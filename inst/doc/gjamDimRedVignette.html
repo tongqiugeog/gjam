@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="James S. Clark, Daniel Taylor-Rodriguez, Duke University" />
+
+<meta name="date" content="2016-10-04" />
+
+<title>Dimension reduction in gjam</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Dimension reduction in gjam</h1>
+<h4 class="author"><em>James S. Clark, Daniel Taylor-Rodriguez, Duke University</em></h4>
+<h4 class="date"><em>2016-10-04</em></h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#overview">Overview</a><ul>
+<li><a href="#how-many-responses">How many responses?</a></li>
+<li><a href="#dimension-reduction-in-gjam">Dimension reduction in gjam</a></li>
+<li><a href="#big-s-composition-data"><em>Big-S</em> composition data</a></li>
+</ul></li>
+<li><a href="#fungal-endophyte-example">Fungal endophyte example</a><ul>
+<li><a href="#interactions-and-indirect-effects">Interactions and indirect effects</a></li>
+</ul></li>
+<li><a href="#acknowledgements">Acknowledgements</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</div>
+
+<div id="citations" class="section level4">
+<h4>citations:</h4>
+<p><em>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, in press.</em></p>
+<p><em>Taylor-Rodriguez, D., K. Kaufeld, E. Schliep, J. S. Clark, and A. Gelfand, 2016. Joint Species distribution modeling: dimension reduction using Dirichlet processes, Bayesian Analysis, in press.</em></p>
+<p>files are found <a href="http://sites.nicholas.duke.edu/clarklab/code/">here</a></p>
+</div>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>Microbiome, genetic, and hyperspectral satelitte data are examples of observations characterized by a large number of response variables <span class="math inline">\(S\)</span> (e.g., species); we refer to such data sets as <em>‘big-S’</em>. To see why <em>big-S</em> represents a modeling challenge recall the first-stage model in gjam,</p>
+<p><span class="math display">\[\mathbf{w}_{i} \sim MVN(\mathbf{B}'\mathbf{x}_{i},\boldsymbol{\Sigma})\]</span></p>
+<p>Covariance <span class="math inline">\(\Sigma\)</span> has dimension <span class="math inline">\(S \times S\)</span>. It must be inverted, an order<span class="math inline">\((S^{3})\)</span> operation. Even in cases where <span class="math inline">\(\Sigma\)</span> can be inverted the number of observations may not be sufficient to accurately estimate the large number of parameters in the model. In gjam, <em>big-S</em> is handled by generating a lower order approximation of <span class="math inline">\(\Sigma\)</span> (Taylor-Rodriguez et al. 2016).</p>
+<p>The total number of estimates in the full model is</p>
+<p><span class="math display">\[\frac{S(S + 1)}{2} + QS\]</span></p>
+<p>The two terms come from <span class="math inline">\(\boldsymbol{\Sigma}\)</span> and <span class="math inline">\(\mathbf{B}\)</span>, respectively. The number of observed responses is <span class="math inline">\(Sn\)</span>. Thus, to prescribe a mimumum ratio of <span class="math inline">\(a = \frac{no. estimates}{no. observations}\)</span> we might choose to fit the model with no more than</p>
+<p><span class="math display">\[S_{min}  = 2(an - Q) - 1\]</span></p>
+<p>parameters. If we think about replacing <span class="math inline">\(\boldsymbol{\Sigma}\)</span> with a new <span class="math inline">\(r \times N\)</span> matrix described below, the maximum size might be prescribed as</p>
+<p><span class="math display">\[r \times N_{max}  = S(an - Q)\]</span></p>
+<p>The interpretation of a reduced model warrents a few words. If we replace <span class="math inline">\(\boldsymbol{\Sigma}\)</span> with a much smaller number of estimates we cannot insist that we can know the covariance between every species. If <span class="math inline">\(\boldsymbol{\Sigma}\)</span> does not contain structure that can be adequately summarized with fewer estimates, then we have at best a version of the model that soaks up some of the dependence structure that is important for estimating <span class="math inline">\(\mathbf{B}\)</span>. On the other hand <span class="math inline">\(\boldsymbol{\Sigma}\)</span> may contain substantial structure that can be captured by a small number of estimates. We may require far less than order<span class="math inline">\((S^{2})\)</span> parameters to describe dependence.</p>
+<p>In this vignette we summarize aspects of dimension reduction in gjam that can be tuned to specific applications. First we point out that an analysis of <em>big-S</em> data sets need not include every species that might be recorded in a data set and how gjam functions can be used to trim large data sets.</p>
+<div id="how-many-responses" class="section level3">
+<h3>How many responses?</h3>
+<p>A species <em>s</em> that bears no relationship to any of the predictors in <span class="math inline">\(\mathbf{X}\)</span> (all <span class="math inline">\(\mathbf{B}_{s}\)</span> small) or to other species <em>s’</em> (all <span class="math inline">\(\boldsymbol{\Sigma}_{s',s}\)</span> small) will not be ‘explained’ by the model. Such species will contribute little to the model fit, while degrading performance. Consider either of two options for reducing the number of species in the model, <em>trimming</em> and <em>aggregation</em>.</p>
+<p><strong>Trim</strong> species that are not of interest, that will not affect the fit, or both.</p>
+<p><strong>Aggregation</strong> can be based on a number of criteria, such as phylogenetic similarity (e.g., members of the same genus), by functional similarity (e.g., a feeding guild, C<sub>3</sub> vs C<sub>4</sub> plants), and so forth. Rare species can be aggregated into a single group. For example, Clark et al. (2014) include 96 tree species that occur on a minimum of 50 forest inventory plots in eastern North America. The remaining species can be gathered into a single class. When this option is used the name <em>‘other’</em> is assigned to this class in the plots-by-species matrix . Including this class is important where species compete, such as forest trees. It can also be used as a reference category for composition data, summarized below</p>
+</div>
+<div id="dimension-reduction-in-gjam" class="section level3">
+<h3>Dimension reduction in gjam</h3>
+<p>As mentioned above, covariance matrix <span class="math inline">\(\boldsymbol{\Sigma}\)</span> has <span class="math inline">\(S(S + 1)/2\)</span> unique elements, the <em>S</em> diagonal elements plus <span class="math inline">\(1/2\)</span> of the non-diagonal elements. For example, a data set with <span class="math inline">\(S = 100\)</span> has 5050 unique elements in <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. The rank of <span class="math inline">\(\boldsymbol{\Sigma}\)</span> can be reduced by finding structure, essentially groups of responses that might respond similarly.</p>
+<p>In gjam the total number of covariance parameter estimates is reduced to <span class="math inline">\(N \times r\)</span>, where <span class="math inline">\(r &lt; N &lt;&lt; S\)</span>. The integer <span class="math inline">\(N\)</span> represents the potential number of response groups. The integer <span class="math inline">\(r\)</span> is the dimensionality of each group. In other words, large <em>N</em> means more groups, and large <em>r</em> increases the flexibility of those <em>N</em> groups.</p>
+<p>Dimension reduction is invoked in one of two ways. <strong>The first way</strong> is automatic, when i) a data set includes more species than can be fitted given sample size <em>n</em> or when ii) <em>S</em> is too large irrespective of <em>n</em>.</p>
+<p><strong>A second way</strong> to invoke dimension reduction is to specify it in <code>modelList</code>, through the <code>list reductList</code>. Here is an example using simulated data, where the number of species is twice the number of observations.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(gjam)
+S   &lt;-<span class="st"> </span><span class="dv">200</span>
+f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n =</span> <span class="dv">100</span>, <span class="dt">S =</span> S, <span class="dt">typeNames=</span><span class="st">'CA'</span>)
+rl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">r =</span> <span class="dv">5</span>, <span class="dt">N =</span> <span class="dv">20</span>)
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames, 
+            <span class="dt">reductList =</span> rl, <span class="dt">PREDICTX =</span> F)  
+out &lt;-<span class="st"> </span><span class="kw">gjamGibbs</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">SMALLPLOTS =</span> F, 
+            <span class="dt">GRIDPLOTS=</span>T, <span class="dt">specLabs =</span> F)
+<span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
+<p>The full matrix is not stored, so gjam needs time to construct versions of it as needed. The setting <code>PREDICTX = F</code> can be included in <code>modelList</code> to speed up computation, when prediction of inputs is not of interest.</p>
+<p>The massive reduction in rank of the covariance matrix means that the we cannot estimate the ‘true’ version of <span class="math inline">\(\boldsymbol{\Sigma}\)</span>, particularly given the fact that the simulator does not generate a structured <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. These appear as highly structured <code>GRIDPLOTS</code> for the posterior mean estimates of the correlation matrix <span class="math inline">\(\mathbf{R}\)</span>. However, we can still obtain estimates of <span class="math inline">\(\mathbf{B}\)</span> and predictions of <span class="math inline">\(\mathbf{Y}\)</span> that are close to true values.</p>
+</div>
+<div id="big-s-composition-data" class="section level3">
+<h3><em>Big-S</em> composition data</h3>
+<p>Microbiome data are often <em>big-S, small-n</em>; with thousands of response variables, columns in <span class="math inline">\(\mathbf{Y}\)</span> (e.g., OTUs). They are also composition count (<code>'CC'</code>) data, discrete counts, but not related to absolute abundance; they are meaningful in a relative sense. Because data only inform about relative abundance, there is information for only <span class="math inline">\(S - 1\)</span> species. If there are thousands of species, most of which are rare and thus not explained by the model, consider aggregating the many rare types into a single <code>other</code> class.</p>
+</div>
+</div>
+<div id="fungal-endophyte-example" class="section level2">
+<h2>Fungal endophyte example</h2>
+<p>Fungal endophytes were sequenced on host tree seedlings (Hersh et al. 2016). In the data set <code>fungEnd</code> there is a compressed version of responses <code>yDeZero</code> containing OTU counts, a <code>data.frame</code> <code>xdata</code> containing predictors, and <code>status</code>, a vector of host responses, 0 for morbid, 1 for no signs of morbidity. Several histograms show the overwhelming numbers of zeros. Here we extract the data, stored in de-zeroed format, and generate some plots:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(gjam)
+<span class="kw">library</span>(repmis)
+<span class="kw">source_data</span>(<span class="st">&quot;https://github.com/jimclarkatduke/gjam/blob/master/fungEnd.RData?raw=True&quot;</span>)
+
+xdata  &lt;-<span class="st"> </span>fungEnd$xdata
+otu    &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(fungEnd$yDeZero)
+status &lt;-<span class="st"> </span>fungEnd$status
+
+<span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
+    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
+<span class="kw">hist</span>(status, <span class="dt">main=</span><span class="st">'Host condition (morbid = 0)'</span>, <span class="dt">ylab =</span> <span class="st">'Host obs'</span>)
+<span class="kw">hist</span>(otu, <span class="dt">nclass=</span><span class="dv">100</span>, <span class="dt">ylab =</span> <span class="st">'Reads'</span>, <span class="dt">main=</span><span class="st">'each observation'</span>)
+nobs &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(otu, <span class="dt">minObs =</span> <span class="dv">1</span>, <span class="dt">OTHER =</span> F)$nobs
+<span class="kw">hist</span>(nobs, <span class="dt">nclass=</span><span class="dv">100</span>, <span class="dt">ylab =</span> <span class="st">'Total reads per OTU'</span>, <span class="dt">main=</span><span class="st">'Full sample'</span>)</code></pre></div>
+<p>The model will provide no information on the rarest taxa. Here we trim <code>otu</code> to include only OTUs that occur in &gt; 100 observations. The rarest OTUs are aggregated into the last column of <code>y</code> with the column name <code>other</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tmp &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(otu, <span class="dt">minObs =</span> <span class="dv">100</span>)
+y   &lt;-<span class="st"> </span>tmp$y
+<span class="kw">dim</span>(fungEnd$y)               <span class="co"># all OTUs</span>
+<span class="kw">dim</span>(y)                       <span class="co"># trimmed data</span>
+<span class="kw">tail</span>(<span class="kw">colnames</span>(y))            <span class="co"># 'other' class added</span></code></pre></div>
+<p>The full response matrix includes the OTU composition counts and the host status in column 1:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ydata &lt;-<span class="st"> </span><span class="kw">cbind</span>(status, y) <span class="co"># host status is also a response</span>
+S     &lt;-<span class="st"> </span><span class="kw">ncol</span>(ydata)
+typeNames    &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'CC'</span>,S)   <span class="co"># composition count data</span>
+typeNames[<span class="dv">1</span>] &lt;-<span class="st"> 'PA'</span>          <span class="co"># binary host status </span></code></pre></div>
+<p>The interactions in the model involve two factors <code>poly</code> (two levels, polyculture vs monoculture) and <code>host</code> (eight factor levels, one for each host species). I assign <code>acerRubr</code> as the reference class for <code>host</code>,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata$host &lt;-<span class="st"> </span><span class="kw">relevel</span>(xdata$host,<span class="st">'acerRubr'</span>)</code></pre></div>
+<p>The <code>gjam vignette</code> on traits discusses multilevel factors in more detail. We discuss multilevel factors in the context of interactions below.</p>
+<p>For this example we specify up to <span class="math inline">\(N = 20\)</span> clusters with <span class="math inline">\(r = 3\)</span> columns each. Here is an analysis of host seedling and polyculture effect on combined host morbidity status and the microbiome composition:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rl &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">r =</span> <span class="dv">5</span>, <span class="dt">N =</span> <span class="dv">20</span>)
+ml &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> typeNames, <span class="dt">reductList =</span> rl)
+output &lt;-<span class="st"> </span><span class="kw">gjamGibbs</span>(~<span class="st"> </span>host*poly, xdata, ydata, <span class="dt">modelList =</span> ml)</code></pre></div>
+<p>Here is output:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">S &lt;-<span class="st"> </span><span class="kw">ncol</span>(ydata)
+specColor     &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'black'</span>,S)
+specColor[<span class="dv">1</span>]  &lt;-<span class="st"> 'red'</span> <span class="co"># highlight host status</span>
+plotPars      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">corLines=</span>F, <span class="dt">specColor =</span> specColor, <span class="dt">GRIDPLOTS=</span>T,
+                      <span class="dt">specLabs =</span> F, <span class="dt">sdScaleY =</span> T, <span class="dt">SMALLPLOTS =</span> F) 
+fit &lt;-<span class="st"> </span><span class="kw">gjamPlot</span>(output, plotPars)
+fit$eComs[<span class="dv">1</span>:<span class="dv">5</span>,]</code></pre></div>
+<p>Check the chains for convergence.</p>
+<p>Again, the low dimensional version of covariance <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is expected to perform best when there is structure in the data. The responses in matrix <span class="math inline">\(\mathbf{E}\)</span>, returned in <code>fit$ematrix</code>, classify OTUs in three main groups, contained in <code>fit$eComs</code>.</p>
+<div id="interactions-and-indirect-effects" class="section level3">
+<h3>Interactions and indirect effects</h3>
+<p>A plot of main effects, interactions, and indirect effects is used in this example to show contributions to host status, the response variable <code>status</code>. The effects on host status of host species is available as a table with standard errors and credible intervals:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">beta &lt;-<span class="st"> </span>fit$summaryCoeffs$betaCoeff
+ws   &lt;-<span class="st"> </span><span class="kw">grep</span>(<span class="st">'status_'</span>,<span class="kw">rownames</span>(beta))  <span class="co"># find coefficients for status</span>
+beta[ws,]</code></pre></div>
+<p>Following the intercept are rows showing main effects. These are followed by interaction terms. A quick visual of coefficients having credible intervals that exclude zero is here:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit$summaryCoeffs$betaSig[<span class="st">'status'</span>,]</code></pre></div>
+<p>with <code>-</code> and <code>+</code> indicating negative and postive values.</p>
+<p>Here we use the function <code>gamIIE</code> to create the object <code>fit1</code>, a <code>list</code> of these main, interaction, and indirect effects. We specify not to include the response variable <code>other</code> as an indirect effect on <code>status</code>, because we want to focus on the effects of microbes that have been assigned to known taxonomic groups.</p>
+<p>We specify the values for main effects that are involved in the interactions between <code>poly</code> and <code>host</code>. Each factor has one less column in the design matrix <code>x</code> than factor levels. <code>poly</code> has two classes in <code>xdata</code>, one each for monoculture and polyculture, so there is one <code>poly</code> column in <code>x</code>. <code>host</code> has eight species in <code>xdata</code>, so there are seven columns in <code>x</code>. Recall that we assigned <code>acerRubr</code> to be the reference class, so there is no column for it in <code>x</code>.</p>
+<p>The vector of predictor values <code>xvector</code> passed to <code>gjamIIE</code> has the same elements and names as columns in <code>x</code>. For this reason it is easiest to simply assign it a row in <code>x</code>, then change the values. The only values that influence interactions are those that are involved in interaction terms, as specified in <code>formula</code>.</p>
+<p>For the following plots we copy the first row of <code>x</code>. In the first are main effects of all predictors on <code>status</code>. In the second plot is interactions with <code>poly</code> set to 1. In the third plot are indirect effects of the microbes:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xvector &lt;-<span class="st"> </span>output$x[<span class="dv">1</span>,]*<span class="dv">0</span>
+xnames  &lt;-<span class="st"> </span><span class="kw">colnames</span>(output$x)
+<span class="kw">names</span>(xvector)  &lt;-<span class="st"> </span>xnames
+
+xvector[<span class="st">'hostfraxAmer'</span>] &lt;-<span class="st"> </span><span class="dv">1</span>
+xvector[<span class="st">'polypoly'</span>] &lt;-<span class="st"> </span><span class="dv">1</span>
+fit1 &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(output, xvector, <span class="dt">omitY =</span> <span class="st">'other'</span>)
+
+<span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
+    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>))
+<span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'status'</span>, <span class="dt">effectMu =</span> <span class="st">'direct'</span>, 
+            <span class="dt">effectSd =</span> <span class="st">'direct'</span>,
+            <span class="dt">legLoc =</span> <span class="st">'bottomright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">5</span>,.<span class="dv">5</span>))
+<span class="kw">title</span>(<span class="st">'Direct effect by host'</span>)
+
+<span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'status'</span>, <span class="dt">effectMu =</span> <span class="st">'int'</span>, <span class="dt">effectSd =</span> <span class="st">'int'</span>,
+            <span class="dt">legLoc =</span> <span class="st">'topright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">5</span>,.<span class="dv">5</span>))
+<span class="kw">title</span>(<span class="st">'Interactions with polyculture'</span>)
+
+<span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'status'</span>, <span class="dt">effectMu =</span> <span class="st">'ind'</span>, <span class="dt">effectSd =</span> <span class="st">'ind'</span>,
+            <span class="dt">legLoc =</span> <span class="st">'topright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">5</span>,.<span class="dv">5</span>))
+<span class="kw">title</span>(<span class="st">'Indirect effect of microbiome'</span>)</code></pre></div>
+<p>The plot at left is the direct effect, which includes both the main effects plus interactions and plotted relative to the mean over all hosts. The interaction contribution at center is the effect of each host, when grown in polyculture (<code>poly = ref1</code>) and of polyculture when the <code>host = 'fraxAmer</code>.</p>
+<p>The indirect effects bring with them the main effects and interaction effects on each microbial taxon. In this example the indirect effects are noisy, showing large 95% intervals.</p>
+<p>I might also wish to explore the taxa that are more abundant in healthy versus morbid hosts. This can be done with <code>gjamPredict</code>. Here are conditional predictions for responses with <code>status</code> first set to 0 (morbid) and then set to 1 (healthy):</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">y0 &lt;-<span class="st"> </span>ydata[,<span class="dv">1</span>,drop=F]*<span class="dv">0</span>       <span class="co">#unhealthy host</span>
+
+newdata   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> y0, <span class="dt">nsim=</span><span class="dv">50</span>)
+morbid    &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(output, <span class="dt">newdata =</span> newdata) 
+
+newdata   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> y0 +<span class="st"> </span><span class="dv">1</span>, <span class="dt">nsim =</span> <span class="dv">50</span> )
+healthy   &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(output, <span class="dt">newdata =</span> newdata)
+
+<span class="co"># compare predictions</span>
+<span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>), <span class="dt">bty=</span><span class="st">'n'</span>)
+<span class="kw">plot</span>(healthy$sdList$yMu[,-<span class="dv">1</span>],morbid$sdList$yMu[,-<span class="dv">1</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,
+     <span class="dt">xlab=</span><span class="st">'healty'</span>,<span class="dt">ylab=</span><span class="st">'morbid'</span>)
+<span class="kw">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">lty=</span><span class="dv">2</span>,<span class="dt">col=</span><span class="st">'grey'</span>)
+<span class="kw">plot</span>(output$y[,<span class="dv">2</span>:<span class="dv">20</span>],healthy$sdList$yMu[,<span class="dv">2</span>:<span class="dv">20</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,<span class="dt">col=</span><span class="st">'orange'</span>,
+     <span class="dt">xlab=</span><span class="st">'Observed'</span>,<span class="dt">ylab=</span><span class="st">'Predicted'</span>, <span class="dt">pch=</span><span class="dv">16</span>)
+<span class="kw">points</span>(output$y[,<span class="dv">2</span>:<span class="dv">20</span>],morbid$sdList$yMu[,<span class="dv">2</span>:<span class="dv">20</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,<span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">pch=</span><span class="dv">16</span>)
+<span class="kw">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">lty=</span><span class="dv">2</span>,<span class="dt">col=</span><span class="st">'grey'</span>)</code></pre></div>
+<p>In the first plot dots above the the 1:1 line are microbial taxa predicted to be more abundant in morbid hosts, and vice versa. In the second plot response to healthy hosts are in orange for a subset of types, to limit clutter.</p>
+<p>For additional information see this <a href="http://sites.nicholas.duke.edu/clarklab/code/">link</a></p>
+<p>The model is described in Clark et al (2016).</p>
+</div>
+</div>
+<div id="acknowledgements" class="section level2">
+<h2>Acknowledgements</h2>
+<p>For valuable feedback on the model and computation we thank Bene Bachelot, Alan Gelfand, Erin Schliep, Daniel Taylor-Rodirquez, and Bradley Tomasek.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, in press.</p>
+<p>Hersh, H., S. Benetiz, R. Vilgalys, J.S. Clark, in review.</p>
+<p>Taylor-Rodriguez, D., K. Kaufeld, E. Schliep, J. S. Clark, and A. Gelfand, 2016. Joint Species distribution modeling: dimension reduction using Dirichlet processes. Bayesian Analysis, in press.</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

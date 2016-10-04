@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="James S. Clark, Duke University" />
+
+<meta name="date" content="2016-10-04" />
+
+<title>Trait modeling in gjam</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Trait modeling in gjam</h1>
+<h4 class="author"><em>James S. Clark, Duke University</em></h4>
+<h4 class="date"><em>2016-10-04</em></h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#trait-response-model-trm">Trait response model (TRM)</a><ul>
+<li><a href="#input-data">Input data</a></li>
+<li><a href="#traits-by-species">Traits by species</a></li>
+<li><a href="#factors-in-this-example">Factors in this example</a></li>
+<li><a href="#trm-analysis">TRM analysis</a></li>
+</ul></li>
+<li><a href="#interactions-and-indirect-effects">Interactions and indirect effects</a></li>
+<li><a href="#predictive-trait-model-ptm">Predictive Trait Model (PTM)</a></li>
+<li><a href="#acknowledgements">Acknowledgements</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</div>
+
+<div id="citation" class="section level4">
+<h4>citation:</h4>
+<p><em>Clark, J.S. 2016. Why species tell us more about traits than traits tell us about species, Ecology, 97, 1979-1993.</em></p>
+<p><em>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data. Ecological Monographs, in press.</em></p>
+<p>files are found <a href="http://sites.nicholas.duke.edu/clarklab/code/">here</a></p>
+</div>
+<div id="gjam-vignettes" class="section level4">
+<h4>gjam vignettes:</h4>
+<ol style="list-style-type: decimal">
+<li><em>Generalized joint attribute modeling - gjam</em>: overview<br />
+</li>
+<li><em>Dimension reduction in gjam</em>: application to many response variables (‘Big-S’)</li>
+<li><strong>Trait modeling in gjam</strong>: ecological trait analysis</li>
+</ol>
+</div>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>Because it accommodates different data types gjam can be used to model ecological traits by either of two approaches (Clark 2016). One approach uses community weighted mean/mode (CWMM) trait values for a plot <span class="math inline">\(i\)</span> as a response vector <span class="math inline">\(\mathbf{u}_{i}\)</span>, where each trait has a corresponding data type designation in <code>typeNames</code>. I discuss this approach first. I then summarize the second approach, predictive trait modeling.</p>
+</div>
+<div id="trait-response-model-trm" class="section level2">
+<h2>Trait response model (TRM)</h2>
+<p>There are <span class="math inline">\(n\)</span> observations of <span class="math inline">\(M\)</span> traits to be explained by <span class="math inline">\(Q - 1\)</span> predictors in design matrix <span class="math inline">\(\mathbf{X}\)</span>. The Trait Response Model (TRM) in Clark (2016) is</p>
+<p><span class="math display">\[\mathbf{w}_{i} \sim MVN(\mathbf{u}_i,\Omega)\]</span></p>
+<p><span class="math display">\[\mathbf{u}_i = \mathbf{A}'\mathbf{x}_{i}\]</span></p>
+<p>where <span class="math inline">\(\mathbf{u}_{i}\)</span> is a length-<span class="math inline">\(M\)</span> vector of CWMM values, corresponding to <span class="math inline">\(\mathbf{w}_{i}\)</span> on the latent scale, <span class="math inline">\(\mathbf{A}\)</span> is the <span class="math inline">\(Q \times M\)</span> matrix of coefficients, and <span class="math inline">\(\Omega\)</span> is the <span class="math inline">\(M \times M\)</span> residual covariance (Fig. 1). After describing the setup and model fitting I show how gjam summarizes the estimates and predictions.</p>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAFQCAYAAABgRsxBAAAD8GlDQ1BJQ0MgUHJvZmlsZQAAOI2NVd1v21QUP4lvXKQWP6Cxjg4Vi69VU1u5GxqtxgZJk6XpQhq5zdgqpMl1bhpT1za2021Vn/YCbwz4A4CyBx6QeEIaDMT2su0BtElTQRXVJKQ9dNpAaJP2gqpwrq9Tu13GuJGvfznndz7v0TVAx1ea45hJGWDe8l01n5GPn5iWO1YhCc9BJ/RAp6Z7TrpcLgIuxoVH1sNfIcHeNwfa6/9zdVappwMknkJsVz19HvFpgJSpO64PIN5G+fAp30Hc8TziHS4miFhheJbjLMMzHB8POFPqKGKWi6TXtSriJcT9MzH5bAzzHIK1I08t6hq6zHpRdu2aYdJYuk9Q/881bzZa8Xrx6fLmJo/iu4/VXnfH1BB/rmu5ScQvI77m+BkmfxXxvcZcJY14L0DymZp7pML5yTcW61PvIN6JuGr4halQvmjNlCa4bXJ5zj6qhpxrujeKPYMXEd+q00KR5yNAlWZzrF+Ie+uNsdC/MO4tTOZafhbroyXuR3Df08bLiHsQf+ja6gTPWVimZl7l/oUrjl8OcxDWLbNU5D6JRL2gxkDu16fGuC054OMhclsyXTOOFEL+kmMGs4i5kfNuQ62EnBuam8tzP+Q+tSqhz9SuqpZlvR1EfBiOJTSgYMMM7jpYsAEyqJCHDL4dcFFTAwNMlFDUUpQYiadhDmXteeWAw3HEmA2s15k1RmnP4RHuhBybdBOF7MfnICmSQ2SYjIBM3iRvkcMki9IRcnDTthyLz2Ld2fTzPjTQK+Mdg8y5nkZfFO+se9LQr3/09xZr+5GcaSufeAfAww60mAPx+q8u/bAr8rFCLrx7s+vqEkw8qb+p26n11Aruq6m1iJH6PbWGv1VIY25mkNE8PkaQhxfLIF7DZXx80HD/A3l2jLclYs061xNpWCfoB6WHJTjbH0mV35Q/lRXlC+W8cndbl9t2SfhU+Fb4UfhO+F74GWThknBZ+Em4InwjXIyd1ePnY/Psg3pb1TJNu15TMKWMtFt6ScpKL0ivSMXIn9QtDUlj0h7U7N48t3i8eC0GnMC91dX2sTivgloDTgUVeEGHLTizbf5Da9JLhkhh29QOs1luMcScmBXTIIt7xRFxSBxnuJWfuAd1I7jntkyd/pgKaIwVr3MgmDo2q8x6IdB5QH162mcX7ajtnHGN2bov71OU1+U0fqqoXLD0wX5ZM005UHmySz3qLtDqILDvIL+iH6jB9y2x83ok898GOPQX3lk3Itl0A+BrD6D7tUjWh3fis58BXDigN9yF8M5PJH4B8Gr79/F/XRm8m241mw/wvur4BGDj42bzn+Vmc+NL9L8GcMn8F1kAcXgSteGGAAAm30lEQVR4Ae3dCbRVZfk/8AdUMEEFVFbghLoWKg6ZQ+WUQ+EQzqWSOTeQA2CKUonLfiGsVBQQwVTUpSaZ08qcUjOzlUOm4TwUpoGKOQ+AIuD98+5/3Bj13gvss+95P3utK+ees/d+3+fzHDxf9jl7nzYNc5ewECBAgAABAgQIEChJoG1J4xiGAAECBAgQIECAQCEggHoiECBAgAABAgQIlCoggJbKbTACBAgQIECAAAEB1HOAAAECBAgQIECgVAEBtFRugxEgQIAAAQIECAigngMECBAgQIAAAQKlCgigpXIbjAABAgQIECBAQAD1HCBAgAABAgQIEChVQAAtldtgBAgQIECAAAECAqjnAAECBAgQIECAQKkCAmip3AYjQIAAAQIECBAQQD0HCBAgQIAAAQIEShUQQEvlNhgBAgQIECBAgIAA6jlAgAABAgQIECBQqoAAWiq3wQgQIECAAAECBARQzwECBAgQIECAAIFSBQTQUrkNRoAAAQIECBAgIIB6DhAgQIAAAQIECJQqIICWym0wAgQIECBAgAABAdRzgAABAgQIECBAoFQBAbRUboMRIECAAAECBAgIoJ4DBAgQIECAAAECpQoIoKVyG4wAAQIECBAgQEAA9RwgQIAAAQIECBAoVUAALZXbYAQIECBAgAABAgKo5wABAgQIECBAgECpAgJoqdwGI0CAAAECBAgQEEA9BwgQIECAAAECBEoVEEBL5TYYAQIECBAgQICAAOo5QIAAAQIECBAgUKqAAFoqt8EIECBAgAABAgQEUM8BAgQIECBAgACBUgUE0FK5DUaAAAECBAgQICCAeg4QIECAAAECBAiUKiCAlsptMAIECBAgQIAAAQHUc4AAAQIECBAgQKBUAQG0VG6DESBAgAABAgQICKCeAwQIECBAgAABAqUKCKClchuMAAECBAgQIEBAAPUcIECAAAECBAgQKFVAAC2V22AECBAgQIAAAQICqOcAAQIECBAgQIBAqQICaKncBiNAgAABAgQIEBBAPQcIECBAgAABAgRKFRBAS+U2GAECBAgQIECAwIoImi/w1ltvxaRJk5q/oS3qUqBbt26x3nrr1WVtzSnq1VdfjSlTpjRnE+tWVGDFFVeMbbbZpqKz+9+0nnzyyZgxY8b/7nAra4H0nE3PXUvrEGjTMHdpHVOtzix79OgRs2fPjrXXXrs6kzKTmgk8/PDDMW3atOjQoUPN5lCFgdu0aRNbb721F4AqNGMp55Ce0zfddFMceOCBS7mn5bf5/fffHzvttFN86UtfWn6D2HOrEUjP2aFDh8aQIUNazZxzn6h/KrTgGdCuXbu46667omfPni3Y2ib1JtCpU6eYNWtWvZXV7HpWWmmlePDBByP9/bC0boFTTjkl/vWvf1W6iKlTp8Y3v/nNuOGGGyo9T5MrR+Ciiy6KJ554opzBjLJMBHwGdJkw2gkBAgQIECBAgEBTBQTQpkpZjwABAgQIECBAYJkICKDLhNFOCBAgQIAAAQIEmioggDZVynoECBAgQKBiAukqAOnKLBYCrU1AAG1tHTNfAgQIECDwX4Fx48bF4MGDeRBodQLOgm91LTNhAgQIECAQxeUAx48fH+kSaK+//np07doVC4FWI+AIaKtplYkSIECAAIH/CaRrtW6//fbx/e9/P9JliCwEWpOAANqaumWuBAgQIEDgvwLnn39+nHDCCXHMMcfEFVdcETNnzmRDoNUICKCtplUmSoAAAQIE/r9A+tKHTz75JLbddtvo3Llz7LbbbnHNNdfgIdBqBATQVtMqEyVAgEDrEXjzzTfjpJNOil69ehVfj5h+T1/tefLJJ8fbb7/degqp6EznHf2cN73jjz8+Ro4cOe9XfxKovIAAWvkWmSABAgRan8Caa64Zw4YNK94WnjJlSrRv3z5WXHHFGDFiRHTp0qX1FVShGX/88cfRvXv3OPTQQxtntd1228X+++8fr7zySuN9bhCosoCz4KvcHXMjQIBAKxbo0KFDXHDBBbHffvvF9OnTY/jw4dG2reMeS9vSdu3axejRoxfZzVlnnbXIfe4gUFUB/yeoamfMiwABAnUg0KdPn9hnn33ipZdeip49e9ZBRdUq4eWXX46zzz67WpMyGwJNEBBAm4BkFQIECBBouUDHjh1j4sSJMWHChJbvxJaLFUifBU1HPt99993FPu5OAlUVEECr2hnzIkCAQB0IXH311XHAAQfEiSeeGIMGDYoPPvigDqqqRgnpZK5bbrklpk2bFpdeemk1JmUWBJooIIA2EcpqBAgQINA8gfQd5SkgHXzwwfHzn/+8OCHpjDPOaN5OrL1EgbFjxxZnvm+yySYxZsyY4puRlriyBwhUTEAArVhDTIcAAQL1IJDOfD/kkEOKyzCletLJR5tvvnlxUtKoUaPqocSa1jBjxoy49957I33Gtn///pG8b7jhhprOyeAEmiPgLPjmaFmXAAECBJoksO6668Y999zTuO6qq64a9913X+PvbiydwGWXXRZHH3108T3wRx11VPz0pz8tjob27dt36XZsawIlCTgCWhK0YQgQIECAwLIQmD17dvGtR7179450gf8PP/ywONr88MMPx/33378shrAPAstdwBHQ5U5sAAIECBAgsOwErr322ujatWukz4DOWzp16lQcDU3fhrTjjjvOu9ufBCorIIBWtjUmRoAAAQIEFhRoaGgoLkJ/++23x1prrbXAg0888UT89re/jRdffDE22GCDBR7zC4GqCXgLvmodMR8CBAgQILAEgeuvv764oP/C4TOtftxxx8WcOXPi3HPPXcLW7iZQHQEBtDq9MBMCBAgQILBEgZtuuikGDBgQkyZNKs6An3/FyZMnF5e8SvddfPHFxbcjpTBqIVBVAW/BV7Uz5kWAAAECBOYTOOiggyL9LG5Zb731Yvz48cXP4h53H4GqCTgCWrWOmA8BAgQIECBAoM4FBNA6b7DyCBAgQIAAAQJVExBAq9YR8yFAgAABAgQI1LmAz4DWeYOVR4AAgXoUWH/99ePGG2+MjTbaqB7LU1MzBd55550YMmRIM7eyei0FBNBa6hubAAECBFoksN122xXffz5z5swWbW+j+hPo0aNH/RVVxxUJoHXcXKURIECgngXWWWedei5PbQTqWsBnQOu6vYojQIAAAQIECFRPQACtXk/MiAABAgQIECBQ1wICaF23V3EECBAgQIAAgeoJCKDV64kZESBAgECdCqSTpp555pl4/fXX67RCZRFomoAA2jQnaxEgQIAAgRYLPPvss7HnnnvGD37wg7jvvvviwgsvjC9/+ctx6aWXxieffNLi/TZnww8//DBGjRoVa621VrRp0ybuuuuuxW4+a9as6N69e7HOYYcdFk899dRi13MngaURcBb80ujZlgABAgQIfIbAo48+GjvssENceeWV0bdv38a1TzrppNh5553j4YcfLoJo4wPL6cbnPve5SGOm8a6//vo4//zzY4899lhktBtuuCFmz55d3P+LX/wi0vfMWwgsawFHQJe1qP0RIECAAIH/CqS33A8//PDiaOf84TM93KVLlzjrrLNi/PjxcfPNN5dmtuqqq8ZBBx0Ud95552KPbl5zzTXF42lCHTt2LG1eBspLQADNq9+qJUCAAIESBR555JF47rnnYq+99lrsqL179y7uT6GvKctVV10Vm222Weyzzz4xderUGD58ePTp0yf+/ve/N2XzxnX69+8fbdu2jZEjRzbel26k+ab9p6OlFgLLU0AAXZ669k2AAAECWQs8/fTTRf1Lumh+OsK4+uqrx7z1PgvryCOPjN133z0eeuihYrvJkyfHmDFjYuutt/6sTRd4fMMNN4x99903UvD9z3/+0/jYuHHj4vjjj2/83Q0Cy0tAAF1esvZLgAABAtkLvPXWW4XBp72VnR5rzlnxw4YNi5VWWqn4PGnPnj0jhcmWLAMHDoz0EYGxY8cWm6c5zJgxI9Zff/2W7M42BJolIIA2i8vKBAgQIECg6QLzwmF6u3xxSzoDPh2BbM6JPquttlqce+65ccstt8T++++/uN026b7ddtsttthii7jooosinSF/ySWXFGfpN2ljKxFYSgEBdCkBbU6AAAECBJYksOWWWxYPvfTSS4tdJQXTdMb5tttuu9jHl3Tn9OnTo1u3bjFo0KAlrdKk+9NR0DfffDMuu+yy+POf/1y8vd+kDa1EYCkFBNClBLQ5AQIECBBYksCmm24aBx54YEyYMCHS9TUXXtKlmdI1OVMQbOry2muvRbq003XXXVecPX/HHXc0ddNivXTUdc6cOcXt73znO7HGGmvEqaee2njme7N2ZmUCLRQQQFsIZzMCBAgQINAUgREjRkT79u1j6NChC6z+/PPPx+jRoyM93qtXrwUe+7RffvKTn8SQIUNip512ikMPPTQGDBhQvIX+advM/1g64plCbFpWXnnl6NevXzG/I444onG19FnQtKR1LQSWh4AAujxU7ZMAAQIECPxXIH0OdOLEiZECZzrzPJ21no44puCYAujJJ5/cJKt01PLMM88s9pPOnE9Leot/0qRJxbVG5z+bfXE7nDZtWgwePLi4/mca8y9/+UuxWjrrPX1D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9QQIECBAgACB0gUE0NLJDUiAAAECBAgQyFtAAM27/6onQIAAAQIECJQuIICWTm5AAgQIECBAgEDeAgJo3v1XPQECBAgQIECgdAEBtHRyAxIgQIAAAQIE8hYQQPPuv+oJECBAgAABAqULCKClkxuQAAECBAgQIJC3gACad/9VT4AAAQIECBAoXUAALZ3cgAQIECBAgACBvAUE0Lz7r3oCBAgQIECAQOkCAmjp5AYkQIAAAQIECOQtIIDm3X/VEyBAgAABAgRKFxBASyc3IAECBAgQIEAgbwEBNO/+q54AAQIECBAgULqAAFo6uQEJECBAgAABAnkLCKB591/1BAgQIECAAIHSBVYsfcQ6GPCFF16IH/3oR7HRRhvVQTVKWFqB9957L9q29W+5WbNmxcCBA2OllVZaWlLb11hgzJgxMXbs2BrPwvAECNSzQJuGuUs9F7g8avvHP/4Rv//975fHru2zFQp88YtfjJ133rkVznzZTvmRRx6JBx54YNnu1N5qItC+ffvo169fTcY2KAECeQgIoHn0WZUECBAgQIAAgcoIeN+wMq0wEQIECBAgQIBAHgICaB59ViUBAgQIECBAoDICAmhlWmEiBAgQIECAAIE8BATQPPqsSgIEaiyQzvf897//HZMmTYpPPvmkxrMxPAECBGor4DJMtfU3OgECdS4wbdq0+PnPfx5/+9vfYq+99op27drFXXfdFeutt14MHz481lhjjToXUB4BAgQWFXAEdFET9yxDgeeffz4GDBgQbdq0ic9//vMxc+bMxe793nvvLdZJL85nn312TJ8+fbHruZNAaxJIz/eddtqpOPJ59913x+DBg4trCN9+++2x8sorxzbbbBPvvvtuayrJXAkQILBMBFyGaZkw2smnCcyePTu6dOkSH3zwQYwfPz6++93vLrL6t7/97bjtttti0003jb/+9a+LPO4OAq1R4LTTTovRo0fHP//5z+KI5/w1vP/++9GjR4/4xje+Eb/61a/mf8htAgQI1L2AI6B13+LaF7jiiivGjjvuGOuvv36MHDkyFv7ug/S5uFVWWSVWW2216NixY+0nbAZ1IZCeV6eeemqkLwp4/PHHY5dddine7r7iiiuaVN+bb74ZJ510UvTq1SuGDBkS6fcDDzwwTj755Hj77bebtI9rrrmm2D693b7wkp7vX/nKV+K6666L9C1SFgIECOQkIIDWeber8CKciFMIPfHEE+Ppp5+OO++8cwH1cePGxXHHHbfAfX4hsLQC3bt3L4Lds88+G+kjHjfffHOkI+3pa3Sbsqy55poxbNiw4mMjU6ZMifTtQOl5PGLEiOKI/mft45133olXX3011llnnSWuuvbaaxdzTN+uZiFAgEBOAlkG0PSikMtS6xfh+Z3TW+8dOnSI888/v/HuDz/8sAil2267beN9bhBYFgLpO+m32mqrIkCmI5mdOnWKb33rW/Hee+/Fa6+91qQh0vP1ggsuKN4iP+aYY4pA2rZt0/63+dZbbxVjfNpR/XmPvfHGG02aj5UIECBQLwJN+z9pvVQ7t470OcMHH3ywjir69FJq/SI8/+w6d+4cRxxxRKSTMZ588sniofQW5WGHHTb/am4TWG4C8wLfkk6GW9zAffr0iX322Sdeeuml6Nmz5+JWWex96SMnK6ywQkydOnWxj6c75wXhxb1Fv8SNPECAAIE6EMgugKYXk5133rkOWtfyEsp8EV54lvPOiJ93FPT666+Pgw8+eOHV/E6gUgLp78zEiRNjwoQJTZ5X+sffJptsUgTXJW2UPiLTtWvXRU5QWtL67idAgEC9CGQXQFPj0v/wLc0XaMmL8MKjpLPce/fuXbyQX3vttbH99ttHeqG2EKiqwNVXXx0HHHBA8RnmQYMGFVdzaOpcTz/99OISTH/6058W2SR97vOhhx6KE044ofhs6SIruIMAAQJ1LJBlAK3jfi630pbmRThN6uOPP26c28CBA4vf+/XrF+nHQmB5CXz00UfFrud981C6KHxa0qXBmrKkz3HecsstxVH6dDH59Nb9GWec0ZRNi3X69u1bbPvjH/+4+OzpvA3TftLZ9LvttlukUGshQIBAbgICaAYdr/WLcHqxTV8/OG/Ze++9i8/SpY9DdOvWbd7dxcXn06VuLASWhcArr7wSv/nNb4pdjRo1KtJZ6b/85S+L38eOHbvAP4oWN1468/2QQw4pLqOUHk8nH22++ebFSUlpf01Z0hcwpMssHXnkkcVloIYOHRrnnHNOHHTQQbHFFlvErbfeWlyCrCn7sg4BAgTqSmDuNRktdSzw8ssvN+y6664Nc5+0Deedd17D3OsXNhx66KHF73MvR9MwNxx+avWTJ09u2H333RvOPPPMYr25F89u+OpXv9ow94W1Ye41PT912/TgY4891rDvvvsW4829DFPD3JMuim3GjBnT8MADDxS30xj9+/cv1pl70kbD3BfphrlHqorH/IdAvQg8+uijDXO/kKHx72K91KUOAgQItETANyHV1T8nFEOAQJUFXnzxxeJSUHP/YRY/+9nPiq/mTF8/ayFAgEBuAgJobh1XLwECNRWYM2dO3HPPPXHjjTfGjBkzYuONNy5Ockpv71sIECCQi4AAmkun1UmAAAECBAgQqIiAk5Aq0gjTIECAAAECBAjkIiCA5tJpdRIgQIAAAQIEKiIggFakEaZBgAABAgQIEMhFQADNpdPqJECAAAECBAhUREAArUgjTIMAAQIECBAgkIuAAJpLp9VJgAABAgQIEKiIgABakUaYBgECBAgQIEAgFwEBNJdOq5MAAQIECBAgUBEBAbQijTANAgQIECBAgEAuAgJoLp1WJwECBAgQIECgIgICaEUaYRoECBAgQIAAgVwEBNBcOq1OAgQIECBAgEBFBATQijTCNAgQIECAAAECuQgIoLl0Wp0ECBAgQIAAgYoICKAVaYRpECBAgAABAgRyERBAc+m0OgkQIECAAAECFREQQCvSCNMgQIAAAQIECOQiIIDm0ml1EiBAgAABAgQqIiCAVqQRpkGAAAECBAgQyEVAAM2l0+okQIAAAQIECFREQACtSCNMgwABAgQIECCQi4AAmkun1UmAAAECBAgQqIiAAFqRRpgGAQIECBAgQCAXAQE0l06rkwABAgQIECBQEQEBtCKNMA0CBAgQIECAQC4CAmgunVYnAQIECBAgQKAiAgJoRRphGgQIECBAgACBXAQE0Fw6rU4CBAgQIECAQEUEBNCKNMI0CBAgQIAAAQK5CAiguXRanQQIECBAgACBiggIoBVphGkQIECAAAECBHIREEBz6bQ6CRAgQIAAAQIVERBAK9II0yBAgAABAgQI5CIggObSaXUSIECAAAECBCoiIIBWpBGmQYAAAQIECBDIRUAAzaXT6iRAgAABAgQIVERAAK1II0yDAAECBAgQIJCLgACaS6fVSYAAAQIECBCoiIAAWpFGmAYBAgQIECBAIBcBATSXTquTAAECBAgQIFARAQG0Io0wDQIECBAgQIBALgICaC6dVicBAgQIECBAoCICAmhFGmEaBAgQIECAAIFcBATQXDqtTgIECBAgQIBARQQE0Io0wjQIECBAgAABArkICKC5dFqdBAgQIECAAIGKCAigFWmEaRAgQIAAAQIEchEQQHPptDoJECBAgAABAhUREEAr0gjTIECAAAECBAjkIiCA5tJpdRIgQIAAAQIEKiIggFakEaZBgAABAgQIEMhFQADNpdPqJECAAAECBAhUREAArUgjTIMAAQIECBAgkIuAAJpLp9VJgAABAgQIEKiIgABakUaYBgECBAgQIEAgFwEBNJdOq5MAAQIECBAgUBEBAbQijTANAgQIECBAgEAuAgJoLp1WJwECBAgQIECgIgL/Dzd1wQnqRW2XAAAAAElFTkSuQmCC" alt /><!-- --> <strong>Figure 1. Trait response model</strong> showing the sizes of matrices for a sample containing <em>n</em> observations, <em>M</em> traits, and <em>Q</em> predictors.</p>
+<div id="input-data" class="section level3">
+<h3>Input data</h3>
+<p>Data contained in <code>forestTraits</code> include predictors in <code>xdata</code>, a character vector of data types in <code>traitTypes</code>, and <code>treesDeZero</code>, which contains tree biomass in de-zeroed format. Here the data are loaded, re-zeroed with <code>gjamReZero</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(gjam)
+<span class="kw">library</span>(repmis)
+<span class="kw">source_data</span>(<span class="st">&quot;https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True&quot;</span>)</code></pre></div>
+<pre><code>## Downloading data from: https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True</code></pre>
+<pre><code>## SHA-1 hash of the downloaded data file is:
+## 1ea78837a63fc59c0e39f8cd665048827251681a</code></pre>
+<pre><code>## [1] &quot;forestTraits&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata &lt;-<span class="st"> </span>forestTraits$xdata                    <span class="co"># n X Q</span>
+types &lt;-<span class="st"> </span>forestTraits$traitTypes               <span class="co"># 12 trait types </span>
+sbyt  &lt;-<span class="st"> </span>forestTraits$specByTrait              <span class="co"># S X 12</span>
+pbys  &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(forestTraits$treesDeZero)  <span class="co"># n X S</span>
+<span class="kw">head</span>(sbyt)</code></pre></div>
+<pre><code>##           gmPerSeed      maxHt      leafN      leafP         SLA
+## abieBals -0.6749613 -0.7215657 -1.3581941 -1.0169734 -1.53743111
+## acerBarb -0.2325344 -0.7215657  0.4023159  0.2311101  0.90381913
+## acerNegu -0.1398369 -0.7215657  1.5275903  0.3119445  1.34368404
+## acerPens -0.1649578 -2.4505299 -0.3962660  0.6352821  2.76591391
+## acerRubr -0.3474630 -0.3510734 -0.5777619 -0.4640659  0.06807581
+## acerSac2 -0.2077359  0.8839010  1.2008977  0.2311101 -0.21050530
+##               woodSG shade drought flood            leaf   xylem
+## abieBals -1.71516623     5       1     2 needleevergreen diffuse
+## acerBarb -0.29558420     4       2     1  broaddeciduous diffuse
+## acerNegu -0.80257778     3       3     3  broaddeciduous diffuse
+## acerPens -0.59978035     4       2     1  broaddeciduous diffuse
+## acerRubr -0.09278677     3       2     3  broaddeciduous diffuse
+## acerSac2 -0.59978035     4       3     3  broaddeciduous diffuse
+##               repro
+## abieBals monoecious
+## acerBarb monoecious
+## acerNegu  dioecious
+## acerPens  dioecious
+## acerRubr  dioecious
+## acerSac2  dioecious</code></pre>
+<p>The matrix <code>pbys</code> holds biomass values for species, rounded off to reduce storage. The first six columns of <code>sbyt</code> are centered and standardized. The three ordinal classes are integer values, but do not represent an absolute scale (see below). The three groups of categorical variables in <code>data.frame sbyt</code> have different numbers of levels shown here:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">table</span>(sbyt$leaf)      <span class="co"># four levels</span></code></pre></div>
+<pre><code>## 
+##  broaddeciduous  broadevergreen needledeciduous needleevergreen 
+##              76               3               3              16</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">table</span>(sbyt$xylem)     <span class="co"># diffuse/tracheid vs ring-porous</span></code></pre></div>
+<pre><code>## 
+## diffuse    ring 
+##      63      35</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">table</span>(sbyt$repro)     <span class="co"># two levels</span></code></pre></div>
+<pre><code>## 
+##  dioecious monoecious 
+##         20         78</code></pre>
+<p>These species traits are translated into community-weighted means and modes (CWMM) by the function <code>gjamSpec2Trait</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tmp         &lt;-<span class="st"> </span><span class="kw">gjamSpec2Trait</span>(pbys, sbyt, types)
+tTypes      &lt;-<span class="st"> </span>tmp$traitTypes                  <span class="co"># M = 15 values</span>
+u           &lt;-<span class="st"> </span>tmp$plotByCWM                   <span class="co"># n X M</span>
+censor      &lt;-<span class="st"> </span>tmp$censor                      <span class="co"># (0, 1) censoring, two-level CAT's</span>
+specByTrait &lt;-<span class="st"> </span>tmp$specByTrait                 <span class="co"># S X M</span>
+M           &lt;-<span class="st"> </span><span class="kw">ncol</span>(u)
+n           &lt;-<span class="st"> </span><span class="kw">nrow</span>(u)
+types                                          <span class="co"># 12 individual trait types</span></code></pre></div>
+<pre><code>##  [1] &quot;CON&quot; &quot;CON&quot; &quot;CON&quot; &quot;CON&quot; &quot;CON&quot; &quot;CON&quot; &quot;OC&quot;  &quot;OC&quot;  &quot;OC&quot;  &quot;CAT&quot; &quot;CAT&quot;
+## [12] &quot;CAT&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">cbind</span>(<span class="kw">colnames</span>(u),tTypes)                      <span class="co"># M trait names and types</span></code></pre></div>
+<pre><code>##                             tTypes
+##  [1,] &quot;gmPerSeed&quot;           &quot;CON&quot; 
+##  [2,] &quot;maxHt&quot;               &quot;CON&quot; 
+##  [3,] &quot;leafN&quot;               &quot;CON&quot; 
+##  [4,] &quot;leafP&quot;               &quot;CON&quot; 
+##  [5,] &quot;SLA&quot;                 &quot;CON&quot; 
+##  [6,] &quot;woodSG&quot;              &quot;CON&quot; 
+##  [7,] &quot;shade&quot;               &quot;OC&quot;  
+##  [8,] &quot;drought&quot;             &quot;OC&quot;  
+##  [9,] &quot;flood&quot;               &quot;OC&quot;  
+## [10,] &quot;leafother&quot;           &quot;FC&quot;  
+## [11,] &quot;leafbroaddeciduous&quot;  &quot;FC&quot;  
+## [12,] &quot;leafneedledeciduous&quot; &quot;FC&quot;  
+## [13,] &quot;leafneedleevergreen&quot; &quot;FC&quot;  
+## [14,] &quot;ring&quot;                &quot;CA&quot;  
+## [15,] &quot;dioecious&quot;           &quot;CA&quot;</code></pre>
+</div>
+<div id="traits-by-species" class="section level3">
+<h3>Traits by species</h3>
+<p>Note the change in data types by comparing <code>types</code> for individuals of a species with <code>tTypes</code> for CWMM values at the plot scale. At the plot scale <code>tTypes</code> has <span class="math inline">\(M = 15\)</span> values, because the leaf <code>'CAT'</code> group in <code>types</code> includes four levels, which are expanded to four <code>'FC'</code> columns in <code>u</code>. The two-level groups <code>'xylem'</code> and <code>'repro'</code> are transformed to censored continuous values on (0, 1) and thus each occupy a single column in <code>u</code>.</p>
+<p>As discussed in Clark (2016) the interpretation of CWMM values in <code>u</code> is not the same as the interpretation of species-level traits assigned in <code>forestTraits$specByTrait</code>. Let <span class="math inline">\(\mathbf{T'}\)</span> be a species-by-traits matrix <code>specByTrait</code>, constructed as CWMM values in function <code>gjamSpec2Trait</code>. The row names of <code>specByTrait</code> match the column names for the <span class="math inline">\(n \times S\)</span> species abundance matrix <code>plotByTrees</code>. The latter is referenced to individuals of a species.</p>
+<p>The plot-by-trait matrix <code>u</code> is referenced to a location, i.e., one row in matrix <code>u</code>. It is a CWMM, with values derived from measurements on individual trees, but combined to produce a weighted value for each location. Ordinal traits (<code>shade</code>, <code>drought</code>, <code>flood</code>) are community weighted modes, because ordinal scores cannot be averaged. The CWMM value for a plot may not be the same data type as the trait measured on an individual tree <code>sbyt</code>. Here is a table of 15 columns in <code>u</code>:</p>
+<table style="width:107%;">
+<colgroup>
+<col width="11%"></col>
+<col width="15%"></col>
+<col width="16%"></col>
+<col width="63%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">trait</th>
+<th align="center"><code>typeName</code></th>
+<th align="center">partition</th>
+<th align="center">comment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><code>gmPerSeed</code></td>
+<td align="center"><code>CON</code></td>
+<td align="center"><span class="math inline">\((-\infty, \infty)\)</span></td>
+<td align="center">centered, standardized</td>
+</tr>
+<tr class="even">
+<td align="center"><code>maxHt</code></td>
+<td align="center"><code>CON</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>leafN</code></td>
+<td align="center"><code>CON</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="even">
+<td align="center"><code>leafP</code></td>
+<td align="center"><code>CON</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>SLA</code></td>
+<td align="center"><code>CON</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="even">
+<td align="center"><code>woodSG</code></td>
+<td align="center"><code>CON</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>shade</code></td>
+<td align="center"><code>OC</code></td>
+<td align="center"><span class="math inline">\((-\infty, 0, p_{s1}, p_{s2}, p_{s3}, p_{s4}, \infty)\)</span></td>
+<td align="center">five tolerance bins</td>
+</tr>
+<tr class="even">
+<td align="center"><code>drought</code></td>
+<td align="center"><code>OC</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>flood</code></td>
+<td align="center"><code>OC</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="even">
+<td align="center"><code>leaf_broaddeciduous</code></td>
+<td align="center"><code>FC</code></td>
+<td align="center"><span class="math inline">\((-\infty, 0, 1, \infty)\)</span></td>
+<td align="center">categorical traits become FC data as CWMs</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>leaf_broadevergreen</code></td>
+<td align="center"><code>FC</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="even">
+<td align="center"><code>leaf_needleevergreen</code></td>
+<td align="center"><code>FC</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>leaf_other</code></td>
+<td align="center"><code>FC</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+<tr class="even">
+<td align="center"><code>repro_monoecious</code></td>
+<td align="center"><code>CA</code></td>
+<td align="center"><span class="math inline">\((-\infty, 0, 1, \infty)\)</span></td>
+<td align="center">two categories become continuous (censored)</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>xylem_ring</code></td>
+<td align="center"><code>CA</code></td>
+<td align="center">&quot;</td>
+<td align="center">&quot;</td>
+</tr>
+</tbody>
+</table>
+<p>The first six <code>CON</code> variables are continuous, centered, and standardized, as is often done in trait studies. In gjam <code>CON</code> is the only type that is not assumed to be censored at zero.</p>
+<p>The three <code>OC</code> variables are ordinal classes, lacking an absolute scale–the partition must be estimated.</p>
+<p>The four fractional composition <code>FC</code> columns are the levels of the single <code>CAT</code> variable <code>leaf</code>, expanded by the function <code>gjamSpec2Trait</code>.</p>
+<p>The last two traits in <code>u</code> are fractions with two classes, only one of which is included here. They are censored at both 0 and 1, the intervals <span class="math inline">\((-\infty, 0)\)</span> and <span class="math inline">\((1, \infty)\)</span>. This censoring can be generated using <code>gjamCensorY</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">censorList    &lt;-<span class="st"> </span><span class="kw">gjamCensorY</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="dt">intervals =</span> <span class="kw">cbind</span>( <span class="kw">c</span>(-<span class="ot">Inf</span>,<span class="dv">0</span>),<span class="kw">c</span>(<span class="dv">1</span>,<span class="ot">Inf</span>) ), 
+                             <span class="dt">y =</span> u, <span class="dt">whichcol =</span> <span class="kw">c</span>(<span class="dv">13</span>:<span class="dv">14</span>))$censor</code></pre></div>
+<p>This censoring was already done with <code>gjamSpec2Trait</code>, which knows to treat <code>'CAT'</code> data with only two levels as censored <code>'CA'</code> data. In this case the <code>values = c(0,1)</code> indicates that zeros and ones in the data indicate censoring. The <code>intervals</code> matrix gives their ranges.</p>
+</div>
+<div id="factors-in-this-example" class="section level3">
+<h3>Factors in this example</h3>
+<p>Multilevel factors in <code>xdata</code> require some interpretation. If you have not worked with multilevel factors, refer to the R <code>help</code> page for <code>factor</code>. The interpretation of coefficients for multilevel factors depends on the reference level used to construct a <em>contrasts</em> matrix. Standard models in R assign contrasts that may not assume the reference level that is desired. Moreover, results may depend on the order of observations and variables in the data.</p>
+<p>In <code>xdata</code> the variable <code>soil</code> is a multilevel factor, which includes soil types that are both common and have potentially strong effects. Here are the first few rows of <code>xdata</code>:</p>
+<pre><code>##         temp     deficit   moisture         u1          u2          u3
+## 1  1.2165433  0.03637914  0.6870299 0.01182693 0.003898011  0.04438465
+## 2  0.1825447  0.20708706  1.6655992 0.02679904 0.000000000  0.87181296
+## 3 -0.9409308  0.20345146 -0.1892591 0.14917175 0.860971854  0.41368482
+## 4  0.6435989  0.81532968  0.3900552 0.04019072 0.061030872 -0.04561379
+## 5  0.8238641 -0.17556592  0.8500289 0.20903325 0.571141912  0.28128988
+## 6  0.2201759  0.76258277 -0.8765680 0.27511333 0.647060523 -0.63773372
+##        stdage      soil
+## 1 -0.16697961 reference
+## 2 -0.02907271 reference
+## 3  0.48147624  SpodHist
+## 4 -0.07895393 reference
+## 5  0.36007415 reference
+## 6 -0.58986965 reference</code></pre>
+<pre><code>## 
+##   EntVert       Mol reference  SpodHist    UltKan 
+##       107        39      1062       354        55</code></pre>
+<p>I used the name <code>reference</code> for a soil type to aggregate types that are rare. Factor levels that rarely occur cannot be estimated in the model.</p>
+<p>The R function <code>relevel</code> allows definition of a reference level. In this case I want to compare levels to the reference soil type <code>reference</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata$soil &lt;-<span class="st"> </span><span class="kw">relevel</span>(xdata$soil,<span class="st">'reference'</span>)</code></pre></div>
+<p>To avoid confusion, contrasts can be inspected as <code>output$modelSummary$contrasts</code>. If the reference class is all zeros and other classes are zeros and ones, then the intercept is the reference class.</p>
+</div>
+<div id="trm-analysis" class="section level3">
+<h3>TRM analysis</h3>
+<p>Here is an analysis of the data, with 20 holdout plots. Predictors in <code>xdata</code> are winter temperature (<code>temp</code>), slope (<code>u1</code>), aspect (<code>u2</code>, <code>u3</code>), local <code>moisture</code>, climatic moisture <code>deficit</code> and <code>soil</code>.</p>
+<p><span class="math display">\[[u_{i,1}, u_{i,2}, u_{i,3}]' = [sin(slope_{i}), sin(slope_{i})sin(aspect_{i}), sin(slope_{i})cos(aspect_{i})]'\]</span></p>
+<p>(Clark 1990). As discussed above, the variable <code>soil</code> is a multi-level factor. Because slope and aspect variables are products (interactions) I do not standardize them, including them in <code>notStandard</code>,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">3000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> tTypes, <span class="dt">holdoutN =</span> <span class="dv">20</span>,
+            <span class="dt">censor=</span>censor, <span class="dt">notStandard =</span> <span class="kw">c</span>(<span class="st">'u1'</span>,<span class="st">'u2'</span>,<span class="st">'u3'</span>))
+out &lt;-<span class="st"> </span><span class="kw">gjamGibbs</span>(~<span class="st"> </span>temp +<span class="st"> </span>stdage +<span class="st"> </span>moisture*deficit +<span class="st"> </span>deficit*soil, 
+                 <span class="dt">xdata =</span> xdata, <span class="dt">ydata =</span> u, <span class="dt">modelList =</span> ml)
+tnames    &lt;-<span class="st"> </span><span class="kw">colnames</span>(u)
+specColor &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'black'</span>, M)                           <span class="co"># highlight types</span>
+wo &lt;-<span class="st"> </span><span class="kw">which</span>(tnames %in%<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;leafN&quot;</span>,<span class="st">&quot;leafP&quot;</span>,<span class="st">&quot;SLA&quot;</span>) )     <span class="co"># foliar traits</span>
+wf &lt;-<span class="st"> </span><span class="kw">grep</span>(<span class="st">&quot;leaf&quot;</span>,tnames)                              <span class="co"># leaf habit</span>
+wc &lt;-<span class="st"> </span><span class="kw">which</span>(tnames %in%<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;woodSG&quot;</span>,<span class="st">&quot;diffuse&quot;</span>,<span class="st">&quot;ring&quot;</span>) ) <span class="co"># wood anatomy</span>
+
+specColor[wc] &lt;-<span class="st"> 'brown'</span>
+specColor[wf] &lt;-<span class="st"> 'darkblue'</span>
+specColor[wo] &lt;-<span class="st"> 'darkgreen'</span>
+
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">GRIDPLOTS =</span> <span class="ot">TRUE</span>, <span class="dt">plotAllY =</span> T, <span class="dt">specColor =</span> specColor, 
+            <span class="dt">SMALLPLOTS =</span> F, <span class="dt">sigOnly=</span>F, <span class="dt">ncluster =</span> <span class="dv">3</span>)
+fit &lt;-<span class="st"> </span><span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
+<p>The model fit is interpreted in the same way as other gjam analyses. Note that <code>specColor</code> is used to highlight different types of traits in the posterior plots for values in coefficient matrix <span class="math inline">\(\boldsymbol{\alpha}\)</span>. Parameter estimates are contained in <code>modelSummary</code>,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$modelSummary$betaMu      <span class="co"># Q by M coefficient matrix alpha</span>
+out$modelSummary$betaSe      <span class="co"># Q by M coefficient std errors</span>
+out$modelSummary$sigMu       <span class="co"># M by M covariance matrix omega</span>
+out$modelSummary$sigSe       <span class="co"># M by M covariance std errors</span></code></pre></div>
+<p>The <code>output</code> list contains a large number of diagnostics explained in help pages. The <code>output$modelSummary</code> holds objects described in the help pages.</p>
+<p>The object <code>fit</code> generated by <code>gjamPlot</code> holds coefficients that are summarized in a table:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit$betaEstimates[<span class="dv">1</span>:<span class="dv">5</span>,]      <span class="co"># Q by M coefficient matrix alpha</span></code></pre></div>
+<p>The objects in <code>out</code> that contain the word <code>traits</code> are empty, because gjam does not know that responses are traits. These objects are used when traits are modeled as predictive distributions, discussed next.</p>
+</div>
+</div>
+<div id="interactions-and-indirect-effects" class="section level2">
+<h2>Interactions and indirect effects</h2>
+<p>Consider the interactions and indirect effects for this model. If there are no interactions in the <code>formula</code> passed to <code>gjamGibbs</code>, then there will be no interactions to estimate with the function <code>gjamIIE</code> (there will still be indirect effects, discussed below). If there are interactions in the <code>formula</code>, I must specify the values for main effects that are involved in these interactions to be used for estimating their effects on predictions. For example, consider a model containing the interaction between predictors <span class="math inline">\(q\)</span> and <span class="math inline">\(q'\)</span>,</p>
+<p><span class="math display">\[E[y_{s}] = \cdots + \beta_{q,s}x_{q} + \beta_{q',s}x_{q'} + \beta_{qq',s}x_{q}x_{q'} + \cdots\]</span></p>
+<p>The ‘effect’ of predictor <span class="math inline">\(x_{q}\)</span> on <span class="math inline">\(y_{s}\)</span> is the derivative</p>
+<p><span class="math display">\[\frac{dy_{s}}{dx_{q}} = \beta_{q,s} + \beta_{qq',s}x_{q'}\]</span></p>
+<p>which depends not on <span class="math inline">\(x_{q}\)</span>, but rather on <span class="math inline">\(x_{q'}\)</span>. So if I want to know how interactions affect the response I have to decide on values for all of the predictors that are involved in interactions. These values are passed to <code>gjamIIE</code> in <code>xvector</code>. The default has <code>sdScaleX = F</code>, which means that effects can be compared on the basis of variation in <span class="math inline">\(\mathbf{X}\)</span>.</p>
+<p>In this example interactions involve <code>moisture</code>, <code>deficit</code>, and the multi-level factor <code>soil</code>, as specified in the <code>formula</code> passed to <code>gjamGibbs</code>. The first row of the design matrix is used with <code>moisture</code> and <code>deficit</code> set to -1 or +1 standard deviation to compare dry and wet sites in a dry climate:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdrydry &lt;-<span class="st"> </span>xwetdry  &lt;-<span class="st"> </span>out$x[<span class="dv">1</span>,]
+xdrydry[<span class="st">'moisture'</span>] &lt;-<span class="st"> </span>xdrydry[<span class="st">'deficit'</span>] &lt;-<span class="st"> </span>-<span class="dv">1</span>
+xwetdry[<span class="st">'moisture'</span>] &lt;-<span class="st"> </span><span class="dv">1</span>
+xwetdry[<span class="st">'deficit'</span>]  &lt;-<span class="st"> </span>-<span class="dv">1</span></code></pre></div>
+<p>The first observation is from the reference soil level <code>reference</code>, so all other soil classes are zero. Here is a plot of main effects and interactions for deciduous and evergreen traits:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">2</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
+    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
+
+fit1 &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(<span class="dt">output =</span> out, <span class="dt">xvector =</span> xdrydry)
+fit2 &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(<span class="dt">output =</span> out, <span class="dt">xvector =</span> xwetdry)
+
+<span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'leafbroaddeciduous'</span>, 
+            <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), 
+            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>,
+            <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">31</span>,.<span class="dv">3</span>)
+<span class="kw">title</span>(<span class="st">'deciduous'</span>)
+<span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'leafneedleevergreen'</span>, 
+            <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), 
+            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>,
+            <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">3</span>,.<span class="dv">3</span>))
+<span class="kw">title</span>(<span class="st">'evergreen'</span>)
+
+<span class="kw">gjamIIEplot</span>(fit2, <span class="dt">response =</span> <span class="st">'leafbroaddeciduous'</span>, 
+            <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), 
+            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>,
+            <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">3</span>,.<span class="dv">3</span>))
+<span class="kw">gjamIIEplot</span>(fit2, <span class="dt">response =</span> <span class="st">'leafneedleevergreen'</span>, 
+            <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), 
+            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>,
+            <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">3</span>,.<span class="dv">3</span>))</code></pre></div>
+<p>The main effects plotted in the graphs do not depend on the values in <code>xvector</code>. Although this observation is taken from the <code>reference</code> soil, the plot shows the main effects that would be obtained if it were on the different soils included in the model. The interactions show how the effect of each predictor is modified by interactions with other variables. Again, the interactions from each predictor do not depend on values for the predictor itself, but rather on the other variables with which it interacts. For example, the interaction effect of <code>soilUltKan</code> on the <code>broaddeciduous</code> trait is positive on dry sites in dry climates (top left). Combined with a negative main effect, this means that deciduous trees tend to be more abundance on moist sites in this soil type. Its main effect on <code>leafneedleevergreen</code> is positive, but less so on moist sites in dry climates (bottom right).</p>
+<p>The indirect effects come from the effects of responses. This example shows indirect effects for foliar N and P that come through <code>broaddeciduous</code> leaf habit:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xvector &lt;-<span class="st"> </span>out$x[<span class="dv">1</span>,]
+<span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
+    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
+
+omitY &lt;-<span class="st"> </span><span class="kw">colnames</span>(u)[<span class="kw">colnames</span>(u) !=<span class="st"> 'leafbroaddeciduous'</span>] <span class="co"># omit all but deciduous</span>
+
+fit &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(out, xvector)
+<span class="kw">gjamIIEplot</span>(fit, <span class="dt">response =</span> <span class="st">'leafP'</span>, <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), 
+            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), <span class="dt">legLoc =</span> <span class="st">'topright'</span>,
+            <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">6</span>,.<span class="dv">6</span>))
+<span class="kw">title</span>(<span class="st">'foliar P'</span>)
+<span class="kw">gjamIIEplot</span>(fit, <span class="dt">response =</span> <span class="st">'leafN'</span>, <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), 
+            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), <span class="dt">legLoc =</span> <span class="st">'bottomright'</span>,
+            <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">6</span>,.<span class="dv">6</span>))
+<span class="kw">title</span>(<span class="st">'foliar N'</span>)</code></pre></div>
+<p>There will always be indirect effects, because they come through the covariance matrix.</p>
+</div>
+<div id="predictive-trait-model-ptm" class="section level2">
+<h2>Predictive Trait Model (PTM)</h2>
+<p>The PTM models species abundance data, then predicts traits. This approach has a number of advantages over TRM discussed in Clark (2016). The response is the <span class="math inline">\(n \times S\)</span> matrix <span class="math inline">\(\mathbf{Y}\)</span>, which could be counts, biomass, and so forth. On the latent scale the observation is represented by a composition vector,</p>
+<p><span class="math display">\[E\big[\mathbf{y}_{i}] = \boldsymbol{\beta'}\mathbf{x}_{i}\]</span></p>
+<p><span class="math display">\[\mathbf{w}_{i} \sim MVN(\boldsymbol{\beta'}\mathbf{x}_{i},\Sigma)\]</span></p>
+<p>where <span class="math inline">\(\boldsymbol{\beta}\)</span> is the <span class="math inline">\(Q \times S\)</span> matrix of coefficients, and <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is the <span class="math inline">\(S \times S\)</span> residual covariance. A predictive distribution on the trait scale is obtained as a <em>variable change</em>,</p>
+<p><span class="math display">\[\boldsymbol{\alpha} = \boldsymbol{\beta}\mathbf{T}\]</span> <span class="math display">\[\boldsymbol{\Omega} = \mathbf{T'}\boldsymbol{\Sigma}\mathbf{T}\]</span> <span class="math display">\[\mathbf{u}_{i} = \mathbf{T'}\mathbf{w}_{i}\]</span></p>
+<p>where <span class="math inline">\(\mathbf{T}\)</span> is a <span class="math inline">\(S \times M\)</span> matrix of trait values for each species, <span class="math inline">\(\boldsymbol{\alpha}\)</span> is the <span class="math inline">\(Q \times M\)</span> matrix of coefficients, and <span class="math inline">\(\boldsymbol{\Omega}\)</span> is the <span class="math inline">\(M \times M\)</span> residual covariance (Fig. 2).</p>
+<p><img src="data:image/png;base64,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" alt /><!-- --> <strong>Figure 2. The predictive trait model</strong> fits species data and predicts traits using the species-by-trait matrix <strong>T</strong>, contained in the object <code>specbyTrait</code>. The white boxes are fitted, with trait matrix <strong>U</strong>, and coefficient matrix <span class="math inline">\(\boldsymbol{\alpha'}\)</span> obtained by variable change.</p>
+<p>The PTM begins by fitting <code>pbys</code>, followed by predicting <code>plotByTraits</code>. This requires a <code>traitList</code>, which defines the objects needed for prediction. The species are weights, so they should be modeled as composition data, eight <code>'FC'</code> (rows sum to 1) or <code>'CC'</code>. Here the model is fitted with dimension reduction:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">plotByTrait =</span> u, <span class="dt">traitTypes =</span> tTypes, <span class="dt">specByTrait =</span> specByTrait)
+rl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">r =</span> <span class="dv">8</span>, <span class="dt">N =</span> <span class="dv">20</span>)
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">200</span>, <span class="dt">typeNames =</span> <span class="st">'CC'</span>, <span class="dt">holdoutN =</span> <span class="dv">20</span>,
+                  <span class="dt">traitList =</span> tl, <span class="dt">reductList =</span> rl)
+out &lt;-<span class="st"> </span><span class="kw">gjamGibbs</span>(~<span class="st"> </span>temp +<span class="st"> </span>stdage +<span class="st"> </span>deficit*soil, <span class="dt">xdata =</span> xdata, 
+                     <span class="dt">ydata =</span> pbys, <span class="dt">modelList =</span> ml)
+S &lt;-<span class="st"> </span><span class="kw">nrow</span>(specByTrait)
+specColor &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'black'</span>,S)
+
+wr &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'ring'</span>] ==<span class="st"> </span><span class="dv">1</span>)                  <span class="co"># ring porous</span>
+wb &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'leafneedleevergreen'</span>] ==<span class="st"> </span><span class="dv">1</span>)   <span class="co"># evergreen</span>
+ws &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'shade'</span>] &gt;=<span class="st"> </span><span class="dv">4</span>)                 <span class="co"># shade tolerant</span>
+specColor[wr] &lt;-<span class="st"> 'brown'</span>
+specColor[ws] &lt;-<span class="st"> 'black'</span>
+specColor[wb] &lt;-<span class="st"> 'darkgreen'</span>
+         
+<span class="kw">par</span>(<span class="dt">family =</span> <span class="st">''</span>)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">width=</span><span class="dv">4</span>, <span class="dt">height=</span><span class="dv">4</span>, <span class="dt">corLines=</span>F, <span class="dt">SMALLPLOTS=</span>F,<span class="dt">GRIDPLOTS=</span>T,
+                  <span class="dt">specColor =</span> specColor, <span class="dt">ncluster =</span> <span class="dv">8</span>) 
+fit &lt;-<span class="st"> </span><span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, pl)</code></pre></div>
+<p>Output is interpreted as previously, now with coefficients <span class="math inline">\(\boldsymbol{\beta}\)</span> and covariance <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. gjamPlot generates an additional plot with trait predictions. Parameter values are here:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$modelSummary$betaTraitMu   <span class="co"># Q by M coefficient matrix alpha</span>
+out$modelSummary$betaTraitSe   <span class="co"># Q by M coefficient std errors</span>
+out$modelSummary$sigmaTraitMu  <span class="co"># M by M covariance matrix omega</span>
+out$modelSummary$sigmaTraitSe  <span class="co"># M by M covariance std errors</span></code></pre></div>
+<p>Trait predictive distributions are summarized here:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$modelSummary$tMu[<span class="dv">1</span>:<span class="dv">5</span>,]     <span class="co"># n by M predictive means</span>
+out$modelSummary$tSd[<span class="dv">1</span>:<span class="dv">5</span>,]     <span class="co"># n by M predictive std errors</span></code></pre></div>
+<p>The groupings of species in terms of their similar responses to the environment (the <code>ematrix</code>) are here, showing only the 4 most frequent species in each of the <code>ncluster</code> = 8 groups:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit$eComs[,<span class="dv">1</span>:<span class="dv">4</span>]</code></pre></div>
+<p>Additional quantities can be predicted from the output using the MCMC output in the list <code>out$chains</code>.</p>
+</div>
+<div id="acknowledgements" class="section level2">
+<h2>Acknowledgements</h2>
+<p>I thank Benedict Bachelot for review of the code.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Clark, J.S. 2016. Clark, J.S. 2016. Why species tell us more about traits than traits tell us about species: Predictive models. Ecology 97, 1979-1993.</p>
+<p>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, in review.</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

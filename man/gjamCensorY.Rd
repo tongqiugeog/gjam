@@ -1,8 +1,8 @@
 \name{gjamCensorY}
 \alias{gjamCensorY}
-\title{Censor gjam data}
+\title{Censor gjam response data}
 \description{
-  Returns a list with censored values, intervals, and censored response data \code{y}.
+  Returns a \code{list} with censored values, intervals, and censored response \code{matrix y}.
 }
 \usage{
   gjamCensorY(values, intervals, y, whichcol = c(1:ncol(y)))
@@ -10,11 +10,11 @@
 \arguments{
   \item{values}{Values in \code{y} that are censored, specified by \code{intervals}}
 
-  \item{intervals}{Matrix having two rows and one column for each value 
+  \item{intervals}{\code{matrix} having two rows and one column for each value 
   in \code{values}. The first row holds lower bounds.  The second row holds
   upper bounds.  See \bold{Examples}.}
 
-  \item{y}{Response data matrix, \code{n} rows by \code{S} columns.  All values within \code{intervals} will be replaced with \code{values}}
+  \item{y}{Response \code{matrix}, \code{n} rows by \code{S} columns.  All values within \code{intervals} will be replaced with \code{values}}
 
   \item{whichcol}{Columns in \code{y} that are censored (often not all responses are
   censored)}
@@ -31,43 +31,33 @@
   are values, followed by lower and upper bounds.}
 }
 \details{
-  Any values in \code{y} that fall within censored \code{intervals} are replaced with
-  censored \code{values}.
+  Any values in \code{y} that fall within censored \code{intervals} are replaced with censored \code{values}.  The example below simulates data collected on an 'octave scale': 0, 1, 2, 4, 8, ..., an approach to accelerate data collection with approximate bins.
 }
 \examples{
-## trait data for USFS For Inventory $ Analysis program
-data(forestTraits)
-y <- forestTraits$y
+## continuous data censored at zero
+values <- c(0, 2^c(0:4), Inf)                                # data in octaves
+intvls <- rbind( c(-Inf, values[-length(values)]), values )  # intervals
 
-# continuous traits censored to allow negative to positive range
-wc       <- 1:6
-tmp      <- gjamCensorY(values=-1000,intervals=cbind( c(-Inf,-1000) ),
-                         y = y,whichcol=wc)
+f   <- gjamSimData(n = 2000, S = 15, Q = 3, typeNames='CA')
+y   <- f$y
+cc  <- c(3:6)                                                # censored columns
+tmp <- gjamCensorY(values = values, intervals = intvls,
+                         y = y, whichcol = cc)
+y[,cc] <- tmp$y                                              # replace columns
 censor <- list('CA' = tmp$censor)
 
-# continuous traits on (0, 1)
-wc     <- 13:14
-tmp    <- gjamCensorY(values=c(0,1),intervals=cbind( c(-Inf,0),c(1,Inf) ),
-                       y = y,whichcol=wc)
-censor <- append(censor,list('CA' = tmp$censor))
-
-# an example with a few iterations (ng = 200)
-modelList <- list(ng=20,burnin=10, typeNames = forestTraits$typeNames,
-                  xfactors='soilFactor',censor=censor)
-outTrait  <- gjamGibbs(~temp+moisture*(deficit+soilFactor),
-                        xdata = forestTraits$xdata, y = y, 
-                        modelList = modelList)
-                        
-# repeat with ng = 3000, burnin = 500, then plot data here:
-plotPars  <- list(width=3,height=2)                  
-fit       <- gjamPlot(output = outTrait, plotPars)
+ml     <- list(ng = 100, burnin = 20, censor = censor, typeNames = f$typeNames)
+output <- gjamGibbs(f$formula, xdata = f$xdata, ydata = f$ydata, 
+                        modelList = ml)
+#repeat with ng = 2000, burnin = 500, then:
+pl  <- list(trueValues = f$trueValues, width = 3, height = 3)           
+gjamPlot(output, pl)
 }
 \author{
 James S Clark, \email{jimclark@duke.edu}
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. (in review) 
-Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
 }
 \seealso{
   \code{\link{gjamSimData}} simulates data

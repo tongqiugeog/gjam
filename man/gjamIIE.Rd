@@ -33,7 +33,7 @@ If \code{sdScaleX = T} effects are standandardized from the Y/X to Y scale.  Thi
   A list of objects for plotting by \code{\link{gjamIIEplot}}.
 }
 \examples{
-sim <- gjamSimData(S = 10, Q = 6, typeNames = 'CA')
+sim <- gjamSimData(S = 12, Q = 5, typeNames = 'CA')
 ml  <- list(ng = 50, burnin = 5, typeNames = sim$typeNames)
 out <- gjamGibbs(sim$formula, sim$xdata, sim$ydata, modelList = ml)
 

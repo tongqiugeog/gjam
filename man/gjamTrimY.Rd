@@ -5,7 +5,7 @@
   Returns a \code{list} that includes a subset of columns in \code{y}.  Rare species can be aggregated into a single class.
 }
 \usage{
-  gjamTrimY(y, minObs = 2, maxCols = NULL, OTHER = T)
+  gjamTrimY(y, minObs = 2, maxCols = NULL, OTHER = TRUE)
 }
 \arguments{
   \item{y}{\code{n} by \code{S} numeric response \code{matrix}}
@@ -14,7 +14,7 @@
 
   \item{maxCols}{maximum number of response variables}
 
-  \item{OTHER}{\code{logical}, rare species are aggregated in a new column \code{'other'}}
+  \item{OTHER}{\code{logical} or \code{character} string.  If \code{OTHER = TRUE}, rare species are aggregated in a new column \code{'other'}.  A \code{character} vector contains the names of columns in \code{y} to be aggregated with rare species in the new column \code{'other'}.}
 }
 \value{
   Returns a \code{list} containing three elements.
@@ -26,7 +26,7 @@
   \item{\code{nobs}}{number of non-zero observations by column in \code{y}.}
 }
 \details{
-  Data sets commonly have many responses that are mostly zeros, large numbers of rare species, even singletons.  Response matrix \code{y} can be trimmed to include only taxa having \code{> minObs} non-zero observations or to \code{<= maxCol} total columns.  The option \code{OTHER} is recommended for composition data ('CC', 'FC'), where the \code{'other'} column is taken as the reference class.  [See \code{\link{gjamSimData}} for \code{typeName} codes].  
+  Data sets commonly have many responses that are mostly zeros, large numbers of rare species, even singletons.  Response matrix \code{y} can be trimmed to include only taxa having \code{> minObs} non-zero observations or to \code{<= maxCol} total columns.  The option \code{OTHER} is recommended for composition data ('CC', 'FC'), where the \code{'other'} column is taken as the reference class.  If there are unidentified species they might be included in this class.  [See \code{\link{gjamSimData}} for \code{typeName} codes].  
 }
 \examples{
 \dontrun{

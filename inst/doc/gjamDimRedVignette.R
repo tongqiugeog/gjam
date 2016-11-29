@@ -34,7 +34,7 @@
 #  tail(colnames(y))            # 'other' class added
 
 ## ----trim y, eval=FALSE--------------------------------------------------
-#  ydata <- cbind(status, y) # host status is also a response
+#  ydata <- cbind(status, y)     # host status is also a response
 #  S     <- ncol(ydata)
 #  typeNames    <- rep('CC',S)   # composition count data
 #  typeNames[1] <- 'PA'          # binary host status
@@ -76,8 +76,7 @@
 #  par(mfrow=c(1,3), bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0),
 #      mar = c(3,2,2,1), tcl = -0.5, mgp = c(3,1,0))
 #  gjamIIEplot(fit1, response = 'status', effectMu = 'direct',
-#              effectSd = 'direct',
-#              legLoc = 'bottomright', ylim=c(-.5,.5))
+#              effectSd = 'direct', legLoc = 'bottomright', ylim=c(-.5,.5))
 #  title('Direct effect by host')
 #  
 #  gjamIIEplot(fit1, response = 'status', effectMu = 'int', effectSd = 'int',

@@ -64,9 +64,9 @@ censor <- tmp$censor
 
 xdata$soil <- relevel(xdata$soil,'reference')   # reference class
 
-ml  <- list(ng=500, burnin=50, typeNames = tTypes, censor = censor)
-out <- gjamGibbs(~ temp + stdage + deficit*soil, xdata = xdata, ydata = traity, modelList = ml)
-pl  <- list(width = 3, height = 3)           
+ml  <- list(ng=2000, burnin=500, typeNames = tTypes, censor = censor)
+out <- gjamGibbs(~ temp + stdage + deficit, xdata, ydata = traity, modelList = ml)
+pl  <- list(SMALLPLOTS=F)           
 gjamPlot(output = out, plotPars = pl)         
 }
 }

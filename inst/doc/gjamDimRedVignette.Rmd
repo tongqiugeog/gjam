@@ -49,7 +49,7 @@ A species *s* that bears no relationship to any of the predictors in $\mathbf{X}
 
 **Trim** species that are not of interest, that will not affect the fit, or both.  
 
-**Aggregation** can be based on a number of criteria, such as phylogenetic similarity (e.g., members of the same genus), by functional similarity (e.g., a feeding guild, C~3~ vs C~4~ plants), and so forth.  Rare species can be aggregated into a single group.  For example, Clark et al. (2014) include 96 tree species that occur on a minimum of 50 forest inventory plots in eastern North America.  The remaining species can be gathered into a single class.  When this option is used the name *'other'* is assigned to this class in the plots-by-species matrix \code{ydata}. Including this class is important where species compete, such as forest trees.  It can also be used as a reference category for composition data, summarized below
+**Aggregation** can be based on a number of criteria, such as phylogenetic similarity (e.g., members of the same genus), by functional similarity (e.g., a feeding guild, C~3~ vs C~4~ plants), and so forth.  Rare species can be aggregated into a single group.  For example, Clark et al. (2014) include 96 tree species that occur on a minimum of 50 forest inventory plots in eastern North America.  The remaining species can be gathered into a single class.  When this option is used the name *'other'* is assigned to this class in the plots-by-species matrix `ydata`. Including this class is important where species compete, such as forest trees.  It can also be used as a reference category for composition data, summarized below
 
 ###Dimension reduction in gjam
 
@@ -116,7 +116,7 @@ tail(colnames(y))            # 'other' class added
 The full response matrix includes the OTU composition counts and the host status in column 1:
 
 ```{r trim y, eval=FALSE}
-ydata <- cbind(status, y) # host status is also a response
+ydata <- cbind(status, y)     # host status is also a response
 S     <- ncol(ydata)
 typeNames    <- rep('CC',S)   # composition count data
 typeNames[1] <- 'PA'          # binary host status 
@@ -171,9 +171,9 @@ fit$summaryCoeffs$betaSig['status',]
 ```
 with `-` and `+` indicating negative and postive values.
 
-Here we use the function `gamIIE` to create the object `fit1`, a `list` of these main, interaction, and indirect effects.  We specify not to include the response variable `other` as an indirect effect on `status`, because we want to focus on the effects of microbes that have been assigned to known taxonomic groups.  
+Here I use the function `gamIIE` to create the object `fit1`, a `list` of these main, interaction, and indirect effects.  I specify not to include the response variable `other` as an indirect effect on `status`, because we want to focus on the effects of microbes that have been assigned to known taxonomic groups.  
 
-We specify the values for main effects that are involved in the interactions between `poly` and `host`.  Each factor has one less column in the design matrix `x` than factor levels.  `poly` has two classes in `xdata`, one each for monoculture and polyculture, so there is one `poly` column in `x`.  `host` has eight species in `xdata`, so there are seven columns in `x`.  Recall that we assigned `acerRubr` to be the reference class, so there is no column for it in `x`. 
+I specify the values for main effects that are involved in the interactions between `poly` and `host`.  Each factor has one less column in the design matrix `x` than factor levels.  `poly` has two classes in `xdata`, one each for monoculture and polyculture, so there is one `poly` column in `x`.  `host` has eight species in `xdata`, so there are seven columns in `x`.  Recall that we assigned `acerRubr` to be the reference class, so there is no column for it in `x`. 
 
 The vector of predictor values `xvector` passed to `gjamIIE` has the same elements and names as columns in `x`.  For this reason it is easiest to simply assign it a row in `x`, then change the values.  The only values that influence interactions are those that are involved in interaction terms, as specified in `formula`.  
 
@@ -191,8 +191,7 @@ fit1 <- gjamIIE(output, xvector, omitY = 'other')
 par(mfrow=c(1,3), bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0), 
     mar = c(3,2,2,1), tcl = -0.5, mgp = c(3,1,0))
 gjamIIEplot(fit1, response = 'status', effectMu = 'direct', 
-            effectSd = 'direct',
-            legLoc = 'bottomright', ylim=c(-.5,.5))
+            effectSd = 'direct', legLoc = 'bottomright', ylim=c(-.5,.5))
 title('Direct effect by host')
 
 gjamIIEplot(fit1, response = 'status', effectMu = 'int', effectSd = 'int',
@@ -242,11 +241,11 @@ For valuable feedback on the model and computation we thank Bene Bachelot, Alan 
 
 ##References
 
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, *Ecological Monographs*, in press.
 
 Hersh, H., S. Benetiz, R. Vilgalys, J.S. Clark, in review.
 
-Taylor-Rodriguez, D., K. Kaufeld, E. Schliep, J. S. Clark, and A. Gelfand, 2016. Joint Species distribution modeling: dimension reduction using Dirichlet processes.  Bayesian Analysis, in press.
+Taylor-Rodriguez, D., K. Kaufeld, E. Schliep, J. S. Clark, and A. Gelfand, 2016. Joint Species distribution modeling: dimension reduction using Dirichlet processes.  *Bayesian Analysis*, in press.
 
 
 

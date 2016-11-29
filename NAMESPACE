@@ -3,7 +3,6 @@ importFrom(Rcpp, evalCpp)
 importFrom("grDevices", "pdf", "rgb", "colorRampPalette", "dev.copy2pdf",
             "graphics.off")
 importFrom("MASS", "ginv", "isoMDS")
-importFrom("repmis", "source_data")
 importFrom("RANN", "nn2")
 importFrom("grDevices", "col2rgb", "dev.off")
 importFrom("graphics", "arrows", "barplot", "bxp", "strheight",
@@ -18,4 +17,6 @@ importFrom("stats", "as.dendrogram", "as.dist", "as.formula", "cor",
             "rpois", "runif", "sd", "contrasts", "dnorm", "rbinom", 
            "relevel", "terms", "var")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
+S3method(print, .gjam)
+S3method(summary, .gjam)
 exportPattern("^[[:alpha:]]+")

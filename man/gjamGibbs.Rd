@@ -1,5 +1,8 @@
 \name{gjamGibbs}
 \alias{gjamGibbs}
+\alias{.gjam.default}
+\alias{print..gjam}
+\alias{summary..gjam}
 \title{Gibbs sampler for gjam data}
 \description{
   Analyzes joint attribute data (e.g., species abundance) with Gibbs sampling.  
@@ -8,6 +11,12 @@
 }
 \usage{
   gjamGibbs(formula, xdata, ydata, modelList)
+  
+  \method{.gjam}{default}(formula, xdata, ydata, modelList)
+  
+  \method{print}{.gjam}(x, ...)
+  
+  \method{summary}{.gjam}(object, ...)
 }
 \arguments{
   \item{formula}{R formula for model, e.g., \code{~ x1 + x2}.}
@@ -17,6 +26,12 @@
   \item{ydata}{\code{n} by \code{S} response \code{matrix} or \code{data.frame}.  Column names are unique labels, e.g., species names.  All columns will be included in the analysis.}
 
   \item{modelList}{\code{list} specifying inputs, including \code{ng} (number of Gibbs steps), \code{burnin}, and \code{typeNames}. Can include number of holdouts for out-of-sample prediction, \code{holdoutN}.  See \bold{Details}.}
+  
+  \item{x}{\code{list} fitted by \code{gjamGibbs}.}
+  
+  \item{object}{\code{list} fitted by \code{gjamGibbs}.}
+  
+  \item{...}{further arguments not used here.}
 }
 
 \details{
@@ -95,8 +110,10 @@ More detailed vignettes can be obtained with:
   \item{xMissMu,xMissSd}{ posterior mean and se for missing \code{x}.}
 
   \item{yMissMu,yMissSd}{ posterior mean and se for missing \code{y}.}
+  
+  
 
-  \item{modelSummary}{list containing the following objects:}
+ There are two lists containing output. \bold{\code{modelSummary}} is a \code{list} containing the following objects:
 
     \item{classBySpec}{\code{S} by \code{K} summary table of \code{ydata}, 
     where \code{K} is the number of classes.}
@@ -119,10 +136,10 @@ More detailed vignettes can be obtained with:
 
     \item{wMu,wSd}{ posterior estimates of latent states.}
     
-    \item{yMu,ySd}{ predictions of \code{y} with standard errors}
+    \item{ypredMu,ypredSd}{ predictions of \code{y} with standard errors}
 
     
-  \item{parameterTables}{list containing the following objects:}
+ \bold{\code{parameterTables}} is a \code{list} containing the following objects:
   
     \item{betaMu,betaSe}{posterior means and standard errors for coefficients.}
     
@@ -150,12 +167,12 @@ More detailed vignettes can be obtained with:
 }
 \examples{
 ## combinations of scales
-types  <- c('OC','OC','OC','OC','CC','CC','CC','CC','CC','CA','CA','PA','PA')         
+types  <- c('DA','DA','OC','OC','OC','OC','CC','CC','CC','CC','CC','CA','CA','PA','PA')         
 f      <- gjamSimData(S = length(types), typeNames = types)
 ml     <- list(ng = 50, burnin = 5, typeNames = f$typeNames)
 out    <- gjamGibbs(f$formula, f$xdata, f$ydata, modelList = ml)
 
-# repeat with ng = 2000, burnin = 500, then plot data:
+# repeat with ng = 5000, burnin = 500, then plot data:
 pl  <- list(trueValues = f$trueValues)
 gjamPlot(out, plotPars = pl)
 
@@ -166,6 +183,7 @@ eff <- list( columns = 1:S, values = round(runif(n,.5,5),1) )
 f   <- gjamSimData(n, S, typeNames='DA', effort=eff)
 ml  <- list(ng = 50, burnin = 5, typeNames = f$typeNames, effort = eff)
 out <- gjamGibbs(f$formula, f$xdata, f$ydata, modelList = ml)
+summary(out)
 
 # repeat with ng = 2000, burnin = 500, then plot data:
 pl  <- list(trueValues = f$trueValues)

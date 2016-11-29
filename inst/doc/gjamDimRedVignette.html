@@ -12,7 +12,7 @@
 
 <meta name="author" content="James S. Clark, Daniel Taylor-Rodriguez, Duke University" />
 
-<meta name="date" content="2016-10-04" />
+<meta name="date" content="2016-11-29" />
 
 <title>Dimension reduction in gjam</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Dimension reduction in gjam</h1>
 <h4 class="author"><em>James S. Clark, Daniel Taylor-Rodriguez, Duke University</em></h4>
-<h4 class="date"><em>2016-10-04</em></h4>
+<h4 class="date"><em>2016-11-29</em></h4>
 
 
 <div id="TOC">
@@ -111,7 +111,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h3>How many responses?</h3>
 <p>A species <em>s</em> that bears no relationship to any of the predictors in <span class="math inline">\(\mathbf{X}\)</span> (all <span class="math inline">\(\mathbf{B}_{s}\)</span> small) or to other species <em>s’</em> (all <span class="math inline">\(\boldsymbol{\Sigma}_{s',s}\)</span> small) will not be ‘explained’ by the model. Such species will contribute little to the model fit, while degrading performance. Consider either of two options for reducing the number of species in the model, <em>trimming</em> and <em>aggregation</em>.</p>
 <p><strong>Trim</strong> species that are not of interest, that will not affect the fit, or both.</p>
-<p><strong>Aggregation</strong> can be based on a number of criteria, such as phylogenetic similarity (e.g., members of the same genus), by functional similarity (e.g., a feeding guild, C<sub>3</sub> vs C<sub>4</sub> plants), and so forth. Rare species can be aggregated into a single group. For example, Clark et al. (2014) include 96 tree species that occur on a minimum of 50 forest inventory plots in eastern North America. The remaining species can be gathered into a single class. When this option is used the name <em>‘other’</em> is assigned to this class in the plots-by-species matrix . Including this class is important where species compete, such as forest trees. It can also be used as a reference category for composition data, summarized below</p>
+<p><strong>Aggregation</strong> can be based on a number of criteria, such as phylogenetic similarity (e.g., members of the same genus), by functional similarity (e.g., a feeding guild, C<sub>3</sub> vs C<sub>4</sub> plants), and so forth. Rare species can be aggregated into a single group. For example, Clark et al. (2014) include 96 tree species that occur on a minimum of 50 forest inventory plots in eastern North America. The remaining species can be gathered into a single class. When this option is used the name <em>‘other’</em> is assigned to this class in the plots-by-species matrix <code>ydata</code>. Including this class is important where species compete, such as forest trees. It can also be used as a reference category for composition data, summarized below</p>
 </div>
 <div id="dimension-reduction-in-gjam" class="section level3">
 <h3>Dimension reduction in gjam</h3>
@@ -161,7 +161,7 @@ y   &lt;-<span class="st"> </span>tmp$y
 <span class="kw">dim</span>(y)                       <span class="co"># trimmed data</span>
 <span class="kw">tail</span>(<span class="kw">colnames</span>(y))            <span class="co"># 'other' class added</span></code></pre></div>
 <p>The full response matrix includes the OTU composition counts and the host status in column 1:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ydata &lt;-<span class="st"> </span><span class="kw">cbind</span>(status, y) <span class="co"># host status is also a response</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ydata &lt;-<span class="st"> </span><span class="kw">cbind</span>(status, y)     <span class="co"># host status is also a response</span>
 S     &lt;-<span class="st"> </span><span class="kw">ncol</span>(ydata)
 typeNames    &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'CC'</span>,S)   <span class="co"># composition count data</span>
 typeNames[<span class="dv">1</span>] &lt;-<span class="st"> 'PA'</span>          <span class="co"># binary host status </span></code></pre></div>
@@ -191,8 +191,8 @@ beta[ws,]</code></pre></div>
 <p>Following the intercept are rows showing main effects. These are followed by interaction terms. A quick visual of coefficients having credible intervals that exclude zero is here:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit$summaryCoeffs$betaSig[<span class="st">'status'</span>,]</code></pre></div>
 <p>with <code>-</code> and <code>+</code> indicating negative and postive values.</p>
-<p>Here we use the function <code>gamIIE</code> to create the object <code>fit1</code>, a <code>list</code> of these main, interaction, and indirect effects. We specify not to include the response variable <code>other</code> as an indirect effect on <code>status</code>, because we want to focus on the effects of microbes that have been assigned to known taxonomic groups.</p>
-<p>We specify the values for main effects that are involved in the interactions between <code>poly</code> and <code>host</code>. Each factor has one less column in the design matrix <code>x</code> than factor levels. <code>poly</code> has two classes in <code>xdata</code>, one each for monoculture and polyculture, so there is one <code>poly</code> column in <code>x</code>. <code>host</code> has eight species in <code>xdata</code>, so there are seven columns in <code>x</code>. Recall that we assigned <code>acerRubr</code> to be the reference class, so there is no column for it in <code>x</code>.</p>
+<p>Here I use the function <code>gamIIE</code> to create the object <code>fit1</code>, a <code>list</code> of these main, interaction, and indirect effects. I specify not to include the response variable <code>other</code> as an indirect effect on <code>status</code>, because we want to focus on the effects of microbes that have been assigned to known taxonomic groups.</p>
+<p>I specify the values for main effects that are involved in the interactions between <code>poly</code> and <code>host</code>. Each factor has one less column in the design matrix <code>x</code> than factor levels. <code>poly</code> has two classes in <code>xdata</code>, one each for monoculture and polyculture, so there is one <code>poly</code> column in <code>x</code>. <code>host</code> has eight species in <code>xdata</code>, so there are seven columns in <code>x</code>. Recall that we assigned <code>acerRubr</code> to be the reference class, so there is no column for it in <code>x</code>.</p>
 <p>The vector of predictor values <code>xvector</code> passed to <code>gjamIIE</code> has the same elements and names as columns in <code>x</code>. For this reason it is easiest to simply assign it a row in <code>x</code>, then change the values. The only values that influence interactions are those that are involved in interaction terms, as specified in <code>formula</code>.</p>
 <p>For the following plots we copy the first row of <code>x</code>. In the first are main effects of all predictors on <code>status</code>. In the second plot is interactions with <code>poly</code> set to 1. In the third plot are indirect effects of the microbes:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xvector &lt;-<span class="st"> </span>output$x[<span class="dv">1</span>,]*<span class="dv">0</span>
@@ -206,8 +206,7 @@ fit1 &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(output, xvect
 <span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
     <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>))
 <span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'status'</span>, <span class="dt">effectMu =</span> <span class="st">'direct'</span>, 
-            <span class="dt">effectSd =</span> <span class="st">'direct'</span>,
-            <span class="dt">legLoc =</span> <span class="st">'bottomright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">5</span>,.<span class="dv">5</span>))
+            <span class="dt">effectSd =</span> <span class="st">'direct'</span>, <span class="dt">legLoc =</span> <span class="st">'bottomright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">5</span>,.<span class="dv">5</span>))
 <span class="kw">title</span>(<span class="st">'Direct effect by host'</span>)
 
 <span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'status'</span>, <span class="dt">effectMu =</span> <span class="st">'int'</span>, <span class="dt">effectSd =</span> <span class="st">'int'</span>,
@@ -248,9 +247,9 @@ healthy   &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(outp
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>
-<p>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, in press.</p>
+<p>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, <em>Ecological Monographs</em>, in press.</p>
 <p>Hersh, H., S. Benetiz, R. Vilgalys, J.S. Clark, in review.</p>
-<p>Taylor-Rodriguez, D., K. Kaufeld, E. Schliep, J. S. Clark, and A. Gelfand, 2016. Joint Species distribution modeling: dimension reduction using Dirichlet processes. Bayesian Analysis, in press.</p>
+<p>Taylor-Rodriguez, D., K. Kaufeld, E. Schliep, J. S. Clark, and A. Gelfand, 2016. Joint Species distribution modeling: dimension reduction using Dirichlet processes. <em>Bayesian Analysis</em>, in press.</p>
 </div>
 
 

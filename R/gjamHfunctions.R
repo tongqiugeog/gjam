@@ -251,6 +251,7 @@
   chNames <- colnames(chainMat)
   
   if(!is.null(varName)){
+    
     wc <- grep(varName,colnames(chainMat),fixed=T)
     if(length(wc) == 0)stop('varName not found in colnames(chainMat)')
     
@@ -347,6 +348,9 @@
       ykk <- ykk[-wna]
       xkk <- xkk[-wna,]
     }
+    
+    tkk <- summary(lm(ykk ~ xkk))$adj.r.squared
+    VIF[k] <- 1/(1 - tkk)
     
     xu <- sort( unique(x[,k]) )
     tmp <- identical(c(0,1),xu)
@@ -463,7 +467,9 @@
                              colOrder1=NULL, colOrder2=NULL, rowOrder=NULL, 
                              colCode1 = NULL, colCode2 = NULL, rowCode=NULL,
                              lower1 = F, diag1 = F, lower2 = F, diag2 = F,
-                             slim1=NULL, slim2=NULL){
+                             slim1=NULL, slim2=NULL,
+                             horiz1 = NULL,  horiz2 = NULL,
+                             vert1 = NULL, vert2 = NULL){
   
   #   layout: mat1 on left, mat2 (if given) on right
   # clusters: left & top or right & top
@@ -649,10 +655,29 @@
   symbols(ww[,2] + .5,nr - ww[,1] + 1 + .5,rectangles=sides,
           fg=coli,bg=coli,inches=F, xlab=' ',ylab=' ',
           xaxt='n',yaxt='n', add=T)
+  
+  if(!is.null(horiz1)){
+    cut <- which(diff(horiz1[colOrder1]) != 0) + 1
+    ncc <- length(cut)
+    for(i in 1:ncc){
+      lines(c(0,cut[i]-2),cut[c(i,i)],lty=2)
+    }
+    text(rep(1,ncc),cut,2:(ncc+1),pos=3)
+  }
+  if(!is.null(vert1)){
+    cut <- which(diff(vert1[colOrder1]) != 0) + .5
+    ncc <- length(cut)
+    for(i in 1:ncc){
+      lines(cut[c(i,i)],c(cut[i]+2,nc1),lty=2)
+    }
+    text(cut,rep(nc1,ncc),2:(ncc+1),pos=4)
+  }
+  
   NEW <- add <- T
   if(!doneLeft)mtext(mainLeft,2)
   doneLeft <- T
   
+    
   if(topLab1){
     yz <- yz + 1
     par(plt=c(xloc[xi], yloc[yz]),bty='n', new=NEW)
@@ -716,6 +741,26 @@
     symbols(ww[,2] + .5,nr - ww[,1] + 1 + .5, rectangles=sides,
             fg=coli, bg=coli, inches=F, xlab=' ',ylab=' ',
             xaxt='n', yaxt='n', add=T)
+    
+    if(!is.null(horiz2)){
+      cut <- which(diff(horiz2[colOrder1]) != 0) + 1
+      ncc <- length(cut)
+      for(i in 1:ncc){
+        xmm <- c(0,cut[i]-2)
+        if(!lower2)xmm[2] <- nc2 + 1
+        lines(xmm,cut[c(i,i)],lty=2)
+      }
+      if(lower2) text(rep(1,ncc),cut,2:(ncc+1),pos=3)
+      if(!lower2)text(rep(nc2+1,ncc),cut,2:(ncc+1),pos=3)
+    }
+    if(!is.null(vert2)){
+      cut <- which(diff(vert2[colOrder1]) != 0) + .5
+      ncc <- length(cut)
+      for(i in 1:ncc){
+        lines(cut[c(i,i)],c(cut[i]+2,nc1),lty=2)
+      }
+      text(cut,rep(nc1,ncc),2:(ncc+1),pos=4)
+    }
     
     if(topLab2){
       yz <- yz + 1
@@ -1684,6 +1729,12 @@
   plo[,wm] <- br[cutLo]
   phi[,wm] <- br[cutHi]
   
+  ww <- which(plo[,wm,drop=F] == -Inf,arr.ind=T)
+  if(length(ww) > 0){
+    mm <- apply(w[,wm],2,max)
+    plo[,wm][ww] <- -10*mm[ww[,2]]
+  }
+  
   tmp <-  .tnorm(nk*n,plo[,wm],phi[,wm],w[,wm],1)
   
   w[,wm][censk] <- tmp[censk]
@@ -1719,10 +1770,13 @@
   TYPES <- c('CON','PA','CA','DA','CAT','FC','CC','OC')
   FULL  <- c('continuous','presenceAbsence','contAbun','discAbun',
              'categorical','fracComp','countComp','ordinal')
+  LABS  <- c('Continuous','Presence-absence','Continuous abundance',
+             'Discrete abundance',
+             'Categorical','Fractional composition','Count composition','Ordinal')
   
   if(is.null(typeNames)){
     names(FULL) <- TYPES
-    return( list(typeCols = NULL, TYPES = TYPES, typeFull = FULL ) )
+    return( list(typeCols = NULL, TYPES = TYPES, typeFull = FULL, labels = LABS ) )
   }
   
   S        <- length(typeNames)
@@ -1732,7 +1786,7 @@
   if(length(ww) > 0)stop( paste('type code error',typeNames[ww],sep=' ') )
   
   list(typeCols = typeCols, TYPES = TYPES, typeFull = FULL[typeCols],
-       typeNames = typeNames)
+       typeNames = typeNames, labels = LABS[typeCols])
 }
 
 .gjamHoldoutSetup <- function(holdoutIndex,holdoutN,n){
@@ -1766,7 +1820,7 @@
     x[xmiss] <- xmean[xmiss[,2]]
     xprior   <- x[xmiss]
     nmiss    <- nrow(xmiss)
-    fmiss    <- round(100*nmiss/length(x[,-1]),0)
+    fmiss    <- round(100*nmiss/length(x[,-1]),1)
     warning( paste(nmiss,' values (',fmiss,'%) missing in x imputed'), sep='' )
     missX <- missX2 <- rep(0,nmiss)
   }
@@ -1950,6 +2004,8 @@
   Q <- ncol(x)
   n <- nrow(y)
   S <- ncol(y)
+  
+  effMat <- effort$values
 
   tmp <- .gjamGetTypes(typeNames)
   typeFull <- tmp$typeFull
@@ -1989,8 +2045,10 @@
   colnames(x) <- .replaceString(colnames(x),now=' ',new='')
   
   w  <- y 
+  if(!is.null(effort))w <- w/effort$values
   
-  maxy <- apply(y,2,max,na.rm=T)
+  maxy <- apply(w,2,max,na.rm=T)
+  maxy[maxy < 0] <- -maxy[maxy < 0]
   maxy <- matrix(maxy, n, S, byrow=T)
   
   z  <- w*0
@@ -2012,10 +2070,10 @@
     if( typeFull[wk[1]] == 'presenceAbsence' ){       
       
       sampleW[,wk] <- 1
+      plo[,wk][z[,wk] == 1] <- -10
+      phi[,wk][z[,wk] == 2] <- 10
       
       w[,wk] <- .tnorm(nk*n,plo[,wk],phi[,wk],0,1)
-      plo[plo < -10] <- -10
-      phi[phi > 10] <- 10
       br <- c(-Inf,0,Inf)
       br <- matrix(br,nk,length(br),byrow=T)
       colnames(br) <- as.character(c(1:ncol(br)))
@@ -2026,9 +2084,11 @@
     
     if( typeFull[wk[1]] == 'continuous' ){      
       
-   #   plo[,wk] <- -Inf
-   #   phi[,wk] <- Inf
+      sampleW[,wk] <- 0
       z[,wk]   <- 1
+      
+      phi[,wk] <- 5*maxy[,wk]
+      plo[,wk] <- -phi[,wk]
       
       br <- c(-Inf,-Inf,Inf)
       br  <- matrix(br,nk,length(br),byrow=T)
@@ -2039,6 +2099,9 @@
     }
     
     if( typeFull[wk[1]] == 'contAbun' ){       
+      
+      phi[,wk] <- 5*maxy[,wk]
+      plo[,wk] <- -phi[,wk]
       
       w[,wk] <- .initW(w[,wk], x, y[,wk], minw = -max(y[,wk],na.rm=T)*5)
       
@@ -2057,12 +2120,19 @@
         for(m in wc){
           
           wm     <- censor[[m]]$columns
+          cp     <- censor[[m]]$partition
+          for(ii in 1:ncol(cp)){
+            wmm <- which(y[,wm] == cp[1,ii] | (y[,wm] > cp[2,ii] & y[,wm] < cp[ii]) )
+            plo[,wm][wmm] <- cp[2,ii]
+            phi[,wm][wmm] <- cp[3,ii]
+          }
+          
           tmp    <- .gjamCensorSetup(y,w,z,plo,phi,wm,censorMat=
                                        censor[[m]]$partition)
-          w[,wm] <- tmp$w[,wm]
+     #     w[,wm] <- tmp$w[,wm]
           z[,wm] <- tmp$z[,wm]
-          plo[,wm] <- tmp$plo[,wm]
-          phi[,wm] <- tmp$phi[,wm]
+     #     plo[,wm] <- tmp$plo[,wm]
+     #     phi[,wm] <- tmp$phi[,wm]
           censorCA <- c(censorCA,tmp$censValue)
           bt       <- tmp$breakMat
           colnames(bt) <- as.character(c(1:ncol(bt)))
@@ -2087,45 +2157,18 @@
     
     if( typeFull[wk[1]] == 'discAbun' ){
       
-      if( is.null(effort) ){      # if effort, w is on effort scale
-        wide <- y*0 + .5
-      } else {
-        
-        em <- mode(effort$values)
-        if(em == 'list')stop('effort$values cannot be a list')
-        
-        if( !is.matrix(effort$values) ){
-          ee <- matrix(effort$values,n,length(effort$columns))
-          effort$values <- ee
-        }
-        
-        we <- which(effort$columns %in% wk)
-        wf  <- match(effort$columns[we],wk)
-        
-        w[,wk[wf]] <- y[,wk[wf]]/effort$values[,we]
-        wide       <- w*0 + .5
-        wide[,wk[wf]] <- .5/effort$values[,we]
-      }
+      plo[,wk] <- (y[,wk] - .5)/effMat[,wk]
+      phi[,wk] <- (y[,wk] + .5)/effMat[,wk]
+      plo[,wk][y[,wk] == 0] <- -5*maxy[,wk][y[,wk] == 0] 
+      phi[,wk][y[,wk] == maxy[,wk]] <- 5*maxy[,wk][y[,wk] == maxy[,wk]]
+      
       
       sampleW[,wk] <- 1
       
       disCols <- wk
       
-      lo <- w[,wk] - wide[,wk]
-      hi <- w[,wk] + wide[,wk]
-      lo[lo < 0] <- -Inf
-      
-      mmm <- 2*maxy[,wk]
-      
-      lo[lo < -mmm] <- -mmm[lo < -mmm]
-      hi[hi >  mmm] <-  mmm[hi >  mmm]
-      hi[hi < lo]   <- lo[hi < lo] + 10
-      
-      plo[,wk] <- lo
-      phi[,wk] <- hi
-      
       z[,wk] <- y[,wk] + 1
-      w[,wk] <- .tnorm(nk*n,lo,hi,w[,wk],1)
+      w[,wk] <- .tnorm(nk*n,plo[,wk],phi[,wk],w[,wk],1)
       
       n <- nrow(y)
       S <- ncol(y)
@@ -2167,11 +2210,13 @@
                                    ncol=2,byrow=T)[,2] ) 
         br <- tmp[order(o),]
       }
+      
+      
       rownames(br) <- paste(colnames(y)[wk],rownames(br),sep='_')
       breakMat <- .appendMatrix(breakMat,br,SORT=T,asNumbers=T)
     }
     
-    if(typeFull[wk[1]] == 'fracComp'){
+    if( typeFull[wk[1]] == 'fracComp' ){
       
       wss <- which(y[,wk] == 0 | y[,wk] == 1)
       sampleW[,wk][wss] <- 1
@@ -2194,7 +2239,6 @@
         phi[,wki] <- hi
         
         w[,wki] <- .initW(w[,wki], x, yki, minw = -20/S)
-        
       }
       
       br <- c(-1,0,1)
@@ -2289,7 +2333,6 @@
           y[y[,mc] == nc[maxOne[m]],mc] <- nc[maxOne[m]] - 1
         }
         nc <- apply(y[,wk,drop=F],2,max)
-#        message('note: single values in last ordinal bin moved down')
       }
       
       ncut <- max(y[,wk,drop=F])
@@ -2644,7 +2687,72 @@
   list(xu = xUnstand, S2U = S2U)
 }
 
-.gibbsLoop <- function(formula, xdata, ydata, modelList){
+.getHoldLoHi <- function(yh, wh, pl, ph, eff, ymax, typeNames, cutg, ordCols){
+  
+  # update plo, phi for holdouts, yh is prediction
+  
+  allTypes <- unique(typeNames)
+  
+  for(k in 1:length(allTypes)){
+    
+    tk <- allTypes[k]
+    wk <- which(typeNames == tk)
+    
+    if(tk == 'CON')next
+    
+    #CAT
+    
+  #  if(tk == 'OC'){
+  #    tmp   <- .gjamGetCuts(yh+1,ordCols)  #holdout pred y cuts
+  #    pl[,ordCols] <- cutg[tmp$cutLo]
+  #    ph[,ordCols] <- cutg[tmp$cutHi]
+  #  }
+    if(tk == 'PA'){
+      pl[,wk][yh[,wk] == 0] <- -10
+      pl[,wk][yh[,wk] == 1] <- 0
+      ph[,wk][yh[,wk] == 0] <- 0
+      ph[,wk][yh[,wk] == 1] <- 10
+    }
+    if(tk == 'CA'){
+      ym <- max(ymax[wk])
+      pl[,wk][yh[,wk] == 0] <- -5*ym
+      pl[,wk][yh[,wk] > 0]  <- 0
+      ph[,wk][yh[,wk] == 0] <- 0
+      ph[,wk][yh[,wk] > 0] <- 5*ym
+    }
+    if(tk == 'DA'){
+      ym <- max(ymax[wk])
+      ee <- 1
+      if(!is.null(eff))ee <- eff[,wk]
+      pl[,wk] <- (yh[,wk] - .5)/ee
+      ph[,wk] <- (yh[,wk] + .5)/ee
+      pl[,wk][yh[,wk] == 0] <- -5*ym
+      pl[,wk][yh[,wk] == ym] <- 5*ym
+    }
+    if(tk == 'FC'){
+      pl[,wk][yh[,wk] == 0] <- -5
+      pl[,wk][yh[,wk] > 0]  <- 0
+      pl[,wk][yh[,wk] > 1]  <- 1
+      ph[,wk][yh[,wk] == 0] <- 0
+      ph[,wk][yh[,wk] > 0]  <- 1
+      ph[,wk][yh[,wk] == 1] <- 5
+    }
+    if(tk == 'CC'){
+      ym <- rowSums(yh[,wk,drop=F])
+      ee <- matrix(ym,nrow(yh),length(wk))
+      pl[,wk] <- (yh[,wk] - .5)/ee
+      ph[,wk] <- (yh[,wk] + .5)/ee
+      pl[,wk][yh[,wk] == 0] <- -5
+      pl[,wk][yh[,wk] == ee] <- 5
+    }
+  }
+  
+  list(pl = pl, ph = ph)
+}
+
+.gjam <- function(formula, xdata, ydata, modelList) UseMethod(".gjam")
+
+.gjam.default <- function(formula, xdata, ydata, modelList){
   
   holdoutN      <-  0
   holdoutIndex  <- numeric(0)
@@ -2662,10 +2770,19 @@
 
   alpha.DP <- ncol(ydata)          # large values give more variation
   
+  if(alpha.DP == 1)stop('multivariate model: at least 2 columns needed in ydata')
+  
   for(k in 1:length(modelList))assign( names(modelList)[k], modelList[[k]] )
   if(!is.null(traitList)){
     TRAITS <- T
     for(k in 1:length(traitList))assign( names(traitList)[k], traitList[[k]] )
+    
+    stt <- .replaceString(colnames(specByTrait),'_','')
+    colnames(specByTrait) <- stt
+    colnames(plotByTrait) <- stt
+    colnames(traitList$specByTrait) <- stt
+    colnames(traitList$plotByTrait) <- stt
+    modelList$traitList <- traitList
   }
   
   if(burnin >= ng)           stop( 'burnin must be > no. MCMC steps, ng' )
@@ -2686,9 +2803,31 @@
   if(length(typeNames) == 1)typeNames <- rep(typeNames,S)
   if(length(typeNames) != S) 
     stop('typeNames must be one value or no. columns in y')
-  if(TRAITS & !all( typeNames %in% c('CC','FC') ) )
-    stop('trait prediction requires composition data (CC or FC)')
+ # if( !all( !sapply(as.data.frame(ydata),is.factor) )  )
+ #   stop('ydata cannot contain factors')
+  if( !all( !sapply(as.data.frame(ydata),is.character) )  )
+    stop('ydata cannot contain characters')
   
+  if(TRAITS){
+    if(!all( typeNames %in% c('CC','FC') ) )
+      stop('trait prediction requires composition data (CC or FC)')
+    if(nrow(plotByTrait) != nrow(ydata))
+      stop('nrow(plotByTrait) must equal nrow(ydata)')
+    if(ncol(plotByTrait) != length(traitTypes))
+      stop('ncol(plotByTrait) must equal length(traitTypes)')
+    if(ncol(plotByTrait) != length(traitTypes))
+      stop('ncol(plotByTrait) must equal length(traitTypes)')
+    ii <- identical(rownames(specByTrait),colnames(ydata))
+    if(!ii){
+      ww <- match(colnames(ydata),rownames(specByTrait) )
+      if( is.finite(min(ww)) ){
+        specByTrait <- specByTrait[ww,]
+      } else {
+        stop( 'rownames(specByTrait) must match colnames(ydata)' )
+      }
+    }
+    if(typeNames[1] == 'CC')ydata <- round(ydata,0)
+  }
   
   tmp <- .buildYdata(ydata, typeNames)
   y   <- tmp$y
@@ -2697,9 +2836,20 @@
   CCgroups   <- tmp$CCgroups
   FCgroups   <- tmp$FCgroups
   CATgroups  <- tmp$CATgroups
+  if(TRAITS) rownames(specByTrait) <- colnames(y)
     
   S <- ncol(y)
   n <- nrow(y)
+  
+  effMat <- y*0 + 1
+  effMat[is.na(effMat)] <- 0
+  if( is.null(effort)){
+    effort <- list(columns = 1:S, values = effMat)
+  } else {
+    effMat[,effort$columns] <- effort$values
+    effort$values <- effMat
+  }
+  effort$columns <- 1:S
   
   tmp      <- .gjamGetTypes(typeNames)
   typeCols <- tmp$typeCols
@@ -2733,9 +2883,7 @@
   
   tmp <- .gjamMissingValues(x,y)
   xmiss  <- tmp$xmiss; xbound <- tmp$xbound; 
-#  missX <- tmp$missX
-#  missX2 <- tmp$missX2
-  ymiss <- tmp$ymiss; missY <- tmp$missY
+  ymiss  <- tmp$ymiss; missY <- tmp$missY
   xprior <- tmp$xprior
   yprior <- tmp$yprior
   nmiss  <- length(xmiss)
@@ -2743,13 +2891,11 @@
   if(nmiss > 0)x[xmiss] <- xprior
   if(mmiss > 0)y[ymiss] <- yprior
   
- # y[ymiss] <- 0   # note data change here
-  
   npar  <- S*(S + 1)/2 
   nobs  <- S*n
   ratio <- 1/5
   Smax  <- floor( 2*n*ratio - 1 )
-  Nmax  <- min( floor( S*n*ratio/3 ), 30)    # r  = 3
+  Nmax  <- min( floor( c(S*n*ratio/3 , n/2)) )    # r  = 3
   
   OVERRIDE <- F
   if( 'REDUCT' %in% names(modelSummary) ){
@@ -2757,6 +2903,7 @@
   }
   if( !'reductList' %in% names(modelList) & S > min(Smax,100) & !OVERRIDE ){
     r <- max(c(3,Nmax/2))
+    r <- floor(r)
     if(r > 8)r <- 8
     reductList <- list(r = r, N = Nmax, alpha.DP = alpha.DP)
     for(k in 1:length(reductList))assign( names(reductList)[k], reductList[[k]] )
@@ -2766,6 +2913,61 @@
     for(k in 1:length(reductList))assign( names(reductList)[k], reductList[[k]] )
     REDUCT <- T
   }
+  
+  
+  tmp <- .gjamHoldoutSetup(holdoutIndex, holdoutN, n)
+  holdoutIndex <- tmp$holdoutIndex; holdoutN <- tmp$holdoutN
+  inSamples    <- tmp$inSamples; nIn <- tmp$nIn
+  
+  
+  tmp <- .gjamSetup(typeNames, x, y, breakList, holdoutN, holdoutIndex,
+                    censor=censor, effort=effort) 
+  w <- tmp$w; z <- tmp$z; y <- tmp$y; other <- tmp$other; cuts <- tmp$cuts
+  cutLo         <- tmp$cutLo; cutHi     <- tmp$cutHi
+  plo <- tmp$plo; phi <- tmp$phi
+  ordCols     <- tmp$ordCols; disCols <- tmp$disCols
+  compCols    <- tmp$compCols 
+  classBySpec <- tmp$classBySpec; breakMat <- tmp$breakMat
+  minOrd      <- tmp$minOrd; maxOrd <- tmp$maxOrd; censorCA <- tmp$censorCA
+  censorDA    <- tmp$censorDA; ncut <- ncol(cuts);  corCols <- tmp$corCols
+  catCols     <- which(attr(typeNames,'CATgroups') > 0)
+  sampleW     <- tmp$sampleW
+  
+  sampleW[censorCA] <- 1
+  sampleW[censorDA] <- 1
+  sampleWhold <- tgHold <- NULL
+  wHold <- NULL
+  wmax  <- apply(y/effMat,2,max,na.rm=T)
+  pmin  <- -2*wmax
+  
+  wlo <- which(plo < pmin,arr.ind=T)
+  if(length(wlo) > 0) plo[wlo] <- pmin[wlo[,2]]
+  
+  if(mmiss > 0){
+    phi[ ymiss ] <- wmax[ ymiss[,2] ]
+    plo[ ymiss ] <- pmin[ ymiss[,2] ]
+    sampleW[ ymiss ] <- 1
+  }
+  
+  ploHold <- phiHold <- NULL
+  
+  if(holdoutN > 0){
+    sampleWhold <- sampleW[holdoutIndex,]  #to predict X
+    sampleW[holdoutIndex,] <- 1
+    tgHold  <- cuts
+    wHold   <- w[drop=F,holdoutIndex,]
+    ploHold <- plo[drop=F,holdoutIndex,]
+    phiHold <- phi[drop=F,holdoutIndex,]
+  }
+
+  byCol <- byRow <- F
+  if(attr(sampleW,'type') == 'cols')byCol <- T
+  if(attr(sampleW,'type') == 'rows')byRow <- T
+  indexW <- attr(sampleW,'index')
+  
+  notCorCols <- c(1:S)
+  if(length(corCols) > 0)notCorCols <- notCorCols[-corCols]
+  
   
   ############ beta
   updateBeta <- .gjamUpdateBetaNoPrior
@@ -2785,39 +2987,7 @@
     updateBeta <- .gjamUpdateBetaPrior
     BPRIOR <- T
   }                 
-  
-  tmp <- .gjamHoldoutSetup(holdoutIndex, holdoutN, n)
-  holdoutIndex <- tmp$holdoutIndex; holdoutN <- tmp$holdoutN
-  inSamples <- tmp$inSamples; nIn <- tmp$nIn
-  
-  tmp <- .gjamSetup(typeNames, x, y, breakList, holdoutN, holdoutIndex,
-                    censor=censor, effort=effort) 
-  w <- tmp$w; z <- tmp$z; y <- tmp$y; other <- tmp$other; cuts <- tmp$cuts
-  cutLo       <- tmp$cutLo; cutHi     <- tmp$cutHi
-  plo <- tmp$plo; phi <- tmp$phi
-  ordCols     <- tmp$ordCols; disCols <- tmp$disCols
-  compCols    <- tmp$compCols 
-  classBySpec <- tmp$classBySpec; breakMat <- tmp$breakMat
-  minOrd      <- tmp$minOrd; maxOrd <- tmp$maxOrd; censorCA <- tmp$censorCA
-  censorDA    <- tmp$censorDA; ncut <- ncol(cuts);  corCols <- tmp$corCols
-  catCols     <- which(attr(typeNames,'CATgroups') > 0)
-  sampleW     <- tmp$sampleW
-  
-  if(mmiss > 0){
-    ymax <- apply(y,2,max,na.rm=T)
-    pmin <- apply(plo,2,min,na.rm=T)
-    phi[ ymiss ] <- ymax[ ymiss[,2] ]
-    plo[ ymiss ] <- pmin[ ymiss[,2] ]
-  }
-  
-  byCol <- byRow <- F
-  if(attr(sampleW,'type') == 'cols')byCol <- T
-  if(attr(sampleW,'type') == 'rows')byRow <- T
-  indexW <- attr(sampleW,'index')
-  
-  notCorCols <- c(1:S)
-  if(length(corCols) > 0)notCorCols <- notCorCols[-corCols]
-  
+
   ############ 'other' columns
   sigmaDf  <- nIn - Q + S - 1
   sg <- diag(.1,S)
@@ -2839,12 +3009,13 @@
     indexW <- match(inw,colnames(y)[notOther])
   }
     
-  ############ dimension reduction
   loB <- hiB <- NULL
   if(BPRIOR){
     loB <- loBeta[,notOther]
     hiB <- hiBeta[,notOther]
   }
+  
+  ############ dimension reduction
     
   .param.fn <- .paramWrapper(REDUCT, inSamples, SS=length(notOther),
                              loB = loB, hiB = hiB, updateBeta)
@@ -2854,6 +3025,11 @@
   ogibbs <- chiSum <- kgibbs <- sigErrGibbs <- rndEff <- NULL
   
   bg  <- alpha <- matrix(0,Q,S)
+  
+  
+  yp <- y
+  wmax <- ymax <- apply(y,2,max)
+  wmax <- wmax/effMat
 
   if(REDUCT){
     message( paste('Dimension reduced from',S,'X',S,'to',N,'X',r,'responses') )
@@ -2886,7 +3062,6 @@
     colnames(sgibbs) <- .multivarChainNames(nnames,rnames)
     sigErrGibbs <- rep(0,ng)      
 
-  #  ogibbs <- matrix(0,ng,S*Q)  #Pr bg[q,s] = 0
     bi       <- bg*0
     bi[1,]   <- 1
     bi[,other] <- 1
@@ -2919,6 +3094,14 @@
     M         <- ncol(specTrait)
     specTrait <- t(specTrait)
     
+    missTrait <- which(is.na(specTrait),arr.ind=T)
+    if(length(missTrait) > 0){
+      traitMeans <- rowMeans(specTrait,na.rm=T)
+      specTrait[missTrait] <- traitMeans[missTrait[,2]]
+      warning( paste('no. missing trait values:',nrow(missTrait)) )
+    }
+      
+    
     agibbs <- matrix(0,ng,M*Q)
     mgibbs <- matrix(0,ng,M*M)
     tpred  <- tpred2 <- matrix(0,n,M)
@@ -2939,7 +3122,6 @@
     cutHi <- tmp$cutHi
     plo[,ordCols] <- tg[cutLo]                                        
     phi[,ordCols] <- tg[cutHi]
-    #   lastOrd <- max(maxOrd) + 1
     lastOrd <- ncol(tg)
   }
   
@@ -2949,11 +3131,12 @@
   typeCols <- tmp$typeCols
   allTypes <- unique(typeCols)
   
-  .updateW <- .wWrapper(REDUCT, x, n, S, effort, corCols, typeNames, 
+  
+  .updateW <- .wWrapper(REDUCT, n, S, effMat, corCols, typeNames, 
                         typeFull, typeCols, 
                         allTypes, holdoutN, holdoutIndex, censor, 
                         censorCA, censorDA, notOther, sampleW, byRow, byCol,
-                        indexW)
+                        indexW, ploHold, phiHold, sampleWhold)
   ycount <- rowSums(y)
   if('CC' %in% typeCode)ycount <- rowSums(y[,compCols])
   
@@ -2968,9 +3151,16 @@
   nfact     <- length(factorList)
   priorXIV  <- diag(1e-5,ncol(x))
   priorX    <- colMeans(x)
-  lox       <- rep(-3,Q)
-  hix       <- rep(3,Q)
+  lox       <- apply(x,2 ,min)
+  hix       <- apply(x,2,max)
   
+  lox[isFactor] <- -2.5
+  hix[isFactor] <- 2.5
+  if(length(intMat) > 0){
+    lox[intMat[,1]] <- -2.5
+    hix[intMat[,1]] <- 2.5
+  }
+
   ws        <- which(notStandard %in% xnames)
   if(length(ws) == 0){
     notStandard <- NULL
@@ -2995,7 +3185,6 @@
   rownames(tmp) <- colnames(tmp) <- fnames
   if(length(tmp) < 2){
     eCont <- frow <- intercept <- numeric(0)
-    
   } else {
     eCont <- tmp[drop=F,-1,]
     frow  <- rep(0,nrow(eCont))
@@ -3054,21 +3243,11 @@
     }
   }
   
-  eCont <- eCont[,xnames]
+  eCont <- eCont[drop=F,,xnames]
   
-  dCont <- t(dCont[,xnames])
+  dCont <- t(dCont[drop=F,,xnames])
   dCont[1,] <- abs(dCont[1,])
-  lCont <- lCont[,xnames]
-  
-#  LL <- t(dCont)%*%solve( crossprod(t(dCont)) )
-#  aa <- LL%*%bg
-#  
-#  z <- x%*%dCont
-#  a <- lCont%*%bg
-  
-#  aa <- z%*%a
-#  bb <- x%*%bg
-#  
+  lCont <- lCont[drop=F,,xnames]
   
   q1 <- nrow(eCont)
   fnames   <- rownames(eCont)
@@ -3080,26 +3259,29 @@
     }
   }
 
-  
           
   fmat <- matrix(0,q1,q1)
   colnames(fmat) <- rownames(fmat) <- fnames
   modelSummary <- append(modelSummary, list(dCont = dCont, eCont = eCont, lCont = lCont))
   
   findex <- match(findex,xnames)
-    
+  
   ############ E matrix
   emat <- matrix(0,S,S)
   colnames(emat) <- rownames(emat) <- snames
   lo <- hi <- lm <- hm <- ess <- emat
   
   ############ sp richness
-  richness <- NULL
+  richness <- richFull <- NULL
   RICHNESS <- F
   
   notRichness <- which(!typeNames %in% c('CON','CAT','OC'))
   if(length(notRichness) > 0)RICHNESS  <- T
   
+  wrich <- y*0 
+  wrich[,notRichness] <- 1
+  wrich[ymiss] <- 0
+ 
   covx <- cov(x)
   
   ############ sums
@@ -3142,6 +3324,15 @@
   
   for(g in 1:ng){ ########################################################
  
+    if(holdoutN > 0){
+      tmp <- .getHoldLoHi( yh = yp[drop=F,holdoutIndex,], wh = w[drop=F,holdoutIndex,],
+                           pl = plo[drop=F,holdoutIndex,],ph = phi[drop=F,holdoutIndex,],
+                           eff = effMat[drop=F,holdoutIndex,], 
+                           ymax = wmax, typeNames, cutg, ordCols)
+      plo[holdoutIndex,] <- tmp$pl
+      phi[holdoutIndex,] <- tmp$ph
+    }
+      
     tmp <- .param.fn(x, beta = bg[,notOther], Y = w[,notOther], otherpar)
     sg[notOther,notOther] <- tmp$sg
     bg[,notOther]         <- tmp$bg 
@@ -3170,16 +3361,25 @@
       
       plo[,ordCols] <- cutg[cutLo]
       phi[,ordCols] <- cutg[cutHi]
+      
+   #   if(holdoutN > 0){
+        
+    #    ploHold <- plo[drop=F,holdoutIndex,]   --this will remain constant
+    #    phiHold <- phi[drop=F,holdoutIndex,]
+        
+    #    tgHold <- .gjamUpdateTheta(wIn,tgHold,cutLo,cutHi,ordCols,
+    #                           holdoutN=NULL,holdoutIndex=NULL,minOrd,maxOrd)
     }
     
     muw   <- x%*%bg
     
-    tmp <- .updateW( w, y, muw, sg, alpha, cutg, plo, phi, rndEff, sigmaerror )
-    w   <- tmp$w
-    yp  <- tmp$yp
-    plo <- tmp$plo
-    phi <- tmp$phi
-    
+    tmp   <- .updateW( x, w, y, muw, sg, alpha, cutg, plo, phi, 
+                       rndEff, sigmaerror, wHold )
+    w     <- tmp$w
+    yp    <- tmp$yp
+    plo   <- tmp$plo
+    phi   <- tmp$phi
+    wHold <- tmp$wHold    #values for w if not held out
     
     if(testCC)wgibbs[g,,] <- w[testCCid,]
     
@@ -3195,11 +3395,8 @@
       tmp    <- .getUnstandX(x, standRows, standMu[standRows,1],
                              standMat[standRows,1], intMat)
       S2U    <- tmp$S2U
-  #    xmm    <- tmp$xu[xmiss]       # unstandardized
       XX     <- crossprod(x)
       IXX    <- solve(XX)
-  #    missX  <- missX + xmm
-  #    missX2 <- missX2 + xmm^2
     }
     
     bgs <- bg                        # unstandardize for X
@@ -3208,21 +3405,35 @@
     bgibbs[g,] <- bgs
     
     if(TRAITS){
+ 
       Atrait <- bgs%*%t(specTrait[,colnames(yp)])
       Strait <- specTrait[,colnames(yp)]%*%sg%*%t(specTrait[,colnames(yp)])
       agibbs[g,] <- Atrait
       mgibbs[g,] <- Strait
+      
+   #   if(length(missTrait) > 0){
+   #     yw     <- sweep(yp,1,rowSums(yp),'/')
+   #     yw[yw <= 0]   <- 0
+   #     yw[is.na(yw)] <- 0
+   #     Ttrait <- .gjamPredictTraits(yw,specTrait[,colnames(yp)], traitTypes)
+   #     tmp <- t(Ttrait)%*%yw
+   #   }
+      
     }
     
     if( PREDICTX & length(predXcols) > 0 ){
       
+      ww <- w
+      if(holdoutN > 0) ww[holdoutIndex,] <- wHold
+        
       if( length(isNonLinX) > 0 ){
         
-        xpred <- .predictY2X_nonLinear(xpred, yy=w[,notOther],
+        xpred <- .predictY2X_nonLinear(xpred, yy=ww[,notOther],
                                        bb=bg[,notOther],ss=sg[notOther,notOther],
                                        priorIV = priorXIV,priorX=priorX,
                                        predCols=isNonLinX,isInt,intMat,
-                                       isFactor,factorList, contrast = contrast)$x
+                                       isFactor,factorList, contrast = contrast,
+                                       lox, hix)$x
         }
       
       if( length(px) > 0 ){
@@ -3232,7 +3443,7 @@
           tmp <- matrix(priorX,Q,nrow(wn))
           xpred[wn[,1],] <- t(tmp)
         }
-        xpred[,px] <- .predictY2X_linear(xpred, yy=w[,notOther], bb=bg[,notOther],
+        xpred[,px] <- .predictY2X_linear(xpred, yy=ww[,notOther], bb=bg[,notOther],
                                          ss=sg[notOther,notOther], sinv = sinv,
                                          priorIV = priorXIV, 
                                          priorX=priorX,predCols=px, 
@@ -3246,23 +3457,26 @@
       
       if( length(linFactor) > 0 ){
         
-        xtmp <- xpred*0
+        xtmp <- xpred
 
         # predict all factors
-        xtmp[,findex] <- .predictY2X_linear(xpred, yy=w[,notOther], bb=bg[,notOther],
+        xtmp[,findex] <- .predictY2X_linear(xpred, yy=ww[,notOther], 
+                                            bb=bg[,notOther],
                                   ss=sg[notOther,notOther], sinv = sinv,
                                   priorIV = priorXIV, 
                                   priorX=priorX,predCols=findex, 
                                   REDUCT=REDUCT, lox, hix)[,findex]
         
         for(k in 1:length(linFactor)){
+          
           mm  <- linFactor[[k]]
           tmp <- xtmp[,mm]
-  #        tmp[,1] <-1
-  #        tmp[,-1] <- tmp[,-1] + tmp[,1]
+          
+          tmp[,1] <- 0
           ix  <- apply(tmp,1,which.max)   
           
           tmp <- tmp*0
+        
           tmp[ cbind(1:n,ix) ] <- 1
           tmp <- tmp[,-1,drop=F]
           xpred[,mm[-1]] <- tmp
@@ -3317,7 +3531,9 @@
         if(length(notRichness) == 0)yy <- yp
         yy[yy > 0] <- 1
         yy[yy <= 0] <- 0
-        richness <- .add2matrix(rowSums(yy),richness)
+        richFull <- .add2matrix(rowSums(yy),richFull)
+        richness <- .add2matrix(rowSums(yy*wrich[,notRichness,drop=F]),
+                                richness)  # only for non-missing
       }
       
       if(mmiss > 0){
@@ -3351,22 +3567,25 @@
       }
     }
   }     ################# end gibbs loop ####################
-  
-  otherpar$S <- S
+   
+  otherpar$S <- S 
   otherpar$Q <- Q
   otherpar$snames <- snames
   otherpar$xnames <- xnames
   
   if(RICHNESS){
-    richness <- richness/ntot
-    yr  <- y[,notRichness]
+    richNonMiss <- richness/ntot            #only non-missing plots
+    yr  <- as.matrix(ydata[,notRichness]) 
     yr[yr > 0] <- 1
-    yr <- rowSums(yr)
-    vv  <- matrix(as.numeric(colnames(richness)),n,ncol(richness),byrow=T)
-    rmu <- rowSums( vv * richness )/rowSums(richness)
-    rsd <- sqrt( rowSums( vv^2 * richness )/rowSums(richness) - rmu^2)
-    richness <- cbind(yr, rmu, rsd )
-    colnames(richness) <- c('obs','predMu','predSd')
+    yr <- rowSums(yr,na.rm=T)
+    vv  <- matrix(as.numeric(colnames(richNonMiss)),n,ncol(richNonMiss),byrow=T)
+    rmu <- rowSums( vv * richNonMiss )/rowSums(richNonMiss)
+    rsd <- sqrt( rowSums( vv^2 * richNonMiss )/rowSums(richNonMiss) - rmu^2)
+    
+    vv  <- matrix(as.numeric(colnames(richFull)),n,ncol(richFull),byrow=T)
+    rfull <- rowSums( vv * richFull )/rowSums(richFull)
+    richness <- cbind(yr, rmu, rsd, rfull )
+    colnames(richness) <- c('obs','predMu','predSd','predNotMissing')
   }
     
   if(mmiss > 0){
@@ -3390,12 +3609,15 @@
   colnames(betaMu) <- colnames(betaSe) <- snames
   rownames(betaMu) <- rownames(betaSe) <- xnames
   
+  bplus  <- which( apply(bgibbs,2,quantile,.025) > 0)
+  bminus <- which( apply(bgibbs,2,quantile,.975) < 0)
+  
   fBetaMu <- colMeans(fbgibbs[burnin:ng,])
   fBetaMu <- matrix(fBetaMu,q1,SO)
   fBetaSd <- apply(fbgibbs[burnin:ng,],2,sd)
   fBetaSd <- matrix(fBetaSd,q1,SO)
   
-  fMu <- colMeans(fgibbs[burnin:ng,])
+  fMu <- colMeans(fgibbs[burnin:ng,,drop=F])
   fSe <- apply(fgibbs,2,sd)
   
   rownames(fBetaMu) <- rownames(fBetaSd) <- names(fMu)
@@ -3413,10 +3635,7 @@
   
   # note: on latent w scale
   meanDev <- sumDev/ntot
- # betaS   <- betaMu
- # betaS[standRows,] <- betaMu[standRows,]*standMat[standRows,]
-  
-  betaS <- solve(crossprod(x))%*%crossprod(x,xunstand)%*%betaMu   #standardized
+  betaS   <- solve(crossprod(x))%*%crossprod(x,xunstand)%*%betaMu   #standardized
   
   pd  <- meanDev - 2*sum(.dMVN(wMu[,notOther],x%*%betaS[,notOther],
                                sMean[notOther,notOther], log=T ) )
@@ -3427,8 +3646,7 @@
   
   
   chains <- list( sgibbs = sgibbs, bgibbs = bgibbs) 
- # if(REDUCT) chains <- append(chains,list(kgibbs = kgibbs, ogibbs = ogibbs,
- #                                         sigErrGibbs = sigErrGibbs))
+
   if(REDUCT) chains <- append(chains,list(kgibbs = kgibbs,
                                           sigErrGibbs = sigErrGibbs))
   if(testCC) chains <- append(chains,list(wgibbs = wgibbs))
@@ -3440,17 +3658,17 @@
     xpredSd <- predx2/ntot - xpredMu^2
     xpredSd[xpredSd < 0] <- 0
     xpredSd <- sqrt(xpredSd)
+    
+    xpredMu <- .getUnstandX(xpredMu, standRows, standMu[standRows,1],
+                            standMat[standRows,1], intMat)$xu
+    xpredSd[,standRows] <- xpredSd[,standRows]*
+      matrix( standMat[standRows,1], n, length(standRows),byrow=T ) 
+    
     if(Q == 2)xscore <- mean( .getScoreNorm(x[,2],xpredMu[,2],xpredSd[,2]^2) )
     if(Q > 2) xscore <- colMeans( .getScoreNorm(x[,-1],xpredMu[,-1],xpredSd[,-1]^2) )
   }
 
   if(length(standRows) > 0){                #unstandardize
-    if(PREDICTX){
-      xpredMu <- .getUnstandX(xpredMu, standRows, standMu[standRows,1],
-                              standMat[standRows,1], intMat)$xu
-      xpredSd[,standRows] <- xpredSd[,standRows]*
-        matrix( standMat[standRows,1], n, length(standRows),byrow=T ) 
-    }
     if(length(xmiss) > 0){
       wmm <- which( xnames[xmiss[,2]] %in% standRows )
       if(length(wmm) > 0){
@@ -3534,13 +3752,11 @@
   rownames(betaMu)   <- rownames(betaSe) <- xnames
   
   
-  
-  
-  
   parameterTables <- list(tMuOrd = tMuOrd,tMu = tMu,tSd = tSd,
                           fMu = fMu, fSe = fSe, cutMu = cMu, cutSe = cSe, 
-                          betaMu = betaMu, betaSe = betaSe, corMu = corMu, 
-                          corSe = corSe, fBetaMu = fBetaMu, fBetaSd = fBetaSd,
+                          betaMu = betaMu, betaSe = betaSe, betaPlus = bplus,
+                          betaMinus = bminus, corMu = corMu, corSe = corSe, 
+                          fBetaMu = fBetaMu, fBetaSd = fBetaSd,
                           sigMu = sigMu, sigSe = sigSe, ematrix = ematrix, 
                           fmatrix = fmatrix,
                           betaTraitMu = btMu, betaTraitSe = btSe, 
@@ -3551,10 +3767,11 @@
                          list(typeNames = typeNames, DIC = DIC, yscore = yscore, 
                               xscore = xscore, rmspeAll = rmspeAll,
                               rmspeBySpec = rmspeBySpec,
+                              standMat = standMat, standRows = standRows,
                               xpredMu = xpredMu, xpredSd = xpredSd,
-                              yMu = yMu, ySd = ySd, wMu = wMu, wSd = wSd, 
-                              xdataNames = xdataNames,
-                              ydataNames = ydataNames, 
+                              ypredMu = yMu, ypredSd = ySd, wMu = wMu, wSd = wSd, 
+                              xdataNames = xdataNames,isNonLinX = isNonLinX,
+                              ydataNames = ydataNames, isInt = isInt,
                               ematAlpha = ematAlpha, richness = richness,
                               whichZero = whichZero, whConZero = whConZero))
   
@@ -3568,8 +3785,87 @@
        yMissMu = ymissPred, yMissSd = ymissPred2, ymiss = ymiss, 
        modelSummary = modelSummary, breakMat = breakMat, standX = standX,
        censor = censor, TRAITS = TRAITS, traitList = traitList)
+  all$call <- match.call()
   all <- all[ sort(names(all)) ]
+  
+  class(all) <- ".gjam"
+  
+ # .print.gjam(all)
+  
   all
+}
+
+summary..gjam <- function(object,...){
+  
+  beta   <- object$parameterTables$betaMu
+  oo <- grep('other',colnames(beta))
+  if(length(oo) > 0)beta <- beta[,-oo]
+  rb <- rownames(beta)
+  cb <- colnames(beta)
+ 
+  Sensitivity <- object$parameterTables$fMu
+  StdErr      <- object$parameterTables$fSe
+  sens <- data.frame(Sensitivity, StdErr)
+  
+  RMSPE       <- object$modelSummary$rmspeBySpec
+  if(length(oo) > 0)RMSPE <- RMSPE[-oo]
+  bb   <- signif(rbind(beta,RMSPE),3)
+  
+  cc <- as.vector( signif(beta, 3) )
+  ss <- object$parameterTables$betaSe
+  if(length(oo) > 0)ss <- ss[,-oo]
+  ss <- as.vector( signif(ss, 3) )
+  rr <- as.vector( outer(rb,cb,paste,sep='_') )
+  TAB <- data.frame(Estimate = cc, StdErr = ss)
+  rownames(TAB) <- rr
+  
+  cat("\nSensitivity by predictor variables f:\n")
+  print( signif(sens, 3) )
+  
+  cat("\nCoefficient matrix B:\n")
+  print(bb)
+  cat("\nRMSPE by individual responses (columns).\n")
+  
+  cat("\nCoefficient matrix B with SEs:\n")
+  
+  Signif <- rep('',nrow(TAB))
+  bp <- object$parameterTables$betaPlus
+  bm <- object$parameterTables$betaMinus
+  bs <- object$parameterTables$betaMu*0
+  bs[bp] <- 1
+  bs[bm] <- -1
+  if(length(oo) > 0){
+    bs <- bs[,-oo]
+  }
+  bs <- as.vector(bs)
+  
+  Signif[bs == 1] <- '+'
+  Signif[bs == -1] <- '-'
+  
+  TAB <- data.frame(TAB,Signif)
+  
+  print(TAB)
+  cat("\nThird column indicates if 95% posterior distribution contains zero.\n")
+  
+  res <- list(DIC=object$modelSummary$DIC, Sensitivity = sens, 
+              Coefficients=TAB, beta = beta)
+  class(res) <- "summary.gjam"
+  invisible(res) 
+}
+
+print..gjam <- function(x, ...){
+  
+  cat("Call:\n")
+  print(x$call)
+  
+  cat("\nDIC:\n")
+  print( round(x$modelSummary$DIC,0) )
+
+  cat("\nCoefficients:\n")
+  print( signif(x$parameterTables$betaMu, 3) )
+  
+  cat("\nStandard errors:\n")
+  print( signif(x$parameterTables$betaSe, 3) )
 }
 
 .getSigTable <- function(chain, SS, QQ, xn, sn){
@@ -3616,7 +3912,7 @@
   omitSpec   <- trueValues  <- censor <- otherpar <- NULL
   traitList  <- specByTrait <- typeNames <- classBySpec <- 
     x <- y   <- burnin      <- richness <- betaTraitMu <-  
-    corSpec  <- cutMu       <- yMu <- DIC <- yscore <- missingIndex <- 
+    corSpec  <- cutMu       <- ypredMu <- DIC <- yscore <- missingIndex <- 
     xpredMu  <- plotByTrait <- tMu <- tMuOrd <- traitTypes <- 
     isFactor <- betaMu      <- corMu <- modelSummary <- NULL
   unstandardX  <- NULL # vector of std devs of x, by name, to unstandardize
@@ -3624,7 +3920,7 @@
   ematrix      <- NULL
   eCont <- modelList <- NULL
   
-  ncluster <- min(c(4,ncol(output$y))) - 1
+  ncluster <- min(c(4,ncol(output$y)))
   
   corLines <- T
   cex <- 1
@@ -3696,6 +3992,10 @@
   gindex  <- burnin:ng
   
   if(S > 10)corLines <- F
+  if(S < 8){
+    if(GRIDPLOTS)message('no GRIDPLOTS if S < 8')
+    GRIDPLOTS <- F
+  }
   
   if(length(specColor) == 1)specColor <- rep(specColor, S)
   boxCol    <- .getColor(specColor,.4)
@@ -3731,44 +4031,48 @@
   
   if( !TRAITS & !is.null(richness) ){
     
-    if(SAVEPLOTS)pdf( file=.outFile(outfolder,'richness.pdf') )
-    
-    par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
-    
-    npp    <- length(richness[,1])/20
-    ylimit <- range(richness[,2])
     xlimit <- range(richness[,1])
     
-    tmp <- .bins4data(richness[,1],nPerBin=npp,breaks=NULL,LOG=F)
-    breaks <- tmp$breaks
-    bins   <- tmp$bins
-    nbin   <- tmp$nbin
-    
-    ncc    <- max( c(100,max(richness[,1])/20) )
-    xy     <- .gjamBaselineHist(richness[,1],bins=bins,nclass=ncc)
-    xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
-    plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
-         xlab=' ',ylab='Predicted')
-    polygon(xy[1,],xy[2,],border='brown',col='tan')
-    
-    fill <- .getColor('blue',.2)
-    
-    .plotObsPred(obs=richness[,1],yMean=richness[,2],
-                 nPerBin=npp, wide=.6, MEDIAN = F, fill=fill, 
-                 box.col='darkblue', 
-                 xlabel='Observed',ylabel='Predicted', POINTS=F,
-                 add=T)
-    
-    abline(0,1,lty=2)
-    abline(h=mean(richness[,1]),lty=2)
-    .plotLabel(' Richness (no. present)',cex=1.2,above=T)
-    
-    if(!SAVEPLOTS){
-      readline('no. species may not vary much -- return to continue ')
-    } else {
-      dev.off( )
-    }
-  } 
+    if(diff(xlimit) > 0){
+      
+      if(SAVEPLOTS)pdf( file=.outFile(outfolder,'richness.pdf') )
+      
+      par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
+      
+      npp    <- length(richness[,1])/20
+      ylimit <- range(richness[,2])
+      
+      tmp <- .bins4data(richness[,1],nPerBin=npp,breaks=NULL,LOG=F)
+      breaks <- tmp$breaks
+      bins   <- tmp$bins
+      nbin   <- tmp$nbin
+      
+      ncc    <- max( c(100,max(richness[,1])/20) )
+      xy     <- .gjamBaselineHist(richness[,1],bins=bins,nclass=ncc)
+      xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
+      plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
+           xlab=' ',ylab='Predicted')
+      polygon(xy[1,],xy[2,],border='brown',col='tan')
+      
+      fill <- .getColor('blue',.2)
+      
+      .plotObsPred(obs=richness[,1],yMean=richness[,2],
+                   nPerBin=npp, wide=.6, MEDIAN = F, fill=fill, 
+                   box.col='darkblue', 
+                   xlabel='Observed',ylabel='Predicted', POINTS=F,
+                   add=T)
+      
+      abline(0,1,lty=2)
+      abline(h=mean(richness[,1]),lty=2)
+      .plotLabel(' Richness (no. present)',cex=1.2,above=T)
+      
+      if(!SAVEPLOTS){
+        readline('no. species may not vary much -- return to continue ')
+      } else {
+        dev.off( )
+      }
+    } 
+  }
   
   #######################################
   
@@ -3794,11 +4098,7 @@
   bgibbsShort    <- chains$bgibbs[simIndex,]
   sgibbsShort    <- tmp$chainList$schain      #lower.tri with diagonal
   rgibbsShort    <- tmp$chainList$cchain
- # chains$sensGibbs <- tmp$chainList$sensChain
- # if(sdScaleY)chains$sensGibbsCor <- tmp$chainList$sensChainCor
-#   chains$bgibbs    <- chainList$bchain[simIndex,]
-#   chains$fgibbs    <- chainList$fchain[simIndex,]
-#  chains$bgibbsCor <- tmp$chainList$bchainCor
+ 
   if(REDUCT){
     kgibbsShort  <- tmp$chainList$kchain
     otherpar       <- output$otherpar
@@ -4056,10 +4356,10 @@
   
   ############################
   
-  rmspeAll <- sqrt( mean( (y[,notOther] - yMu[,notOther])^2 ) )
+  rmspeAll <- sqrt( mean( (y[,notOther] - ypredMu[,notOther])^2 ) )
   
   eBySpec <- sqrt( colMeans( (y[,notOther]/rowSums(y[,notOther]) - 
-                                yMu[,notOther]/rowSums(yMu[,notOther]))^2 ) )
+                                ypredMu[,notOther]/rowSums(ypredMu[,notOther]))^2 ) )
   ordFit  <- order(eBySpec)
   
   score <- mean(yscore)
@@ -4142,13 +4442,9 @@
         
         mk <- mk + 1
         
-        y1 <- y[,wkm]
-        yp <- yMu[,wkm]
+        y1 <- y[,wkm,drop=F]
+        yp <- ypredMu[,wkm,drop=F]
         
-        if(nkm == 1){
-          y1 <- matrix(y1,ncol=1)
-          yp <- matrix(yp,ncol=1)
-        }
         tmp <- .gjamPlotPars(type=typeNames[wk[1]],y1,yp,censm)
         y1 <- tmp$y1; yp <- tmp$yp; nbin <- tmp$nbin; nPerBin <- tmp$nPerBin
         vlines <- tmp$vlines; xlimit <- tmp$xlimit; ylimit <- tmp$ylimit
@@ -4178,9 +4474,12 @@
           ncc   <- max( c(100,max(y1)/20) )
           xy <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
           xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
+          xy[1,xy[1,] < xlimit[1]] <- xlimit[1]
+          xy[2,xy[2,] < ylimit[1]] <- ylimit[1]
+          
           plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
                xlab='Observed',ylab='Predicted', log=log)
-          polygon(xy[1,],xy[2,],border='brown',col='tan')
+          polygon(xy[1,],xy[2,],border='tan',col='wheat')
           
         } else {
           y11 <- mean(y1)
@@ -4189,7 +4488,7 @@
           y11 <- c(0,y00,y00,0,0,y11,y11,0,0)
           plot(x11,y11,col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
                xlab=' ',ylab=ylab)
-          polygon(x11,y11,border='brown',col='tan')
+          polygon(x11,y11,border='tan',col='wheat')
         }
         abline(0,1,lty=2,lwd=3,col='brown')
         abline(h = mean(y1),lty=2,lwd=3,col='tan')
@@ -4197,7 +4496,9 @@
         add <- T
         
         if(nhold > 0){
-          points(y1[holdoutIndex,],yp[holdoutIndex,],col='brown',
+          y1h <- y[holdoutIndex,wkm,drop=F]
+          yph <- ypredMu[holdoutIndex,wkm,drop=F]
+          points(y1h,yph,col='brown',
                  pch=21, bg='green',cex=.3)
         } 
         
@@ -4212,7 +4513,7 @@
         
         if(length(vlines) > 0)abline(v=vlines,lty=2)
         
-        tf <- .gjamGetTypes(typeNames[wk[1]])$typeFull
+        tf <- .gjamGetTypes(typeNames[wk[1]])$labels
         tf <- paste(letters[mk],tf, sep=') ')
         
         .plotLabel(tf,'topleft',above=AA)
@@ -4221,7 +4522,7 @@
     }
     
     if(!SAVEPLOTS){
-      readline('y vs predicted yMu -- return to continue ')
+      readline('obs y vs predicted y -- return to continue ')
     } else {
       dev.off()
     }  ##########################
@@ -4235,12 +4536,12 @@
       if(SAVEPLOTS)pdf( file=.outFile(outfolder,'effort.pdf') )
       
       par(mfrow=c(1,1),bty='n')
-      yMu <- output$modelSummary$yMu
-      ySd <- output$modelSummary$ySd
+      ypredMu <- output$modelSummary$ypredMu
+      ySd <- output$modelSummary$ypredSd
       
       n <- nrow(y)
       effort <- matrix(rowSums(y),n,S)
-      cvv <- ySd/yMu
+      cvv <- ySd/ypredMu
       www <- which(is.finite(effort) & is.finite(cvv) & cvv > 0)
       
       yl <- log10(quantile(cvv[www],c(.05,.999)))
@@ -4263,17 +4564,16 @@
     }
   }  #################
   
+  nfact <- length(modelSummary$factorList)
   
-  if(PLOTX & PREDICTX & length(output$modelSummary$xpredMu) > 0){
+  if( PLOTX & PREDICTX & length(output$modelSummary$xpredMu) > 0){
     
     noX <- character(0)
     colorGrad   <- colorRampPalette(c('white','brown','black'))
     
-    nfact <- length(modelSummary$factorList)
-    
     if(nfact > 0){
       
-      nn <- length(unlist(modelSummary$factorList)) + nfact
+      nn <- length(unlist(modelSummary$factorList)) # + nfact
       mmat <- matrix(0,nn,nn)
       mnames <- rep('bogus',nn)
       samples <- rep(0,nn)
@@ -4282,7 +4582,8 @@
       
       par(mfrow=c(1,1),bty='n')
       
-      useCols <- colorRampPalette(c('brown','orange','darkblue'))(nfact)
+      mm <- max(nfact,2)
+      useCols <- colorRampPalette(c('brown','orange','darkblue'))(mm)
       textCol <- character(0)
       
       
@@ -4293,7 +4594,7 @@
         nx     <- length(fnames)
         if(nx < 1)next
         
-        ie <- ib + nx
+        ie <- ib + nx - 1
         
         noX <- c(noX,fnames)
         
@@ -4302,17 +4603,17 @@
         refClass <- names (which( rowSums( cont ) == 0) )
         
         hnames <- matrix( unlist( strsplit(fnames,gname) ),nx,2,byrow=T)[,2]
-        hnames <- c(refClass,hnames)
+     #   hnames <- c(refClass,hnames)
         knames <- c(paste(gname,'Ref',sep=''),fnames)
         xtrue     <- x[,fnames,drop=F]
-        reference <- 1 - rowSums(xtrue)
-        xtrue <- cbind(reference,xtrue)
+     #   reference <- 1 - rowSums(xtrue)
+     #   xtrue <- cbind(reference,xtrue)
         nx    <- ncol(xtrue)
-        colnames(xtrue)[1] <- refClass
+     #   colnames(xtrue)[1] <- refClass
         
         xpred <- xpredMu[,fnames,drop=F]
-        reference <- 1 - rowSums(xpred)
-        xpred <- cbind(reference,xpred)
+   #     reference <- 1 - rowSums(xpred)
+   #     xpred <- cbind(reference,xpred)
         cmat  <- matrix(0,nx,nx)
         colnames(cmat) <- hnames
         rownames(cmat) <- rev(hnames)
@@ -4346,7 +4647,7 @@
       if(SAVEPLOTS)pdf( file=.outFile(outfolder,'xPredFactors.pdf' ) )
       par(mfrow=c(1,1),bty='n')
       
-        .corPlot(mmat,slim=c(.1,1),plotScale=.8, textCol = textCol,
+        .corPlot(mmat,slim=c(0,1),plotScale=.8, textCol = textCol,
                  PDIAG=F,corLines=T, tri='both',
                  specLabs = T, colorGrad = colorGrad,
                  textSize=1, new=F)
@@ -4442,7 +4743,7 @@
         xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
         plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
              xlab=' ',ylab=ylab)
-        polygon(xy[1,],xy[2,],border='brown',col='tan')
+        polygon(xy[1,],xy[2,],border='tan',col='wheat')
         
         
         abline(0,1,lty=2,lwd=3,col='brown')
@@ -4517,7 +4818,7 @@
       
       y1 <- y[,j]
       if(min(y1) == max(y1))next
-      y2 <- yMu[,j]
+      y2 <- ypredMu[,j]
       
       k <- k + 1
       if(k > 16)break
@@ -4557,7 +4858,7 @@
         xy[2,] <- ylimit[1] + .8*xy[2,]*diff(ylimit)/max(xy[2,])
         plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
              xlab=' ',ylab=ylab)
-        polygon(xy[1,],xy[2,],border='brown',col='tan')
+        polygon(xy[1,],xy[2,],border='tan',col='wheat')
         
       } else {
         y11 <- mean(y1)
@@ -4566,7 +4867,7 @@
         y11 <- c(0,y00,y00,0,0,y11,y11,0,0)
         plot(x11,y11,col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
              xlab=' ',ylab=ylab)
-        polygon(x11,y11,border='brown',col='tan')
+        polygon(x11,y11,border='tan',col='wheat')
       }
       abline(0,1,lty=2,lwd=3,col='brown')
       abline(h = mean(y1),lty=2,lwd=3,col='tan')
@@ -4623,11 +4924,12 @@
     }
     
     mfrow <- .getPlotLayout(length(o))
-    par(mfrow=mfrow, bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
+    par(mfrow=mfrow, bty='n', oma=oma, mar=c(3,3,1,1), tcl= tcl, mgp=mgp)
     k <- 0
     
     for(j in o){
       
+      add   <- F
       jname <- colnames(tMu)[j]
       
       k <- k + 1
@@ -4673,34 +4975,49 @@
   
   ##############sensitivity 
   
-  wc <- c(1:ncol(chains$fgibbs))
-  wx <- grep(':',colnames(chains$fgibbs))
-  wx <- c(wx, grep('^2',colnames(chains$fgibbs), fixed=T) )
+  fgibbs <- chains$fgibbs
+  if(!is.matrix(fgibbs)){
+    fgibbs <- matrix(fgibbs)
+    colnames(fgibbs) <- xnames[-1]
+  }
+  
+  wc <- c(1:ncol(fgibbs))
+  wx <- grep(':',colnames(fgibbs))
+  wx <- c(wx, grep('^2',colnames(fgibbs), fixed=T) )
   if(length(wx) > 0)wc <- wc[-wx]
   
-  wx <- grep('intercept',colnames(chains$fgibbs))
+  wx <- grep('intercept',colnames(fgibbs))
   if(length(wx) > 0)wc <- wc[-wx]
   
   if(SAVEPLOTS)pdf( file=.outFile(outfolder,'sensitivity.pdf') ) # start plot
   
-  xx   <- chains$fgibbs[,wc]
+  xx   <- fgibbs[,wc,drop=F]
   tcol <- rep('black',ncol(xx))
   names(tcol) <- colnames(xx)
-  tcol[ names(textCol) ] <- textCol
+  
+  if(nfact > 0){
+    for(i in 1:nfact){
+      im <- which(colnames(xx) %in% rownames(modelSummary$contrasts[[i]]))
+      tcol[im] <- useCols[i]
+    }
+  }
+  
+  
+#  tcol[ names(textCol) ] <- textCol
     
   par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
   
   ord  <- order( colMeans(xx) )
   ylim <- c(min(xx),2*quantile(xx,.95))
-  tmp <- .boxplotQuant( xx[,ord], xaxt='n',outline=F, 
-                        border=tcol[ord],whiskcol=tcol,
+  tmp <- .boxplotQuant( xx[,ord, drop=F], xaxt='n',outline=F, 
+                        border=tcol[ord],whiskcol=tcol[ord],
                         boxfill=.getColor(tcol[ord],.4), 
                         pars = list(boxwex = 0.5, ylim=ylim), lty=1, log='y')
   mtext('Predictors in X',side=1,line=1)
   abline(h=0,lwd=2,col='grey')
   
   dy <- .05*diff(par()$yaxp[1:2])
-  text(1:length(wc),dy + tmp$stats[5,],tmp$names,srt=90,pos=4,col=tcol[ord])
+  text(1:length(wc), dy + tmp$stats[5,],tmp$names,srt=90,pos=4,col=tcol[ord])
   
   sensLab   <- expression( paste('Sensitivity ',hat(bold(F))  ))
   
@@ -4782,13 +5099,13 @@
     
     tname <- xnam[k]
     
-    kchain <- betaSig
-    if(tname %in% flist){
-      kchain <- bfSig
-      tname <- rownames(eCont)[eCont[,tname] == 1]
-    }
+  #  kchain <- betaSig
+  #  if(tname %in% flist){
+  #    kchain <- bfSig
+  #    tname <- rownames(eCont)[eCont[,tname] == 1]
+  #  }
     
-    tmp <- .chains2density(kchain,varName=tname, cut=3)
+    tmp <- .chains2density(chains$bgibbs,varName=tname, cut=3)
     xt  <- tmp$x
     yt  <- tmp$y
     chainMat <- tmp$chainMat
@@ -4811,7 +5128,7 @@
     for(j in jk){
       lines(chainMat[,j],col=cols[j])
       if(ncol(chainMat) < 15)text(nn,chainMat[nn,j],snamek[j],col=cols[j],pos=4)
-      if(k == 1 & j == 1).plotLabel( paste('burnin =',burnin),
+      if(k == 1 & j == 1).plotLabel( paste('burn-in =',burnin),
                                      location='topright' )
     }
     .plotLabel(label=paste(letters[k],') ',tname,sep=''),location='topleft',above=T)
@@ -4903,135 +5220,141 @@
   
   ############################### beta posteriors as boxes
     
-  fnames <- names( output$parameterTables$fMu )
-  
-  nc    <- 0
-  vnam  <- matrix( unlist( strsplit(colnames(bfSig),'_') ),ncol=2,byrow=T)
-  
-  ix <- 1
-  nc <- 2
-  y1 <- which(vnam[,1] %in% snames)
-  y2 <- which(vnam[,2] %in% snames)
-  if(length(y1) > length(y2))ix <- 2
-  if(ix == 2)nc <- 1
-  
- # if( length(which(is.finite(match(colnames(y),vnam[,1])))) > 5 )nc <- 2
- # if( length( which(is.finite(match(colnames(y),vnam[,2]))) ) > 5 )nc <- 1
-  
- # ix <- 1
- # if(nc == 1)ix <- 2
-  xnam <- vnam[,ix]
-  vnam <- vnam[,nc]
-  
-  xpNames <- .replaceString(fnames,':','X')
-  xpNames <- .replaceString(xpNames,'I(','')
-  xpNames <- .replaceString(xpNames,')','')
-  xpNames <- .replaceString(xpNames,'^2','2')
-  xpNames <- .replaceString(xpNames,'*','TIMES')
-  
-  for(j in 1:length(fnames)){
+    fnames <- names( output$parameterTables$fMu )
     
-    wc <- which(xnam == fnames[j])
-    if(length(wc) < 2)next
-    
-    plab <- paste('beta_',xpNames[j],'.pdf',sep='')
-    if(SAVEPLOTS)pdf( file=.outFile(outfolder,plab) ) # start plot
-    
-    
-    par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
-    
-    if(length(wc) > 100)wc <- sample(wc,100)
-    
-    mat <- bfSig[,wc]
-    ord <- order(colMeans(mat),decreasing=F)
-    tnam <- vnam[ wc[ord] ]
-    bx   <- boxCol[ match(tnam, snames) ]
-    bb   <- specColor[ match(tnam, snames) ]
-    ry   <- range(mat)
-    ymin <- min(mat) - diff(ry)*.15
-    ymax <- max(mat) + diff(ry)*.15
-    
-    tmp <- .boxplotQuant( mat[,ord],xaxt='n',outline=F,ylim=c(ymin,ymax),
-                          col=bx, border=bb, xaxt='n',lty=1)
-    abline(h=0,lwd=2,col='grey',lty=1)
-    
-    dy <- .05*diff(par()$yaxp[1:2])
-    
-    cext <- .fitText2Fig(tnam,fraction=1)
-    text((1:length(wc)) - .1,dy + tmp$stats[5,],tnam,srt=70,pos=4,
-         col=bb, cex=cext)
-    
-    pl    <- par('usr')
-    xtext <- pl[1]
-    ytext <- pl[3] + diff(pl[3:4])*.85
- #   text(xtext, ytext, expression(hat(bold(beta))),pos=4,cex=1.1)    
- #   .plotLabel(paste(fnames[j], scaleNote,sep=', '),location='topleft', 
- #              cex=1.0)   
-    .plotLabel(fnames[j],location='topleft', cex=1.0)
-    
-    if(!SAVEPLOTS){
-      readline('95% posterior -- return to continue ')
-    } else {
-      dev.off()
+    if(length(bfSig) > 0){
+      
+      nc    <- 0
+      vnam  <- matrix( unlist( strsplit(colnames(bfSig),'_') ),ncol=2,byrow=T)
+      
+      ix <- 1
+      nc <- 2
+      y1 <- which(vnam[,1] %in% snames)
+      y2 <- which(vnam[,2] %in% snames)
+      if(length(y1) > length(y2))ix <- 2
+      if(ix == 2)nc <- 1
+      
+      # if( length(which(is.finite(match(colnames(y),vnam[,1])))) > 5 )nc <- 2
+      # if( length( which(is.finite(match(colnames(y),vnam[,2]))) ) > 5 )nc <- 1
+      
+      # ix <- 1
+      # if(nc == 1)ix <- 2
+      xnam <- vnam[,ix]
+      vnam <- vnam[,nc]
+      
+      xpNames <- .replaceString(fnames,':','X')
+      xpNames <- .replaceString(xpNames,'I(','')
+      xpNames <- .replaceString(xpNames,')','')
+      xpNames <- .replaceString(xpNames,'^2','2')
+      xpNames <- .replaceString(xpNames,'*','TIMES')
+      
+      for(j in 1:length(fnames)){
+        
+        wc <- which(xnam == fnames[j])
+        if(length(wc) < 2)next
+        
+        plab <- paste('beta_',xpNames[j],'.pdf',sep='')
+        if(SAVEPLOTS)pdf( file=.outFile(outfolder,plab) ) # start plot
+        
+        
+        par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
+        
+        if(length(wc) > 100)wc <- sample(wc,100)
+        
+        mat <- bfSig[,wc]
+        ord <- order(colMeans(mat),decreasing=F)
+        tnam <- vnam[ wc[ord] ]
+        bx   <- boxCol[ match(tnam, snames) ]
+        bb   <- specColor[ match(tnam, snames) ]
+        ry   <- range(mat)
+        ymin <- min(mat) - diff(ry)*.15
+        ymax <- max(mat) + diff(ry)*.15
+        
+        tmp <- .boxplotQuant( mat[,ord],xaxt='n',outline=F,ylim=c(ymin,ymax),
+                              col=bx, border=bb, xaxt='n',lty=1)
+        abline(h=0,lwd=2,col='grey',lty=1)
+        
+        dy <- .05*diff(par()$yaxp[1:2])
+        
+        cext <- .fitText2Fig(tnam,fraction=1)
+        text((1:length(wc)) - .1,dy + tmp$stats[5,],tnam,srt=70,pos=4,
+             col=bb, cex=cext)
+        
+        pl    <- par('usr')
+        xtext <- pl[1]
+        ytext <- pl[3] + diff(pl[3:4])*.85
+        #   text(xtext, ytext, expression(hat(bold(beta))),pos=4,cex=1.1)    
+        #   .plotLabel(paste(fnames[j], scaleNote,sep=', '),location='topleft', 
+        #              cex=1.0)   
+        .plotLabel(fnames[j],location='topleft', cex=1.0)
+        
+        if(!SAVEPLOTS){
+          readline('95% posterior -- return to continue ')
+        } else {
+          dev.off()
+        }
+      }
+      
+      #one figure
+      
+      if(length(fnames) > 1){
+        
+        if(SAVEPLOTS)pdf( file=.outFile(outfolder,'betaAll.pdf') )  
+        
+        npp <- length(which(table(match(xnam,fnames)) > 1))
+        
+        mfrow <- .getPlotLayout(npp)
+        par( mfrow=mfrow, bty='n', oma=oma, mar=c(1,1,1,1), tcl= tcl, mgp=mgp )
+        
+        k <- 0
+        for(j in 1:length(fnames)){
+          
+          wc <- which(xnam == fnames[j])
+          if(length(wc) < 2)next
+          
+          k <- k + 1
+          
+          plab <- paste('beta_',xnames[j],'.pdf',sep='')
+          
+          if(length(wc) > 100)wc <- sample(wc,100)
+          
+          mat <- bfSig[,wc]
+          ord <- order(apply(mat,2,mean),decreasing=F)
+          tnam <- vnam[ wc[ord] ]
+          bx   <- boxCol[ match(tnam, snames) ]
+          bb   <- specColor[ match(tnam, snames) ]
+          ry   <- range(mat)
+          ymin <- min(mat) - diff(ry)*.15
+          ymax <- max(mat) + diff(ry)*.15
+          
+          tmp <- .boxplotQuant( mat[,ord],xaxt='n',outline=F,ylim=c(ymin,ymax),
+                                col=bx, border=bb, xaxt='n',lty=1)
+          abline(h=0,lwd=2,col='grey',lty=1)
+          
+          dy <- .05*diff(par()$yaxp[1:2])
+          
+          cext <- .fitText2Fig(tnam,fraction=.9)
+          
+          text((1:length(wc)) - .1,dy + tmp$stats[5,],tnam,srt=70,pos=4,
+               col=bb, cex=cext)
+          
+          pl    <- par('usr')
+          xtext <- pl[1]
+          ytext <- pl[3] + diff(pl[3:4])*.2
+          #  text(xtext, ytext, expression(hat(bold(beta))),pos=4,cex=1.5)    
+          .plotLabel(paste(letters[k],') ',fnames[j],sep=''),
+                     location='topleft', cex=1.0)   
+        }
+        
+        if(!SAVEPLOTS){
+          readline('95% posterior -- return to continue ')
+        } else {
+          dev.off()
+        }
+      }
+      
     }
-  }
-  
-  
-  #one figure
-  
-  if(SAVEPLOTS)pdf( file=.outFile(outfolder,'betaAll.pdf') ) # start plot
-  
-  npp <- length(which(table(match(xnam,fnames)) > 1))
-  
-  mfrow <- .getPlotLayout(npp)
-  par( mfrow=mfrow, bty='n', oma=oma, mar=c(1,1,1,1), tcl= tcl, mgp=mgp )
-  
-  k <- 0
-  for(j in 1:length(fnames)){
     
-    wc <- which(xnam == fnames[j])
-    if(length(wc) < 2)next
-    
-    k <- k + 1
-    
-    plab <- paste('beta_',xnames[j],'.pdf',sep='')
-    
-    if(length(wc) > 100)wc <- sample(wc,100)
-    
-    mat <- bfSig[,wc]
-    ord <- order(apply(mat,2,mean),decreasing=F)
-    tnam <- vnam[ wc[ord] ]
-    bx   <- boxCol[ match(tnam, snames) ]
-    bb   <- specColor[ match(tnam, snames) ]
-    ry   <- range(mat)
-    ymin <- min(mat) - diff(ry)*.15
-    ymax <- max(mat) + diff(ry)*.15
-    
-    tmp <- .boxplotQuant( mat[,ord],xaxt='n',outline=F,ylim=c(ymin,ymax),
-                          col=bx, border=bb, xaxt='n',lty=1)
-    abline(h=0,lwd=2,col='grey',lty=1)
-    
-    dy <- .05*diff(par()$yaxp[1:2])
-    
-    cext <- .fitText2Fig(tnam,fraction=.9)
-    
-    text((1:length(wc)) - .1,dy + tmp$stats[5,],tnam,srt=70,pos=4,
-         col=bb, cex=cext)
-    
-    pl    <- par('usr')
-    xtext <- pl[1]
-    ytext <- pl[3] + diff(pl[3:4])*.2
-  #  text(xtext, ytext, expression(hat(bold(beta))),pos=4,cex=1.5)    
-    .plotLabel(paste(letters[k],') ',fnames[j],sep=''),
-               location='topleft', cex=1.0)   
-  }
-  
-  if(!SAVEPLOTS){
-    readline('95% posterior -- return to continue ')
-  } else {
-    dev.off()
-  }
-  
   ############################### beta posteriors, traits
   
   if(TRAITS){
@@ -5060,7 +5383,6 @@
       
       wc <- which(xnam == xnames[j])
       if(length(wc) < 2)next
-      
       
       if(SAVEPLOTS)pdf( file=.outFile(outfolder,'traits.pdf') ) # start plot
       
@@ -5125,17 +5447,19 @@
   
   if(!GRIDPLOTS){
     
- #   tmp <- .multivarEmat(chains$bgibbs[,keepBC],covx,snames,
- #                        notOther,nsim=20)
- #   bm  <- tmp$bm
+    clusterIndex <- NULL
+    clusterOrder <- NULL
     
-    clusterDat <- .clusterPlot( dcor = ematrix , ncluster=ncluster, PLOT=F)
-    colCode <- clusterDat$colCode
-    cord    <- rev(clusterDat$corder)
-    dord    <- notOther[!notOther %in% omit][cord]
-    
-    clusterIndex <- clusterDat$clusterIndex
-    clusterOrder <- clusterDat$corder
+    if(S >= 8){
+      
+      clusterDat <- .clusterPlot( dcor = ematrix , ncluster=ncluster, PLOT=F)
+      colCode    <- clusterDat$colCode
+      cord       <- rev(clusterDat$corder)
+      dord       <- notOther[!notOther %in% omit][cord]
+      
+      clusterIndex <- clusterDat$clusterIndex
+      clusterOrder <- clusterDat$corder
+    }
  #   names(clusterOrder) <- names(clusterIndex)
     
  #   tmp <- .multivarEmat(bchains=chains$bgibbs[,keepBC],covx,snames,
@@ -5169,12 +5493,12 @@
   clusterIndex <- tmp$clusterIndex
   clusterOrder <- tmp$corder
   
-  .plotLabel('Data correlation',above=T, cex=1.7)
+  .plotLabel('a) Data correlation',above=T, cex=1.7)
   
   tmp <- .clusterPlot( dcor = ematrix[notOther,notOther] ,main='',cex=.2,
                        ncluster=ncluster, 
                        colCode=colCode, textSize=.5, LABELS = LABELS)
-  .plotLabel('E correlation',above=T, cex=1.7)
+  .plotLabel('b) E correlation',above=T, cex=1.7)
   
   clusterIndex <- cbind( clusterIndex, tmp$clusterIndex )
   clusterOrder <- cbind( clusterOrder, tmp$corder )
@@ -5300,11 +5624,11 @@
     
     rect(xl,yl,SO+xl,SO+yl,col='wheat',border='wheat',lty=2,lwd=2)
     polygon(c(xl,SO+xl,xl),c(yl,yl,SO+yl),col='blue',border='darkblue')
-    rect(1,1,r+1,mk+1,col='blue',border='darkblue')
-    arrows(r/2 + SO/5, mk/2 + 1, r/2 + 7, mk/2 + 1, col='brown',
+    rect(0,yl/10,r,mk+yl/10,col='turquoise',border='brown')
+    arrows(r, yl/20 + mk/3, r + SO/5, yl/20*(mk + 1), col='brown',
            angle=20, lwd=2)
-    text(xl+SO/3,yl+SO/5,bquote(Sigma == .(en)), col='wheat', cex=1.4 )
-    text(r/2 + SO/5, mk/2,
+    text(xl+SO/4,yl+SO/3,bquote(Sigma == .(en)), col='wheat', cex=1.4 )
+    text(r + SO/5, yl/20*(mk + 1),
          paste('Z (',mk,' x ',r,' = ',mk*r,')',sep=''),col='brown',
          cex=1.,pos=4)
     .plotLabel('Dimensions',above=T)
@@ -5424,7 +5748,7 @@
     
     fBetaMu <- output$parameterTables$fBetaMu
     
-    mat1 <- fMat
+    mat1 <- .cov2Cor(fMat)
     mat2 <- fBetaMu
     .clusterWithGrid(mat1, mat2, expand=5, mainLeft=main1, DIST=F,
                      main1=main1, main2 = main2,
@@ -5456,7 +5780,7 @@
                    colCode1 = boxCol[notOther],
                    rowCode=boxCol[notOther],
                    lower1 = T, diag1 = T,lower2 = F, diag2 = F,
-                   slim1=NULL, slim2=NULL)
+                   slim1=NULL, slim2=NULL, horiz1=clusterIndex[,'E'])
   
   if(!SAVEPLOTS){
     readline('E: model-based response to X -- return to continue ')
@@ -5521,7 +5845,7 @@
   }
   
   #################### beta grid
-  if(betaGrid){
+  if(betaGrid & nrow(fBetaMu) > 4){
     
     graphics.off()
     
@@ -5542,7 +5866,8 @@
                      colCode1 = boxCol[notOther],
                      rowCode=boxCol[notOther],
                      lower1 = T, diag1 = T,lower2 = F, diag2 = F,
-                     slim1=NULL, slim2=NULL)
+                     slim1=NULL, slim2=NULL, vert1=clusterIndex[,'E'],
+                     horiz2=clusterIndex[,'E'])
     
     if(!SAVEPLOTS){
       readline('beta ordered by response to X -- return to continue ')
@@ -5601,8 +5926,9 @@
   
   xdata <- ydataCond <- NULL
   tiny  <- 1e-10
+  wHold <- phiHold <- ploHold <- sampleWhold <- NULL
   
-  ng <- output$modelList$ng
+  ng     <- output$modelList$ng
   burnin <- output$modelList$burnin
   
   nsim <- 500
@@ -5613,7 +5939,7 @@
     if(PLOT){
       
       y1 <- output$y
-      y2 <- output$modelSummary$yMu
+      y2 <- output$modelSummary$ypredMu
       if(!is.null(y2plot)){
         y1 <- y1[,y2plot]
         y2 <- y2[,y2plot]
@@ -5634,8 +5960,8 @@
       abline(0,1,lwd=4,col='white')
       abline(0,1,lwd=2,col='grey',lty=2)
     }
-    return(  list( yMu = output$modelSummary$yMu, 
-                   ySe = output$modelSummary$ySd ) )
+    return(  list( ypredMu = output$modelSummary$ypredMu, 
+                   ypredSe = output$modelSummary$ypredSd ) )
   }
   
   S <- SO <- S1 <- ncol(output$y)
@@ -5664,24 +5990,18 @@
   NEWX <- F
   if('xdata' %in% names(newdata))NEWX <- T
   
+  
   effort <- output$effort
-  
-  effortMat <- NULL
-  
-  nxx <- 0
-  if(NEWX)nxx <- nrow(newdata$xdata)
-  
+  effMat <- output$y*0 + 1
   if(!is.null(effort)){
-    effort     <- output$effort
-    if( !is.matrix(effort$values) )effort$values <- matrix(effort$values,ncol=1)
-    if( NEWX & ( nrow(effort$values) != nxx ) ){
-      effort <- NULL
-    } else {
-      effortCols <- effort$columns
-      effortMat  <- matrix(1,n,S)
-      effortMat[,effort$columns] <- effort$values
-    }
   }
+  
+  if('effort' %in% names(newdata)){
+    effort <- newdata$effort
+    effMat <- matrix(1,nrow(newdata$xdata),ncol(output$y))
+    effMat[,effort$columns] <- effort$values
+  }
+  effort <- list(columns = c(1:S), values = effMat)
 
   if(REDUCT){
     N  <- output$otherpar$N
@@ -5718,12 +6038,22 @@
     
     xdata <- newdata$xdata
     COND  <- F
+    nx    <- n <- nrow(newdata$xdata)
     
+    effMat <- matrix(1, nx, S)
+    
+    if( 'effort' %in% names(newdata) ){
+      ev     <- newdata$effort$values
+      effMat <-  matrix(1, nx, S)
+      effMat[,newdata$effort$columns] <- ev
+    }
+    effort <- list(columns = c(1:S), values = effMat)
+
     if( 'ydataCond' %in% names(newdata) )
       stop('supply either xdata or ydataCond, not both')
     
     ydataCond <- NULL
-    n <- nrow(xdata)
+ #   n <- nrow(xdata)
     
     if(length(factorList) > 0){
       
@@ -5738,32 +6068,43 @@
         xdata[[wf]] <- factor( xdata[[wf]], levels = levels(output$xdata[[wo]]) )
         
         attr(xdata[[wf]],'contrasts') <- cc
-    #    attr(xdata[[wf]],'levels')    <- rownames(cc)
-        
-        attr(xdata[[wf]],'reference') <- rownames(cc)[!rownames(cc) %in% colnames(cc)]
+     #   attr(xdata[[wf]],'reference') <- rownames(cc)[!rownames(cc) %in% colnames(cc)]
       }
     }
-    
-    
-    x <- matrix(0,n,Q)
-    y <- matrix(0,n,S)
+  
+    x <- matrix(0,nx,Q)
+    y <- matrix(0,nx,S)
     colnames(x) <- xnames
     colnames(y) <- ynames
     yp <- y
     
- #   xn    <- match(colnames(xdata),xdataNames['original',])
- #   colnames(xdata) <- xdataNames['new',xn]
-    
+    standRows <- output$modelSummar$standRows
+    standMat  <- output$modelSummar$standMat
     
     tmp <- .gjamXY(formula, xdata, yp, typeNames, 
-                   notStandard, checkX = F, 
-                   xscale = xscale)
-    xdata <- tmp$xdata
-    standRows <- tmp$standRows
-    standMat  <- tmp$standMat;    standMu <- tmp$standMu
+                   notStandard, checkX = F, xscale = xscale)
+    
     x  <- tmp$x
-    yp <- x%*%output$parameterTables$betaMu
-    n  <- nrow(x)
+    ws <- which(xscale[1,] != 0)
+    if(length(ws) > 0){
+      xx <- xdata[,colnames(xscale)[ws],drop=F]
+      for(k in 1:length(ws)){
+        x[,ws[k]] <- (xx[,k] - xscale[1,ws[k]])/xscale[2,ws[k]]
+      }
+    }
+
+    yp <- w <- x%*%output$parameterTables$betaMu
+    
+    wca <- which(typeNames == 'CA')
+    if(length(wca) > 0){
+      yp[,wca][yp[,wca] < 0] <- 0
+    }
+    
+    wda <- which(typeNames == 'DA')
+    if(length(wda) > 0){
+      yp[,wda] <- round(yp[,wda]*effMat[,wda],0)
+      yp[,wda][yp[,wda] < 0] <- 0
+    }
 
     ordCols <- which(typeNames == 'OC')
     if(length(ordCols) > 0){
@@ -5777,11 +6118,7 @@
       }
     }
     
-    wcon <- which(!typeNames == 'CON')
-    if(length(wcon) > 0)yp[,wcon][yp[,wcon] < 0] <- 0
-    
     if(length(FCgroups) > 0){
-      
       ntt <- max(FCgroups)
       for(i in 1:ntt){   
         wk      <- which( FCgroups == i )
@@ -5791,20 +6128,23 @@
     }
     
     if(length(CCgroups) > 0){
-      
-      ysum <- rep(1,n)
+      ysum <- rep(1000,n)                   # CC use sum of 1000
       ntt  <- max(CCgroups)
+      if(ntt > 0){
       for(i in 1:ntt){  ## normalize y 
         wk      <- which( CCgroups == i )
         wo      <- which(wk %in% notOther)
         yp[,wk] <- .gjamCompW2Y(yp[,wk], notOther=wo)$ww
+        yp[,wk][yp[,wk] < 0] <- 0
         yp[,wk] <- round( sweep(yp[,wk],1,ysum,'*'), 0) 
+      }
       }
     }
     
     tmp <- .gjamSetup(typeNames, x, yp, breakList=NULL, holdoutN=NULL, 
                       holdoutIndex=NULL,censor=NULL, effort=effort) 
-    w <- tmp$w; z <- tmp$z; yp <- tmp$y; other <- tmp$other
+ #   w <- tmp$w; z <- tmp$z; yp <- tmp$y; 
+    other <- tmp$other
  #   plo      <- tmp$plo; phi <- tmp$phi
     ordCols  <- tmp$ordCols; disCols <- tmp$disCols; compCols <- tmp$compCols 
     minOrd   <- tmp$minOrd;   maxOrd <- tmp$maxOrd;  censorCA <- tmp$censorCA
@@ -5817,15 +6157,20 @@
     if(attr(sampleW,'type') == 'rows')byRow <- T
     indexW <- attr(sampleW,'index')
     
-    tmp <- .gjamSetup(typeNames, x, yp*0, breakList=NULL, holdoutN=NULL, 
-                      holdoutIndex=NULL,censor=NULL, effort=effort) 
-    plo      <- tmp$plo
     
-    phi <- yp*0 + 10000
+ #   tmp <- .gjamSetup(typeNames, x, yp*0, breakList=NULL, holdoutN=NULL, 
+ #                     holdoutIndex=NULL,censor=NULL, effort=effort) 
+ #   plo      <- tmp$plo
+    
+    pmax <- apply(output$y/output$effort$values,2,max) #max w at fitted effort
+    
+    phi  <- 2*matrix(pmax,n,S,byrow=T)                 #max w
+    
     phi[,ordCols]  <- length(ordCols) + 10
-    phi[,disCols]  <- 5*max(yp)
     phi[,compCols] <- 2
-    phi[,catCols]  <- 100
+    phi[,catCols]  <- 10
+    
+    plo <- -phi
     
     byCol <- byRow <- F
     if(attr(sampleW,'type') == 'cols')byCol <- T
@@ -5866,11 +6211,14 @@
     ordCols  <- tmp$ordCols; disCols <- tmp$disCols; compCols <- tmp$compCols 
     minOrd   <- tmp$minOrd;   maxOrd <- tmp$maxOrd;  censorCA <- tmp$censorCA
     censorDA <- tmp$censorDA;   ncut <- ncol(cuts);   corCols <- tmp$corCols
+    effort   <- tmp$effort
     catCols  <- which(attr(typeNames,'CATgroups') > 0)
     sampleW  <- tmp$sampleW
     sampleW[,-condCols] <- 1
     
-
+    
+    standMat <-  output$modelSummary$standMat
+    standRows <- output$modelSummary$standRows
     
     tmp <- .gjamXY(formula, xdata, yp, typeNames, 
                    output$modelList$notStandard, checkX = F, 
@@ -5904,6 +6252,8 @@
   if(length(other) > 0)cdex <- cdex[!cdex %in% other]
   S1   <- length(cdex)
   
+ # yg <- yp <- y
+  
   yg <- yp
   
   FULL <- F
@@ -5912,12 +6262,15 @@
   if(FULL){
     ygibbs <- wgibbs <- matrix(0,nsim,length(yp))
   }
+  
+ # wmax <- ymax <- apply(y,2,max)
+ # wmax <- wmax/effMat
    
-  .updateW <- .wWrapper(REDUCT, x, n, S, effort, corCols, typeNames, 
+  .updateW <- .wWrapper(REDUCT, n, S, effMat, corCols, typeNames, 
                         typeFull, typeCols, 
                         allTypes, holdoutN=0, holdoutIndex=NULL, censor, 
                         censorCA, censorDA, notOther, sampleW, byRow, byCol,
-                        indexW)
+                        indexW, ploHold, phiHold, sampleWhold)
   sigmaerror <- otherpar$sigmaerror
   
   
@@ -5953,7 +6306,7 @@
   covE <- cov( x%*%dCont )  # note that x is standardized
   
   
-  nfact <- length(factorList)
+  nfact <- length(output$modelSummary$factorList)
   eCont <- output$modelSummary$eCont
   frow  <- NULL
   if(nfact > 0){
@@ -6042,8 +6395,8 @@
       phi[,ordCols] <- cutg[cutHi]
     }
     
-    tmp <- .updateW( w, yg, muw, sg, alpha, cutg, plo, phi, 
-                     rndEff=rndEff, sigmaerror )
+    tmp <- .updateW( x, w, yg, muw, sg, alpha, cutg, plo, phi, 
+                     rndEff=rndEff, sigmaerror, wHold )
     w   <- tmp$w
     if( !COND )yg  <- tmp$yp   
       
@@ -6085,9 +6438,7 @@
         mmm[mmm < 0] <- 0
         yg[,ccols]   <- mmm
       } 
-    }
-    
-    
+
     for(k in allTypes){    # predicting from w (not from yg)
       
       wk  <- which(typeCols == k)
@@ -6127,13 +6478,14 @@
         if(typeFull[wk[1]] == 'fracComp') groups <- FCgroups[wk]
         
         tmp <- .gjamWLoopTypes(wo, type = typeFull[wk[1]], yy = yg[,wk,drop=F], 
-                               wp, yp = yg, cutg, 
-                               censor, censorCA, censorDA, effort, groups, 
+                               wp, yp = yg[,wk,drop=F], cutg, 
+                               censor, censorCA, censorDA, effMat[,wk,drop=F], groups, 
                                k, typeCols, notOther, wk = wk )
-        yg[,wk] <- tmp[[2]][,wk]
+        yg[,wk] <- tmp[[2]] #[,wk]
         yg[,wk] <- .censorValues(censor,yg,yg)[,wk]
       }
     }
+  }
     
     if(length(ccols) > 0){
       mmm <- muw[,ccols]
@@ -6141,7 +6493,7 @@
       muw[,ccols] <- mmm
     }
     
-    if(!is.null(effortMat))yg<- yg*effortMat
+  #  if(!is.null(effMat))yg <- yg*effMat
     
     yg[,condCols] <- ydataCond
     
@@ -6256,7 +6608,7 @@
         xy[2,] <- ylimit[1] + .8*xy[2,]*diff(ylimit)/max(xy[2,])
         plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
              xlab='Observed',ylab='Predicted')
-        polygon(xy[1,],xy[2,],border='brown',col='tan')
+        polygon(xy[1,],xy[2,],border='tan',col='wheat')
         
       } else {
         y11 <- mean(y1)
@@ -6265,7 +6617,7 @@
         y11 <- c(0,y00,y00,0,0,y11,y11,0,0)
         plot(x11,y11,col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
              xlab='Observed',ylab='Predicted')
-        polygon(x11,y11,border='brown',col='tan')
+        polygon(x11,y11,border='tan',col='wheat')
       }
       abline(0,1,lty=2,lwd=3,col='brown')
       abline(h = mean(y1),lty=2,lwd=3,col='tan')
@@ -6415,7 +6767,7 @@
 
 .gjamWLoopTypes <- function(wo, type, yy, wp, yp, cutg, censor, 
                             censorCA, censorDA,
-                            effort, groups, k, typeCols, notOther, wk = wo ){
+                            effMat, groups, k, typeCols, notOther, wk = wo ){
   
   if( type == 'continuous')return( list(yy,yp) )   # w = y
   
@@ -6442,15 +6794,15 @@
   if( type == 'discAbun' ){
     yp[yp < 0] <- 0
     if(length(censorDA) > 0) wp[-censorDA] <- yy[-censorDA]
-    if(!is.null(effort)){
-      if(!is.matrix(effort$values)){
-        yp <- yp*effort$values
-      } else {
-        we  <- which(effort$columns %in% wk)
-        wf  <- match(effort$columns[we],wk)
-        yp[,wf] <- yp[,wf]*effort$values[,we]
-      }
-    }
+  #  if(!is.null(effort)){
+  #    if(!is.matrix(effort$values)){
+        yp <- yp*effMat
+  #    } else {
+  #      we  <- which(effort$columns %in% wk)
+  #      wf  <- match(effort$columns[we],wk)
+  #      yp[,wf] <- yp[,wf]*effort$values[,we]
+  #    }
+  #  }
     return( list(wp,yp) )
   }
 
@@ -6465,14 +6817,9 @@
       } else {
         wki <- which( groups == i )
       }
-      nki <- length(wki)
-  #    wko <- wki[wki %in% notOther]
-      
-      wko <- wki
-      
+      nki  <- length(wki)
+      wko  <- wki
       wmax <- apply( yp[,wko],1, which.max) 
- #     w0   <- which( yp[,wko][ cbind(c(1:n),wmax) ] < 0 )
- #     if(length(w0) > 0)wmax[w0] <- nki
       
       yp[,wki] <- 0
       yp[,wki][ cbind(1:n,wmax) ] <- 1
@@ -6498,7 +6845,6 @@
       io <- which(wki %in% wo)
       wc <- .gjamCompW2Y(ww[,wki], notOther=io)$ww
       wp[,wki][wp[,wki] > 0] <- wc[wp[,wki] > 0]
-   #   wp[,ncol(wp)] <- wc[,ncol(wp)]
       
       yp[,wki] <- .gjamCompW2Y(yp[,wki],notOther=io)$ww
       ysum     <- rowSums(yy[,wki])
@@ -6520,7 +6866,7 @@
     if(ntt == 1){
       wki <- wkk
     } else {
-      wki <- which(typeCols == k & groups == i)
+      wki <- which(groups == i)
     }
     
     io <- which(wki %in% wo)
@@ -7538,7 +7884,8 @@ function(cmat,omitCols){
       bins <- sort(unique(bins))
       
       db <- diff(bins)
-      wb <- which( db/diff(range(quantile(obs,c(.1,.9)))) < .02)
+      qo <- quantile(obs,c(.1,.9),na.rm=T)
+      wb <- which( db/diff(range(qo)) < .02)
       wb <- wb[wb != 1]
       if(length(wb) > 0)bins <- bins[-wb]
       
@@ -7566,8 +7913,7 @@ function(cmat,omitCols){
   
   if(is.null(ptcol)){
     ptcol <- 'black'
-    ptcol <- 'grey'
-    if(!is.null(nbin))ptcol <- 'grey'
+ #   if(!is.null(nbin))ptcol <- 'grey'
   }
   if(length(ptcol) == 1)ptcol <- rep(ptcol,length(obs))
   
@@ -7590,16 +7936,18 @@ function(cmat,omitCols){
   
   if(!add){
     if(is.null(ylimit)){
-      if(!LOG)plot(xxx,yyy,col=ptcol,cex=.3,xlab=xlabel,ylab=ylabel)
-      if(LOG) plot(xxx,yyy,col=ptcol,cex=.3,xlab=xlabel,ylab=ylabel,log='xy')
+      if(!LOG)plot(xxx,yyy,col=ptcol,cex=.03,xlab=xlabel,ylab=ylabel)
+      if(LOG) plot(xxx,yyy,col=ptcol,cex=.03,xlab=xlabel,ylab=ylabel,log='xy')
     }
     if(!is.null(ylimit)){
-      if(!LOG)plot(xxx,yyy,col=ptcol,cex=.3,xlab=xlabel,ylab=ylabel,
+      if(!LOG)plot(xxx,yyy,col=ptcol,cex=.03,xlab=xlabel,ylab=ylabel,
                    xlim=xlimit,ylim=ylimit)
-      if(LOG) plot(xxx,yyy,col=ptcol,cex=.3,xlab=xlabel,ylab=ylabel,
+      if(LOG) plot(xxx,yyy,col=ptcol,cex=.03,xlab=xlabel,ylab=ylabel,
                    xlim=xlimit,log='xy',ylim=ylimit)
     }
   }
+  
+  if(POINTS)points(xxx,yyy,pch=16,col=.getColor(ptcol,.5), cex=.5)
   
   if(!is.null(ySE)){
     ylo <- yMean - 1.96*ySE
@@ -7697,8 +8045,6 @@ function(cmat,omitCols){
     if(last)break
   }
   
-  if(POINTS)points(xxx,yyy,col=ptcol)
-  
   invisible( bins )
 }
 
@@ -7746,7 +8092,7 @@ function(cmat,omitCols){
 .predictY2X_nonLinear <- function(xx,yy,bb,ss,priorIV = diag(1e-10,ncol(xx)), 
                                   priorX=matrix(0,ncol(xx)),predCols=c(2:ncol(xx)),
                                   isInt=NULL,intMat=NULL, isFactor=NULL,
-                                  factorList=NULL, contrast = contrast){
+                                  factorList=NULL, contrast = contrast, lox, hix){
   
   #inverse prediction for multivariate nonlinear in x and factors, metropolis
   
@@ -7758,7 +8104,14 @@ function(cmat,omitCols){
   intercept <- xx[,1]
   
   xnew <- xx
-  xnew[,predCols] <- .rMVN(nn,xx[,predCols],diag(.01,length(predCols)))
+  
+  xv <- as.vector(xx[,predCols])
+  nv <- length(xv)
+  lo <- rep(lox[predCols],each=nn)
+  hi <- rep(hix[predCols],each=nn)
+  xnew[,predCols] <- .tnorm(nv,lo,hi,xv,.01)
+  
+ # xnew[,predCols] <- .rMVN(nn,xx[,predCols],diag(.01,length(predCols)))
   
   if(length(isFactor) > 0){          # all factors, main effects
  #   xnew[,isFactor] <- 0
@@ -7767,27 +8120,26 @@ function(cmat,omitCols){
       nf <- length(factorList[[k]]) + 1
       tm <- contrast[[k]][sample(nf,nn,replace=T),]
       xnew[,factorList[[k]]] <- tm
-  
     }
     iFcol <- match(isFactor,colnames(xx))
   }
   
   if(length(intMat) > 0){     # some of the nlin terms interactions?
-    pindex <- unique(as.vector(intMat[,-1,drop=F]))
-    if(length(iFcol) > 0)pindex <- pindex[!pindex %in% iFcol]  #  not factors
-    if(length(pindex) > 1) xnew[,pindex] <- .rMVN(nn,xx[,pindex],diag(.01,length(pindex)))
-    if(length(pindex) == 1)xnew[,pindex] <- rnorm(nn,xx[,pindex],sqrt(.01))
+  #  pindex <- unique(as.vector(intMat[,-1,drop=F]))
+  #  if(length(iFcol) > 0)pindex <- pindex[!pindex %in% iFcol]  #  not factors
+  #  if(length(pindex) > 1)xnew[,pindex] <- .rMVN(nn,xx[,pindex],diag(.01,length(pindex)))
+  #  if(length(pindex) == 1)xnew[,pindex] <- rnorm(nn,xx[,pindex],sqrt(.01))
     xnew[,intMat[,1]] <- xnew[,intMat[,2]]*xnew[,intMat[,3]]
   }
   
-  pnow <- .dMVN(yy,xx%*%bb,smat=ss)
-  pnew <- .dMVN(yy,xnew%*%bb,smat=ss)
+  pnow <- .dMVN(yy,xx%*%bb,smat=ss,log=T)
+  pnew <- .dMVN(yy,xnew%*%bb,smat=ss,log=T)
   
   a  <- exp(pnew - pnow)
-  wa <- which(a == 1)    # rounding error when pr approx 0
-  if(length(wa) > 0){
-    a[a == 1 & pnew < pnow] <- 0
-  }
+ # wa <- which(a == 1)    # rounding error when pr approx 0
+ # if(length(wa) > 0){
+ #   a[a == 1 & pnew < pnow] <- 0
+ # }
     
   z  <- runif(nn,0,1)
   wa <- which(z < a)
@@ -8828,18 +9180,20 @@ function(tname){
        sigmaerror = sigmaerror, RndEff = RndEff)
 } 
 
-.wWrapper <- function(REDUCT, x, n, S, effort, corCols, typeNames, 
+.wWrapper <- function(REDUCT, n, S, effMat, corCols, typeNames, 
                       typeFull, typeCols, 
                       allTypes, holdoutN, holdoutIndex, censor, 
                       censorCA, censorDA, notOther, sampleW, byRow, byCol,
-                      indexW)
+                      indexW, ploHold, phiHold, sampleWhold)
   if(REDUCT){
     
-    function(w, y, muw, sg, alpha, cutg, plo, phi, rndEff, sigmaerror){
+    function(x, w, y, muw, sg, alpha, cutg, plo, phi, rndEff, sigmaerror, wHold){
       
       SC   <- ncol(y)
       scol <- c(1:S)
       muf <- muw + rndEff
+      
+      if(holdoutN > 0)wHold <- w[drop=F,holdoutIndex,]
       
       if(length(corCols) > 0){
         scol <- scol[-corCols]
@@ -8851,32 +9205,41 @@ function(tname){
       mef <- as.vector(muf[,scol])
       w[,scol]  <- matrix( .tnorm(n*SC, as.vector(plo[,scol]), 
                                   as.vector(phi[,scol]),mef,
-                                  sqrt(sigmaerror)),n,SC) # cov scale
+                                  sqrt(sigmaerror)),n,SC)        # cov scale
       yPredict[,scol] <- matrix( rnorm(n*SC,mef,sqrt(sigmaerror)),n,SC)
+      
+      if(holdoutN > 0){
+        wHold[,scol] <- matrix( .tnorm(holdoutN*SC, as.vector(ploHold[,scol]), 
+                                           as.vector(phiHold[,scol]),
+                                           as.vector( muf[drop=F,holdoutIndex,scol] ),
+                                           sqrt(sigmaerror)),holdoutN,SC) 
+      }
+      
       sigvec <- rep(sigmaerror,S)
       
       if(length(corCols) > 0){   # corr scale (spp have different sigmaerror)
         SC     <- length(corCols)
-   #     sigvec <- sqrt( sigmaerror/diag(sg[corCols,corCols]) )
         mef    <- .sqrtRootMatrix(muw[,corCols] + rndEff[,corCols],
                                   sg[corCols,corCols], DIVIDE=T)
-  #      yq[,corCols] <- matrix( rnorm(n*SC, mef,sigvec),
-  #                              n,SC, byrow=T)
-        
-  #      sigvec <- diag(sigmaerror,SC)
-  #      mef    <- .sqrtRootMatrix(muf[,corCols],sigvec, DIVIDE=T)
         
         mef    <- as.vector(t(mef))
         w[,corCols] <- matrix( .tnorm(n*SC, as.vector(t(plo[,corCols])), 
                                        as.vector(t(phi[,corCols])), mef,1),
                                        n,SC, byrow=T) # cor scale
+        if(holdoutN > 0){
+          wHold[,corCols] <- matrix( .tnorm(holdoutN*SC, as.vector(ploHold[,corCols]), 
+                                             as.vector(phiHold[,corCols]),mef,
+                                             sqrt(sigmaerror)),holdoutN,SC) 
+        }
         yPredict[,corCols] <- matrix( rnorm(n*SC, mef,1),n,SC, byrow=T)
       }
       
+      
       w[sampleW == 0] <- y[sampleW == 0]
-      
-      if(holdoutN > 0)w[holdoutIndex,] <- yPredict[holdoutIndex,]
-      
+      if(holdoutN > 0){
+        wHold[sampleWhold == 0] <- y[holdoutIndex,][sampleWhold == 0]
+      }
+        
       FCgroups  <- attr(typeNames,'FCgroups')
       CCgroups  <- attr(typeNames,'CCgroups')
       CATgroups <- attr(typeNames,'CATgroups')
@@ -8894,6 +9257,8 @@ function(tname){
         if(typeFull[wk[1]] == 'countComp')  groups <- CCgroups[wk]
         if(typeFull[wk[1]] == 'fracComp')   groups <- FCgroups[wk]
         
+        #################
+        
         if( typeFull[wk[1]] == 'categorical' ){
           groups <- CATgroups[wk]
           tmp <- .gjamWcatLoop2(y, ws = wp, mus = muf, sgs = sigvec, 
@@ -8902,26 +9267,54 @@ function(tname){
           wp[,wo] <- tmp$w[,wo]
           plo     <- tmp$plo
           phi     <- tmp$phi
+          
+          if(holdoutN > 0){
+            wHold[,wo] <- .gjamWcatLoop2(y, ws = w[, wk, drop=F], 
+                                                  mus = muf, sgs = sigvec, 
+                                                  notOther = notOther, ploHold, phiHold, 
+                                                  groups = CATgroups, REDUCT=T) 
+          }
         }
         
         tmp <- .gjamWLoopTypes(wo, typeFull[wk[1]], y[,wk,drop=F], wp, yp, cutg, 
-                               censor, censorCA, censorDA, effort, groups, k,
-                               typeCols, notOther, wk = wk)
+                               censor, censorCA, censorDA, effMat[,wk,drop=F], 
+                               groups, k, typeCols, notOther, wk = wk)
         w[,wk]        <- tmp[[1]]
         yPredict[,wk] <- tmp[[2]]
+        
+        if(holdoutN > 0){
+          wp  <- wHold[,wk,drop=F]
+          yp  <- yPredict[holdoutIndex, wk, drop=F]
+   #       eff <- list(columns = effort$columns, 
+   #                   values = effort$values[drop=F,holdoutIndex, ])
+          tmp <- .gjamWLoopTypes(wo, typeFull[wk[1]], y[holdoutIndex,wk,drop=F], wp, 
+                                 yp, cutg, censor, censorCA, censorDA, 
+                                 effMat[holdoutIndex, wk, drop=F], 
+                                 groups, k, typeCols, notOther, wk = wk)
+          wHold[,wk] <- tmp[[1]]
+          yPredict[holdoutIndex,wk] <- tmp[[2]]
+        }
         yPredict[,wk] <- .censorValues(censor,y,yPredict)[,wk]
       }
-      if(holdoutN > 0)w[holdoutIndex,] <- yPredict[holdoutIndex,]
       
-      list(w = w, yp = yPredict, plo = plo, phi = phi )
+      
+      w[sampleW == 0] <- y[sampleW == 0]
+      if(holdoutN > 0){
+        wHold[sampleWhold == 0] <- y[holdoutIndex,][sampleWhold == 0]
+      }
+      
+      list(w = w, wHold = wHold, yp = yPredict, plo = plo, phi = phi )
     }
     
   } else {
     
-    function(w, y, muw, sg, alpha, cutg, plo, phi, rndEff  = NULL, 
-             sigmaerror = NULL){
+    function(x, w, y, muw, sg, alpha, cutg, plo, phi, rndEff  = NULL, 
+             sigmaerror = NULL, wHold){
       
       w[sampleW == 0] <- y[sampleW == 0]
+      if(holdoutN > 0){
+        wHold[sampleWhold == 0] <- y[holdoutIndex,][sampleWhold == 0]
+      }
       
       yPredict <- w*0
       yPredict[,notOther] <- .rMVN(n,muw[,notOther],sg[notOther,notOther])
@@ -8954,24 +9347,56 @@ function(tname){
                                 sgs = css, wkk = wu, 
                                 lo = plo[,notOther], hi = phi[,notOther],
                                 sampW = sampleW[,notOther], indexW)[,wu]
+          
+          if(holdoutN > 0){
+            wHold[,wo] <- .gjamWLoop(ws = wss[drop=F,holdoutIndex,notOther], 
+                                              mus = muss[drop=F,holdoutIndex,notOther], 
+                                              sgs = css, wkk = wu, 
+                                              lo = ploHold[drop=F,,notOther], 
+                                              hi = phiHold[drop=F,,notOther],
+                                              sampW = sampleWhold[,notOther], 
+                                              indexW)[,wu] 
+          }
         }
+        
         if( !typeFull[wk[1]] %in% c('presenceAbsence','ordinal','categorical') ){
+          
           wp[,wo] <- .gjamWLoop(w[,notOther], mus = muw[,notOther], 
                                 sgs = sg[notOther,notOther], wkk = wu,
                                 plo[,notOther],phi[,notOther],
                                 sampleW[,notOther], indexW, byCol, byRow)[,wu]
+          if(holdoutN > 0){
+            wHold[,wo] <- .gjamWLoop(w[drop=F,holdoutIndex,notOther], 
+                                              mus = muw[drop=F,holdoutIndex,notOther], 
+                                              sgs = sg[notOther,notOther], wkk = wu,
+                                              ploHold[drop=F,,notOther],
+                                              phiHold[drop=F,,notOther],
+                                              sampleWhold[,notOther], indexW=wo, 
+                                              byCol, byRow)[,wu] 
+          }
         }
+        
         if( typeFull[wk[1]] == 'categorical' ){
           wss[,notOther] <- .sqrtRootMatrix(w[,notOther],sg[notOther,notOther],
                                             DIVIDE=T)
-          tmp <- .gjamWcatLoop2(y, ws = wss, mus = muss, sgs = css, 
+          yy  <- y
+          if(holdoutN > 0)yy[holdoutIndex,] <- yp[holdoutIndex,]
+          tmp <- .gjamWcatLoop2(yy, ws = wss, mus = muss, sgs = css, 
                                 notOther, plo, phi, groups = CATgroups)
           wp      <- tmp$w[,wk]
           plo     <- tmp$plo
           phi     <- tmp$phi
+          
+          if(holdoutN > 0){
+            wHold[,wk] <- .gjamWcatLoop2(yp[drop=F,holdoutIndex,],
+                                                  wss[drop=F,holdoutIndex,], 
+                                                  muss[drop=F,holdoutIndex,], sgs = css, 
+                                                  notOther, ploHold, phiHold, 
+                                                  groups = CATgroups)$w[,wk]
+          }
         }
         
-        if(holdoutN > 0)wp[holdoutIndex,wo] <- yp[holdoutIndex,wo]
+    #    if(holdoutN > 0)wp[holdoutIndex,wo] <- yp[holdoutIndex,wo]
         
         groups <- NULL
         if(typeFull[wk[1]] == 'countComp')  groups <- CCgroups[wk]
@@ -8980,16 +9405,30 @@ function(tname){
         
         tmp <- .gjamWLoopTypes(wo, type = typeFull[wk[1]], yy = y[,wk,drop=F], 
                                wp, yp, cutg, 
-                               censor, censorCA, censorDA, effort, groups, 
+                               censor, censorCA, censorDA, effMat[,wk,drop=F], groups, 
                                k, typeCols, notOther, wk = wk )
         w[,wk]        <- tmp[[1]]
+        
+        if(holdoutN > 0){
+          w[holdoutIndex,wk] <- .gjamWLoopTypes(wo, type = typeFull[wk[1]], 
+                                                 yy = yp[holdoutIndex,,drop=F], 
+                                                 wp[drop=F,holdoutIndex,],
+                                                 yp[drop=F,holdoutIndex,], cutg, 
+                                                 censor, censorCA, censorDA, 
+                                                 effMat[drop=F,holdoutIndex,], groups, 
+                                                 k, typeCols, notOther, wk = wk )[[1]]
+        }
+        
         yPredict[,wk] <- tmp[[2]]
         yPredict[,wk] <- .censorValues(censor, y, yPredict)[,wk]
       }
       
-      if(holdoutN > 0)w[holdoutIndex,] <- ypred[holdoutIndex,]
+      w[sampleW == 0] <- y[sampleW == 0]
+      if(holdoutN > 0){
+        wHold[sampleWhold == 0] <- y[holdoutIndex,][sampleWhold == 0]
+      }
       
-      list(w = w, yp = yPredict, plo = plo, phi = phi )
+      list(w = w, wHold = wHold, yp = yPredict, plo = plo, phi = phi )
     }
   }
 
@@ -9205,13 +9644,25 @@ function(tname){
   
   for(j in 1:ncol(ordTraits)){
     
-    mm  <- matrix(0,n,max(ordTraits[,j]) )
-    jj  <- as.vector( matrix(ordTraits[,j],n,s,byrow=T) )
-    tmp <- .byRcpp(as.vector(yWt),ii,jj,mm,mm,fun='sum')
+    PLUS <- F
     
+    oj  <- ordTraits[,j]
+    if(min(oj) < 0)stop('ordinal scores cannot be < 0')
+    if(min(oj) == 0){
+      PLUS <- T
+      oj   <- oj + 1
+    }
+    
+    rj  <- range(oj, na.rm=T)
+    mm  <- matrix(0, n, rj[2] )
+    jj  <- as.vector( matrix(oj, n, s, byrow=T) )
+    tmp <- .byRcpp(as.vector(yWt),ii,jj,mm,mm,fun='sum')
     w0  <- which( apply(tmp,1,sum) == 0)
     
-    omat[,j] <- apply(tmp,1,which.max)
+    m1  <- apply(tmp,1,which.max)
+    m1  <- (rj[1]:rj[2])[m1]
+    if(PLUS)m1 <- m1 - 1
+    omat[,j] <- m1
     if(length(w0) > 0)omat[w0,j] <- 0
   }
   colnames(omat) <- colnames(ordTraits)
@@ -9337,10 +9788,15 @@ function(tname){
       
       xkk  <- xx[[kk]]            #rare type is reference
       xtab <- table(xkk)
+      if(length(xtab) == 1){
+        stop( paste('CAT trait _',names(xx)[kk],
+                    '_ has only 1 level, need at least 2',sep='') )
+      }
+        
       xtab <- xtab[order(xtab)]
       xkk  <- relevel(xkk,ref=names(xtab)[1])
       cont <- contrasts(xkk,contrasts = F)
-      xk   <- cont[xkk,]
+      xk   <- cont[xkk,,drop=F]
       tmp  <- ywt[,t2y]%*%xk[t2y,]
       
       if(ncol(tmp) == 2){

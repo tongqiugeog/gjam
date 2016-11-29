@@ -47,45 +47,46 @@ for(j in 1:length(xbox)){
   if(j == 1)text(tmp$mu[1],tmp$mu[2],
                  expression(paste(italic(E),'[',bold(U),']')))
   if(j == 2)text(tmp$mu[1],tmp$mu[2],expression(bold(X)))
-  if(j == 3)text(tmp$mu[1],tmp$mu[2],expression(hat(Alpha)))
+  if(j == 3)text(tmp$mu[1],tmp$mu[2],expression(hat(A)))
 }
 
-## ----input, eval = T-----------------------------------------------------
-library(gjam)
-library(repmis)
-source_data("https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True")
+## ----input, eval = F-----------------------------------------------------
+#  library(gjam)
+#  library(repmis)
+#  source_data("https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True")
+#  
+#  xdata <- forestTraits$xdata                    # n X Q
+#  types <- forestTraits$traitTypes               # 12 trait types
+#  sbyt  <- forestTraits$specByTrait              # S X 12
+#  pbys  <- gjamReZero(forestTraits$treesDeZero)  # n X S
+#  pbys  <- gjamTrimY(pbys,5)$y                   # at least 5 plots
+#  head(sbyt)
 
-xdata <- forestTraits$xdata                    # n X Q
-types <- forestTraits$traitTypes               # 12 trait types 
-sbyt  <- forestTraits$specByTrait              # S X 12
-pbys  <- gjamReZero(forestTraits$treesDeZero)  # n X S
-head(sbyt)
+## ----input2, eval = F----------------------------------------------------
+#  table(sbyt$leaf)      # four levels
+#  
+#  table(sbyt$xylem)     # diffuse/tracheid vs ring-porous
+#  
+#  table(sbyt$repro)     # two levels
 
-## ----input2, eval = T----------------------------------------------------
-table(sbyt$leaf)      # four levels
-
-table(sbyt$xylem)     # diffuse/tracheid vs ring-porous
-
-table(sbyt$repro)     # two levels
-
-## ----input3, eval = T----------------------------------------------------
-tmp         <- gjamSpec2Trait(pbys, sbyt, types)
-tTypes      <- tmp$traitTypes                  # M = 15 values
-u           <- tmp$plotByCWM                   # n X M
-censor      <- tmp$censor                      # (0, 1) censoring, two-level CAT's
-specByTrait <- tmp$specByTrait                 # S X M
-M           <- ncol(u)
-n           <- nrow(u)
-types                                          # 12 individual trait types
-cbind(colnames(u),tTypes)                      # M trait names and types
+## ----input3, eval = F----------------------------------------------------
+#  tmp         <- gjamSpec2Trait(pbys, sbyt, types)
+#  tTypes      <- tmp$traitTypes                  # M = 15 values
+#  u           <- tmp$plotByCWM                   # n X M
+#  censor      <- tmp$censor                      # (0, 1) censoring, two-level CAT's
+#  specByTrait <- tmp$specByTrait                 # S X M
+#  M           <- ncol(u)
+#  n           <- nrow(u)
+#  types                                          # 12 individual trait types
+#  cbind(colnames(u),tTypes)                      # M trait names and types
 
 ## ----setup2, eval = F----------------------------------------------------
 #  censorList    <- gjamCensorY(values = c(0,1), intervals = cbind( c(-Inf,0),c(1,Inf) ),
 #                               y = u, whichcol = c(13:14))$censor
 
-## ----xdata, eval = T, echo = FALSE---------------------------------------
-head(xdata)
-table(xdata$soil)
+## ----xdata, eval = F, echo = FALSE---------------------------------------
+#  head(xdata)
+#  table(xdata$soil)
 
 ## ----soil, eval = F------------------------------------------------------
 #  xdata$soil <- relevel(xdata$soil,'reference')
@@ -134,7 +135,7 @@ table(xdata$soil)
 #  gjamIIEplot(fit1, response = 'leafbroaddeciduous',
 #              effectMu = c('main','int'),
 #              effectSd = c('main','int'), legLoc = 'bottomleft',
-#              ylim=c(-.31,.3)
+#              ylim=c(-.31,.3))
 #  title('deciduous')
 #  gjamIIEplot(fit1, response = 'leafneedleevergreen',
 #              effectMu = c('main','int'),
@@ -209,7 +210,7 @@ for(j in 1:length(xbox)){
                  expression(paste(italic(E),'[',bold(W),']')))
   if(j == 2)text(tmp$mu[1],tmp$mu[2],expression(bold(T)))
   if(j == 3)text(tmp$mu[1],tmp$mu[2],expression(bold(X)))
-  if(j == 4)text(tmp$mu[1],tmp$mu[2],expression(hat(beta)))
+  if(j == 4)text(tmp$mu[1],tmp$mu[2],expression(hat(Beta)))
   if(j == 5)text(tmp$mu[1],tmp$mu[2],expression(bold(T)))
 }
 
@@ -232,7 +233,7 @@ for(j in 1:length(xbox)){
 #  
 #  par(family = '')
 #  pl  <- list(width=4, height=4, corLines=F, SMALLPLOTS=F,GRIDPLOTS=T,
-#                    specColor = specColor, ncluster = 8)
+#                    specColor = specColor, ncluster = 6)
 #  fit <- gjamPlot(output = out, pl)
 
 ## ----trait pars, eval = F------------------------------------------------

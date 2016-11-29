@@ -90,7 +90,7 @@ for(j in 1:length(xbox)){
   if(j == 1)text(tmp$mu[1],tmp$mu[2],
                  expression(paste(italic(E),'[',bold(U),']')))
   if(j == 2)text(tmp$mu[1],tmp$mu[2],expression(bold(X)))
-  if(j == 3)text(tmp$mu[1],tmp$mu[2],expression(hat(Alpha)))
+  if(j == 3)text(tmp$mu[1],tmp$mu[2],expression(hat(A)))
 }
 ```
 **Figure 1. Trait response model** showing the sizes of matrices for a sample containing *n* observations, *M* traits, and *Q* predictors.
@@ -100,7 +100,7 @@ for(j in 1:length(xbox)){
 
 Data contained in `forestTraits` include predictors in `xdata`, a character vector of data types in `traitTypes`, and `treesDeZero`, which contains tree biomass in de-zeroed format.  Here the data are loaded, re-zeroed with `gjamReZero`:
 
-```{r input, eval = T}
+```{r input, eval = F}
 library(gjam)
 library(repmis)
 source_data("https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True")
@@ -109,12 +109,13 @@ xdata <- forestTraits$xdata                    # n X Q
 types <- forestTraits$traitTypes               # 12 trait types 
 sbyt  <- forestTraits$specByTrait              # S X 12
 pbys  <- gjamReZero(forestTraits$treesDeZero)  # n X S
+pbys  <- gjamTrimY(pbys,5)$y                   # at least 5 plots
 head(sbyt)
 ```
 
 The matrix `pbys` holds biomass values for species, rounded off to reduce storage. The first six columns of `sbyt` are centered and standardized.  The three ordinal classes are integer values, but do not represent an absolute scale (see below).  The three groups of categorical variables in `data.frame sbyt` have different numbers of levels shown here:
 
-```{r input2, eval = T}
+```{r input2, eval = F}
 table(sbyt$leaf)      # four levels
 
 table(sbyt$xylem)     # diffuse/tracheid vs ring-porous
@@ -124,7 +125,7 @@ table(sbyt$repro)     # two levels
 
 These species traits are translated into community-weighted means and modes (CWMM) by the function `gjamSpec2Trait`:
 
-```{r input3, eval = T}
+```{r input3, eval = F}
 tmp         <- gjamSpec2Trait(pbys, sbyt, types)
 tTypes      <- tmp$traitTypes                  # M = 15 values
 u           <- tmp$plotByCWM                   # n X M
@@ -185,7 +186,7 @@ Multilevel factors in `xdata` require some interpretation.  If you have not work
 
 In `xdata` the variable `soil` is a multilevel factor, which includes soil types that are both common and have potentially strong effects.  Here are the first few rows of `xdata`:  
 
-```{r xdata, eval = T, echo = FALSE}
+```{r xdata, eval = F, echo = FALSE}
 head(xdata)
 table(xdata$soil)
 ```
@@ -229,7 +230,7 @@ pl  <- list(GRIDPLOTS = TRUE, plotAllY = T, specColor = specColor,
 fit <- gjamPlot(output = out, plotPars = pl)
 ```
 
-The model fit is interpreted in the same way as other gjam analyses. Note that `specColor` is used to highlight different types of traits in the posterior plots for values in coefficient matrix $\boldsymbol{\alpha}$.  Parameter estimates are contained in `modelSummary`,
+The model fit is interpreted in the same way as other gjam analyses. Note that `specColor` is used to highlight different types of traits in the posterior plots for values in coefficient matrix $\mathbf{A}$.  Parameter estimates are contained in `modelSummary`,
 
 ```{r fit pars, eval = F}
 out$modelSummary$betaMu      # Q by M coefficient matrix alpha
@@ -281,7 +282,7 @@ fit2 <- gjamIIE(output = out, xvector = xwetdry)
 gjamIIEplot(fit1, response = 'leafbroaddeciduous', 
             effectMu = c('main','int'), 
             effectSd = c('main','int'), legLoc = 'bottomleft',
-            ylim=c(-.31,.3)
+            ylim=c(-.31,.3))
 title('deciduous')
 gjamIIEplot(fit1, response = 'leafneedleevergreen', 
             effectMu = c('main','int'), 
@@ -328,17 +329,17 @@ There will always be indirect effects, because they come through the covariance 
 
 The PTM models species abundance data, then predicts traits.  This approach has a number of advantages over TRM discussed in Clark (2016).  The response is the $n \times S$ matrix $\mathbf{Y}$, which could be counts, biomass, and so forth.  On the latent scale the observation is represented by a composition vector,
 
-$$E\big[\mathbf{y}_{i}] = \boldsymbol{\beta'}\mathbf{x}_{i}$$
+$$E\big[\mathbf{y}_{i}] = \mathbf{B'}\mathbf{x}_{i}$$
 
-$$\mathbf{w}_{i} \sim MVN(\boldsymbol{\beta'}\mathbf{x}_{i},\Sigma)$$
+$$\mathbf{w}_{i} \sim MVN(\mathbf{B'}\mathbf{x}_{i},\Sigma)$$
 
 where $\boldsymbol{\beta}$ is the $Q \times S$ matrix of coefficients, and $\boldsymbol{\Sigma}$ is the $S \times S$ residual covariance.  A predictive distribution on the trait scale is obtained as a *variable change*,
 
-$$\boldsymbol{\alpha} = \boldsymbol{\beta}\mathbf{T}$$
+$$\mathbf{A} = \mathbf{B}\mathbf{T}$$
 $$\boldsymbol{\Omega} = \mathbf{T'}\boldsymbol{\Sigma}\mathbf{T}$$
 $$\mathbf{u}_{i} = \mathbf{T'}\mathbf{w}_{i}$$
 
-where $\mathbf{T}$ is a $S \times M$ matrix of trait values for each species, $\boldsymbol{\alpha}$ is the $Q \times M$ matrix of coefficients, and $\boldsymbol{\Omega}$ is the $M \times M$ residual covariance (Fig. 2).  
+where $\mathbf{T}$ is a $S \times M$ matrix of trait values for each species, $\mathbf{A}$ is the $Q \times M$ matrix of coefficients, and $\boldsymbol{\Omega}$ is the $M \times M$ residual covariance (Fig. 2).  
 
 ```{r traitBox2, fig.width = 6.7, fig.height = 4, echo = FALSE}
 par(bty='n', bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0), 
@@ -381,7 +382,7 @@ for(j in 1:length(xbox)){
                  expression(paste(italic(E),'[',bold(W),']')))
   if(j == 2)text(tmp$mu[1],tmp$mu[2],expression(bold(T)))
   if(j == 3)text(tmp$mu[1],tmp$mu[2],expression(bold(X)))
-  if(j == 4)text(tmp$mu[1],tmp$mu[2],expression(hat(beta)))
+  if(j == 4)text(tmp$mu[1],tmp$mu[2],expression(hat(Beta)))
   if(j == 5)text(tmp$mu[1],tmp$mu[2],expression(bold(T)))
 }
 ```
@@ -408,7 +409,7 @@ specColor[wb] <- 'darkgreen'
          
 par(family = '')
 pl  <- list(width=4, height=4, corLines=F, SMALLPLOTS=F,GRIDPLOTS=T,
-                  specColor = specColor, ncluster = 8) 
+                  specColor = specColor, ncluster = 6) 
 fit <- gjamPlot(output = out, pl)
 ```
 
@@ -435,6 +436,21 @@ fit$eComs[,1:4]
 ```
 
 Additional quantities can be predicted from the output using the MCMC output in the list `out$chains`.
+
+##Things to check in PTM
+
+When using `gjam` in predictive trait mode remember the following:
+
+1. `typeNames` for `ydata` data should be composition, either `CC` or `FC`
+
+2. `nrow(plotByTrait)` must equal `nrow(ydata)`
+
+3. `ncol(plotByTrait)` must equal `length(traitTypes)`
+
+4. `ncol(plotByTrait)` must equal `length(traitTypes)`
+
+5. `rownames(specByTrait)` must match `colnames(ydata)`
+    
 
 ##Acknowledgements
 

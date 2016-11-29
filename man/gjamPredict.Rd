@@ -23,6 +23,8 @@ Conditional prediction on a new set of \code{y} values is done if \code{newdata}
  
 Alternatively, the \code{list newdata} can include a new version of \code{xdata} for out-of-sample prediction.  The version of \code{xdata} passed in \code{newdata} has the columns with the same names and variable types as \code{xdata} passed to \code{\link{gjamGibbs}}.  Note that factor levels must also match those included when fitting the model.  All columns in \code{y} will be predicted out-of-sample.  
 
+For count composition data the effort (total count) is 1000.
+
 Because there is no out-of-sample effort for \code{'CC'} data, values are predicted on the [0, 1] scale.
 
 See examples below.
@@ -51,14 +53,14 @@ title('full sample')
 
 # out-of-sample prediction
 xdata     <- f$xdata[1:20,]
-xdata[,3] <- mean(f$xdata[,3])    # mean for x[,3]
+xdata[,3] <- mean(f$xdata[,3])     # mean for x[,3]
 xdata[,2] <- seq(-2,2,length=20)   # gradient x[,2]
 newdata   <- list(xdata = xdata, nsim = 50 )
 p1 <- gjamPredict(out, newdata = newdata)
 
-# plus/minus 1 prediction SE
+# plus/minus 1 prediction SE, default effort = 1000
 x2   <- p1$x[,2]
-plot(x2, p1$sdList$yMu[,1],type='l',lwd=2, ylim=c(0,.3), xlab='x2',
+plot(x2, p1$sdList$yMu[,1],type='l',lwd=2, ylim=c(0,300), xlab='x2',
      ylab = 'Predicted')
 lines(x2, p1$sdList$yMu[,1] + p1$sdList$yPe[,1], lty=2)
 lines(x2, p1$sdList$yMu[,1] - p1$sdList$yPe[,1], lty=2)

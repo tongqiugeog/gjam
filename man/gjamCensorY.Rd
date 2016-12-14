@@ -26,7 +26,7 @@
   those falling within \code{intervals}.}
 
   \item{\code{censor}}{list containing \code{$columns} that are censored and
-  \code{$partition}, a matrix with 3 rows used in \code{\link{gjamGibbs}} 
+  \code{$partition}, a matrix with 3 rows used in \code{\link{gjam}} 
   and \code{\link{gjamPlot}}, one column per censor interval.  Rows 
   are values, followed by lower and upper bounds.}
 }
@@ -47,7 +47,7 @@ y[,cc] <- tmp$y                                              # replace columns
 censor <- list('CA' = tmp$censor)
 
 ml     <- list(ng = 100, burnin = 20, censor = censor, typeNames = f$typeNames)
-output <- gjamGibbs(f$formula, xdata = f$xdata, ydata = f$ydata, 
+output <- gjam(f$formula, xdata = f$xdata, ydata = f$ydata, 
                         modelList = ml)
 #repeat with ng = 2000, burnin = 500, then:
 pl  <- list(trueValues = f$trueValues, width = 3, height = 3)           
@@ -61,12 +61,12 @@ Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Gen
 }
 \seealso{
   \code{\link{gjamSimData}} simulates data
-  \code{\link{gjamGibbs}} analyzes data
+  \code{\link{gjam}} analyzes data
   
   A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+website 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

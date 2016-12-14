@@ -49,12 +49,12 @@ Generalized joint attribute modeling for biodiversity analysis: Median-zero, mul
 }
 \seealso{
   \code{\link{gjamSimData}} simulates data
-  \code{\link{gjamGibbs}} analyzes data
+  \code{\link{gjam}} analyzes data
   
   A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+web site 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

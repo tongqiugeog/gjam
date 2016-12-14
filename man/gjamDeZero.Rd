@@ -49,6 +49,6 @@ Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Gen
   
   \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+website 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

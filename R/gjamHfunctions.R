@@ -1,4 +1,5 @@
 
+
 .combineFacLevels <- function(xfactor,fname=NULL, aname = 'reference', 
                               vminF=1){
   tmp <- as.character(xfactor)
@@ -136,6 +137,7 @@
   xnew[ cbind(c(1:n),match(values,all)) ] <- xnew[ cbind(c(1:n),match(values,all)) ] + 1
   xnew
 }
+
 .appendMatrix <- function(m1,m2,fill=NA,SORT=F,asNumbers=F){  
   
   # matches matrices by column names
@@ -199,6 +201,7 @@
    out[(n1+1):nr,mat2] <- m2
    out
 }
+
 .byIndex <- function(xx,INDICES,FUN,coerce=F,...){  
   
 #INDICES is list, each same length as  x
@@ -2750,9 +2753,7 @@
   list(pl = pl, ph = ph)
 }
 
-.gjam <- function(formula, xdata, ydata, modelList) UseMethod(".gjam")
-
-.gjam.default <- function(formula, xdata, ydata, modelList){
+.gjam <- function(formula, xdata, ydata, modelList){
   
   holdoutN      <-  0
   holdoutIndex  <- numeric(0)
@@ -2896,6 +2897,7 @@
   ratio <- 1/5
   Smax  <- floor( 2*n*ratio - 1 )
   Nmax  <- min( floor( c(S*n*ratio/3 , n/2)) )    # r  = 3
+  if(Nmax > 50)Nmax <- 50
   
   OVERRIDE <- F
   if( 'REDUCT' %in% names(modelSummary) ){
@@ -3788,14 +3790,12 @@
   all$call <- match.call()
   all <- all[ sort(names(all)) ]
   
-  class(all) <- ".gjam"
-  
- # .print.gjam(all)
+  class(all) <- "gjam"
   
   all
 }
-
-summary..gjam <- function(object,...){
+ 
+summary.gjam <- function(object,...){
   
   beta   <- object$parameterTables$betaMu
   oo <- grep('other',colnames(beta))
@@ -3853,7 +3853,7 @@ summary..gjam <- function(object,...){
   invisible(res) 
 }
 
-print..gjam <- function(x, ...){
+print.gjam <- function(x, ...){
   
   cat("Call:\n")
   print(x$call)
@@ -6123,7 +6123,7 @@ print..gjam <- function(x, ...){
       for(i in 1:ntt){   
         wk      <- which( FCgroups == i )
         wo      <- which(wk %in% notOther)
-        yp[,wk] <- .gjamCompW2Y(yp[,wk], notOther=wo)$ww
+        yp[,wk] <- .gjamCompW2Y(yp[,wk,drop=F], notOther=wo)$ww
       }
     }
     
@@ -6134,7 +6134,7 @@ print..gjam <- function(x, ...){
       for(i in 1:ntt){  ## normalize y 
         wk      <- which( CCgroups == i )
         wo      <- which(wk %in% notOther)
-        yp[,wk] <- .gjamCompW2Y(yp[,wk], notOther=wo)$ww
+        yp[,wk] <- .gjamCompW2Y(yp[,wk,drop=F], notOther=wo)$ww
         yp[,wk][yp[,wk] < 0] <- 0
         yp[,wk] <- round( sweep(yp[,wk],1,ysum,'*'), 0) 
       }
@@ -6843,12 +6843,12 @@ print..gjam <- function(x, ...){
       }
       
       io <- which(wki %in% wo)
-      wc <- .gjamCompW2Y(ww[,wki], notOther=io)$ww
+      wc <- .gjamCompW2Y(ww[,wki,drop=F], notOther=io)$ww
       wp[,wki][wp[,wki] > 0] <- wc[wp[,wki] > 0]
       
-      yp[,wki] <- .gjamCompW2Y(yp[,wki],notOther=io)$ww
-      ysum     <- rowSums(yy[,wki])
-      yp[,wki] <- round( sweep(yp[,wki],1,ysum,'*'), 0) 
+      yp[,wki] <- .gjamCompW2Y(yp[,wki,drop=F],notOther=io)$ww
+      ysum     <- rowSums(yy[,wki,drop=F])
+      yp[,wki] <- round( sweep(yp[,wki,drop=F],1,ysum,'*'), 0) 
     }
     return( list(wp,yp) )
   }
@@ -6870,7 +6870,7 @@ print..gjam <- function(x, ...){
     }
     
     io <- which(wki %in% wo)
-    yp[,wki] <- .gjamCompW2Y(yp[,wki],notOther=io)$ww
+    yp[,wki] <- .gjamCompW2Y(yp[,wki,drop=F],notOther=io)$ww
   }
   return( list(wp,yp) )
 }
@@ -7351,7 +7351,7 @@ print..gjam <- function(x, ...){
  # pgPrior <- c(9000, 278)
   
   n  <- nrow(ww)
-  W  <- rowSums(ww[,notOther])
+  W  <- rowSums(ww[,notOther,drop=F])
   wh <- which(W > pg)
   other <- c(1:ncol(ww))[-notOther]
   
@@ -7360,7 +7360,7 @@ print..gjam <- function(x, ...){
     ww[wh,]  <- ww[wh,]*contract        
   }
   
-  ww[,other] <- 1 - rowSums(ww[,notOther])
+  ww[,other] <- 1 - rowSums(ww[,notOther,drop=F])
   
 #  pg <- rbeta(1,pgPrior[1] + n - length(wh),pgPrior[2] + length(wh) )
   
@@ -9287,6 +9287,11 @@ function(tname){
           yp  <- yPredict[holdoutIndex, wk, drop=F]
    #       eff <- list(columns = effort$columns, 
    #                   values = effort$values[drop=F,holdoutIndex, ])
+          
+          
+          
+          
+          
           tmp <- .gjamWLoopTypes(wo, typeFull[wk[1]], y[holdoutIndex,wk,drop=F], wp, 
                                  yp, cutg, censor, censorCA, censorDA, 
                                  effMat[holdoutIndex, wk, drop=F], 

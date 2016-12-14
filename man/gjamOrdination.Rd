@@ -9,7 +9,7 @@
                  PLOT=T, method = 'PCA')
 }
 \arguments{
-  \item{output}{fitted object from \code{\link{gjamGibbs}}.}
+  \item{output}{object of \code{\link{class}} "gjam".}
 
   \item{specLabs}{\code{character vector} of variable names in \code{colnames(output$y)}.}
   
@@ -34,7 +34,7 @@
 \examples{
 f      <- gjamSimData(S = 30, typeNames = 'CA') 
 ml     <- list(ng = 30, burnin = 5, typeNames = f$typeNames, holdoutN = 10)
-output <- gjamGibbs(f$formula, f$xdata, f$ydata, modelList = ml)
+output <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 ePCA   <- gjamOrdination(output, PLOT=FALSE)
 eNMDS  <- gjamOrdination(output, PLOT=FALSE, method='NMDS')
 }
@@ -47,12 +47,12 @@ James S Clark, \email{jimclark@duke.edu}
 Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
 }
 \seealso{
-\code{\link{gjamGibbs}} fits the data
+\code{\link{gjam}} fits the data
 
 A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+website 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

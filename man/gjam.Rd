@@ -1,8 +1,7 @@
-\name{gjamGibbs}
-\alias{gjamGibbs}
-\alias{.gjam.default}
-\alias{print..gjam}
-\alias{summary..gjam}
+\name{gjam}
+\alias{gjam}
+\alias{print.gjam}
+\alias{summary.gjam}
 \title{Gibbs sampler for gjam data}
 \description{
   Analyzes joint attribute data (e.g., species abundance) with Gibbs sampling.  
@@ -10,13 +9,11 @@
   Gibbs sampling that can be plotted by \code{\link{gjamPlot}}.
 }
 \usage{
-  gjamGibbs(formula, xdata, ydata, modelList)
+  gjam(formula, xdata, ydata, modelList)
   
-  \method{.gjam}{default}(formula, xdata, ydata, modelList)
+  \method{print}{gjam}(x, ...)
   
-  \method{print}{.gjam}(x, ...)
-  
-  \method{summary}{.gjam}(object, ...)
+  \method{summary}{gjam}(object, ...)
 }
 \arguments{
   \item{formula}{R formula for model, e.g., \code{~ x1 + x2}.}
@@ -27,18 +24,19 @@
 
   \item{modelList}{\code{list} specifying inputs, including \code{ng} (number of Gibbs steps), \code{burnin}, and \code{typeNames}. Can include number of holdouts for out-of-sample prediction, \code{holdoutN}.  See \bold{Details}.}
   
-  \item{x}{\code{list} fitted by \code{gjamGibbs}.}
+  \item{x}{object of \code{\link{gjam}}.}
   
-  \item{object}{\code{list} fitted by \code{gjamGibbs}.}
+  \item{object}{currently, also an object of \code{\link{gjam}}.}
   
   \item{...}{further arguments not used here.}
 }
 
 \details{
 
+
 Note that \code{formula} begins with \code{~}, not \code{y ~}.  The response matrix is passed in the form of a \code{n} by \code{S} matrix or \code{data.frame} \code{ydata}, passed as a separate argument.  
   
-  Both predictors in \code{xdata} and responses \code{ydata} can include missing values as \code{NA}. Factors in \code{xdata} should be declared using \code{factor}.   For computational stability variables that are not factors are standardized by mean and variance, then transformed back to original scales in \code{output}.  To retain a variable in its original scale during computation include it in the character string \code{notStandard} as part of the \code{list modelList}. (example shown in the \code{vignette} on traits).  
+Both predictors in \code{xdata} and responses \code{ydata} can include missing values as \code{NA}. Factors in \code{xdata} should be declared using \code{factor}.   For computational stability variables that are not factors are standardized by mean and variance, then transformed back to original scales in \code{output}.  To retain a variable in its original scale during computation include it in the character string \code{notStandard} as part of the \code{list modelList}. (example shown in the \code{vignette} on traits).  
   
   
 \code{modelList} has these defaults and provides these options:
@@ -79,6 +77,9 @@ More detailed vignettes can be obtained with:
 }
 
 \value{
+
+Returns an object of \code{\link{class}} "gjam", which is a list containing the following components:
+
   \item{breakMat}{partition matrix.}
   
   \item{censor}{\code{list}, see \code{gjamCensor}. }
@@ -170,7 +171,7 @@ More detailed vignettes can be obtained with:
 types  <- c('DA','DA','OC','OC','OC','OC','CC','CC','CC','CC','CC','CA','CA','PA','PA')         
 f      <- gjamSimData(S = length(types), typeNames = types)
 ml     <- list(ng = 50, burnin = 5, typeNames = f$typeNames)
-out    <- gjamGibbs(f$formula, f$xdata, f$ydata, modelList = ml)
+out    <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 
 # repeat with ng = 5000, burnin = 500, then plot data:
 pl  <- list(trueValues = f$trueValues)
@@ -182,7 +183,7 @@ n   <- 1000
 eff <- list( columns = 1:S, values = round(runif(n,.5,5),1) )
 f   <- gjamSimData(n, S, typeNames='DA', effort=eff)
 ml  <- list(ng = 50, burnin = 5, typeNames = f$typeNames, effort = eff)
-out <- gjamGibbs(f$formula, f$xdata, f$ydata, modelList = ml)
+out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 summary(out)
 
 # repeat with ng = 2000, burnin = 500, then plot data:
@@ -202,6 +203,6 @@ A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+website 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

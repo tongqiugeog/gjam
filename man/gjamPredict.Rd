@@ -8,7 +8,7 @@
   gjamPredict(output, newdata = NULL, y2plot = NULL, ylim = NULL)
 }
 \arguments{
-  \item{output}{fitted object from \code{\link{gjamGibbs}}.}
+  \item{output}{object of \code{\link{class}} "gjam".}
 
   \item{newdata}{a \code{list} of data for prediction, see \bold{Details}.}
   
@@ -21,7 +21,7 @@
  
 Conditional prediction on a new set of \code{y} values is done if \code{newdata} includes the \code{matrix ycondData}, which holds columns to condition on.  \code{ycondData} must be a \code{matrix} and have column names matching those in \code{y} that it will replace.  \code{ycondData} must have at least one column, but fewer than \code{ncol(y)} columns.  Columns not included in \code{ycondData} will be predicted conditionally.
  
-Alternatively, the \code{list newdata} can include a new version of \code{xdata} for out-of-sample prediction.  The version of \code{xdata} passed in \code{newdata} has the columns with the same names and variable types as \code{xdata} passed to \code{\link{gjamGibbs}}.  Note that factor levels must also match those included when fitting the model.  All columns in \code{y} will be predicted out-of-sample.  
+Alternatively, the \code{list newdata} can include a new version of \code{xdata} for out-of-sample prediction.  The version of \code{xdata} passed in \code{newdata} has the columns with the same names and variable types as \code{xdata} passed to \code{\link{gjam}}.  Note that factor levels must also match those included when fitting the model.  All columns in \code{y} will be predicted out-of-sample.  
 
 For count composition data the effort (total count) is 1000.
 
@@ -44,7 +44,7 @@ See examples below.
 S   <- 10
 f   <- gjamSimData(n = 200, S = S, Q = 3, typeNames = 'CC') 
 ml  <- list(ng = 50, burnin = 5, typeNames = f$typeNames, holdoutN = 10)
-out <- gjamGibbs(f$formula, f$xdata, f$ydata, modelList = ml)
+out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 
 # predict data
 par(mfrow=c(1,3),bty='n')             
@@ -98,6 +98,6 @@ A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+web site 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

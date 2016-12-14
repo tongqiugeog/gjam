@@ -2,7 +2,7 @@
 \alias{gjamIIE}
 \title{Indirect effects and interactions for gjam data}
 \description{
-  Evaluates direct, indirect, and interactions from a \code{\link{gjamGibbs}} object.  Returns a \code{list} of objects that can be plotted by \code{\link{gjamIIEplot}}.
+  Evaluates direct, indirect, and interactions from a \code{\link{gjam}} object.  Returns a \code{list} of objects that can be plotted by \code{\link{gjamIIEplot}}.
 }
 \usage{
   gjamIIE(output, xvector, MEAN = T, keepNames = NULL, omitY = NULL, 
@@ -10,7 +10,7 @@
           
 }
 \arguments{
-  \item{output}{fitted object from \code{gjamGibbs}.}
+  \item{output}{object of \code{\link{class}} inheriting from "gjam".}
 
   \item{xvector}{vector of predictor values, with names, corresponding to columns in \code{output$x}.}
 
@@ -35,7 +35,7 @@ If \code{sdScaleX = T} effects are standandardized from the Y/X to Y scale.  Thi
 \examples{
 sim <- gjamSimData(S = 12, Q = 5, typeNames = 'CA')
 ml  <- list(ng = 50, burnin = 5, typeNames = sim$typeNames)
-out <- gjamGibbs(sim$formula, sim$xdata, sim$ydata, modelList = ml)
+out <- gjam(sim$formula, sim$xdata, sim$ydata, modelList = ml)
 
 xvector <- colMeans(out$x)  #predict at mean values for data
 xvector[1] <- 1
@@ -58,6 +58,6 @@ A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+web site 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

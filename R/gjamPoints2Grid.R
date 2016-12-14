@@ -5,6 +5,16 @@ gjamPoints2Grid <- function(specs, xy, nxy = NULL, dxy = NULL,
   
   dx <- dy <- nx <- ny <- NULL
   
+  wna <- which(is.na(xy),arr.ind=T)
+  if(length(wna) > 0){
+    wna <- unique(wna[,1])
+  }
+  wna <- c(wna,which(is.na(specs)))
+  if(length(wna) > 0){
+    specs <- specs[-wna]
+    xy    <- xy[-wna,]
+  }
+  
   if(length(nxy) == 1) nx <- ny <- nxy
   if(length(dxy) == 1) dx <- dy <- dxy
   if(is.null(nxy) & is.null(dxy) & is.null(predGrid)){
@@ -15,7 +25,7 @@ gjamPoints2Grid <- function(specs, xy, nxy = NULL, dxy = NULL,
   
   if(length(specs) != nrow(xy))stop('specs must have length = nrow(xy)')
   
-  mr <- apply( apply(xy,2,range), 2, diff )
+  mr <- apply( apply(xy,2,range, na.rm=T), 2, diff )
   
   if(!is.null(dxy)){
     if(mr[1] < (3*dx) | mr[2] < (3*dy))stop('dxy too small')

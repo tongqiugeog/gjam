@@ -2,7 +2,7 @@
 \alias{gjamSpec2Trait}
 \title{Ecological traits for gjam analysis}
 \description{
-  Constructs community-weighted mean-mode (CWMM) trait matrix for analysis with \code{\link{gjamGibbs}} for \code{n} observations, \code{S} species, \code{P} traits, and \code{M} total trait levels.
+  Constructs community-weighted mean-mode (CWMM) trait matrix for analysis with \code{\link{gjam}} for \code{n} observations, \code{S} species, \code{P} traits, and \code{M} total trait levels.
 }
 \usage{
   gjamSpec2Trait(pbys, sbyt, tTypes)
@@ -44,7 +44,7 @@ Clark, J.S. 2016. Why species tell us more about traits than traits tell us abou
 Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
 }
 \seealso{
-\code{\link{gjamGibbs}}, \code{\link{gjamCensorY}}
+\code{\link{gjam}}, \code{\link{gjamCensorY}}
 }
 \examples{
 \dontrun{
@@ -65,7 +65,7 @@ censor <- tmp$censor
 xdata$soil <- relevel(xdata$soil,'reference')   # reference class
 
 ml  <- list(ng=2000, burnin=500, typeNames = tTypes, censor = censor)
-out <- gjamGibbs(~ temp + stdage + deficit, xdata, ydata = traity, modelList = ml)
+out <- gjam(~ temp + stdage + deficit, xdata, ydata = traity, modelList = ml)
 pl  <- list(SMALLPLOTS=F)           
 gjamPlot(output = out, plotPars = pl)         
 }

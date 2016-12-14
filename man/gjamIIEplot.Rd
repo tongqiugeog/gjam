@@ -33,7 +33,7 @@ For factors, effects are plotted relative to the mean over all factor levels.
 \examples{
 sim <- gjamSimData(S = 10, Q = 6, typeNames = 'OC')
 ml  <- list(ng = 50, burnin = 5, typeNames = sim$typeNames)
-out <- gjamGibbs(sim$formula, sim$xdata, sim$ydata, modelList = ml)
+out <- gjam(sim$formula, sim$xdata, sim$ydata, modelList = ml)
 
 xvector <- colMeans(out$x)  #predict at mean values for data
 xvector[1] <- 1
@@ -56,6 +56,6 @@ A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+web site 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

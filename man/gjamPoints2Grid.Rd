@@ -2,7 +2,7 @@
 \alias{gjamPoints2Grid}
 \title{Incidence point pattern to grid counts}
 \description{
-  From point pattern data in (x, y) generates counts on a lattice supplied by the user or specified by lattice size or density.  For analysis in \code{\link{gjamGibbs} as counts (known effort) or count composition (unknown effort) data}.
+  From point pattern data in (x, y) generates counts on a lattice supplied by the user or specified by lattice size or density.  For analysis in \code{\link{gjam} as counts (known effort) or count composition (unknown effort) data}.
 }
 \usage{
   gjamPoints2Grid(specs, xy, nxy = NULL, dxy = NULL, 
@@ -35,7 +35,7 @@ For incidence data with species names \code{specs} and locations \code{(x, y)} c
 
 A prediction grid \code{predGrid} would be passed when counts by locations of known effort are required or where multiple groups should be assign to the same lattice points.
 
-The returned \code{gridBySpec} can be analyzed in \code{\link{gjamGibbs}} with known effort as count data \code{"DA"} or with unknown effort as count composition data \code{"CC"}.
+The returned \code{gridBySpec} can be analyzed in \code{\link{gjam}} with known effort as count data \code{"DA"} or with unknown effort as count composition data \code{"CC"}.
   
 }
 \examples{
@@ -66,7 +66,7 @@ James S Clark, \email{jimclark@duke.edu}
 Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
 }
 \seealso{
-\code{\link{gjamGibbs}}
+\code{\link{gjam}}
 A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}

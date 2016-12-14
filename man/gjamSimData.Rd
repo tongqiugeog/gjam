@@ -2,7 +2,7 @@
 \alias{gjamSimData}
 \title{Simulated data for gjam analysis}
 \description{
-  Simulates data for analysis by \code{\link{gjamGibbs}}.
+  Simulates data for analysis by \code{\link{gjam}}.
 }
 \usage{
   gjamSimData(n = 1000, S = 10, Q = 5, x = NULL, nmiss = 0, typeNames, effort = NULL)
@@ -34,7 +34,7 @@
   
     \item{ydata}{\code{data.frame} for the simulated response}
     
-    \item{y}{response as a  \code{n} by \code{S} \code{matrix} as assembled in \code{\link{gjamGibbs}}.}
+    \item{y}{response as a  \code{n} by \code{S} \code{matrix} as assembled in \code{\link{gjam}}.}
   
     \item{w}{\code{n} by \code{S} latent states}
   
@@ -51,8 +51,7 @@
   
 }
 \details{
-  Generates simulated data and parameters for analysis by \code{\link{gjamGibbs}}.  Because both
-  parameters and data are stochastic, not all simulations will give good results.   
+  Generates simulated data and parameters for analysis by \code{\link{gjam}}.  Because both parameters and data are stochastic, not all simulations will give good results.   
   
   \code{typeNames} can be '\code{PA}' (presenceAbsence), '\code{CA}'  
   (continuous), '\code{DA}' (discrete),  '\code{FC}' (fractional composition),
@@ -65,7 +64,7 @@
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+website 'http://sites.nicholas.duke.edu/clarklab/code/'.
 
 }
 \author{
@@ -75,7 +74,7 @@ James S Clark, \email{jimclark@duke.edu}
 Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
 }
 \seealso{
-\code{\link{gjamGibbs}}
+\code{\link{gjam}}
 }
 \examples{
 ## ordinal data, show true parameter values

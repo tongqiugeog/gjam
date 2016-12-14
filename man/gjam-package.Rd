@@ -1,8 +1,9 @@
 \name{gjam-package}
 \alias{gjam-package}
-\alias{gjam}
 \alias{GJAM}
 \docType{package}
+\concept{ecology}
+\concept{microbiome}
 \concept{multivariate regression}
 \concept{hierarchical Bayes}
 \concept{Gibbs sampling}
@@ -22,8 +23,8 @@
   \tabular{ll}{
   Package: \tab gjam\cr
   Type: \tab Package\cr
-  Version: \tab 2.1\cr
-  Date: \tab 2015-12-21\cr
+  Version: \tab 2.1.1\cr
+  Date: \tab 2016-12-14\cr
   License: \tab GPL (>= 2)\cr
   URL: \tab http://sites.nicholas.duke.edu/clarklab/code/\cr
   }
@@ -38,14 +39,13 @@ gjam can be used to model ecological trait data, where species traits are transl
 
 Posterior simulation is done by Gibbs sampling.  Analysis is done by these functions:
 
+\code{\link{gjam}} fits model with Gibbs sampling.
 
 \code{\link{gjamSimData}} simulates data for analysis by \code{gjamGibbs}.
 
 \code{\link{gjamCensorY}} defines censored values and intervals.
 
 \code{\link{gjamTrimY}} trims the response matrix and aggregates rare types.
-
-\code{\link{gjamGibbs}} fits model with Gibbs sampling.
 
 \code{\link{gjamPlot}} plots output from \code{gjamGibbs}.
 
@@ -74,18 +74,18 @@ Posterior simulation is done by Gibbs sampling.  Analysis is done by these funct
   Author: James S Clark, \email{jimclark@duke.edu}, Daniel Taylor-Rodriquez
 }
 \references{
-  Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
 
-  Clark, J.S. 2016. Why species tell more about traits than traits tell us about species: Predictive models.  Ecology 97, 1979-1993.
+Clark, J.S. 2016. Why species tell more about traits than traits tell us about species: Predictive models.  Ecology 97, 1979-1993.
   
-  Taylor-Rodriguez, D., K. Kaufeld, E. M. Schliep, J. S. Clark, and A. E. Gelfand. 2016.  Joint species distribution modeling: dimension eduction using Dirichlet processes.  Bayesian Analysis, in press.
+Taylor-Rodriguez, D., K. Kaufeld, E. M. Schliep, J. S. Clark, and A. E. Gelfand. 2016.  Joint species distribution modeling: dimension eduction using Dirichlet processes.  Bayesian Analysis, in press.
 }
 \keyword{ package }
 \seealso{
+  \code{\link{gjam}}, 
   \code{\link{gjamSimData}}, 
   \code{\link{gjamCensorY}}, 
   \code{\link{gjamTrimY}}, 
-  \code{\link{gjamGibbs}}, 
   \code{\link{gjamPredict}}, 
   \code{\link{gjamSpec2Trait}}, 
   \code{\link{gjamPlot}},
@@ -96,5 +96,4 @@ Posterior simulation is done by Gibbs sampling.  Analysis is done by these funct
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }

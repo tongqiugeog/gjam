@@ -3,13 +3,13 @@
 \title{Plot gjam analysis}
 \description{
   Constructs plots of posterior distributions, predictive distributions, 
-  and additional analysis from output of \code{\link{gjamGibbs}}.
+  and additional analysis from output of \code{\link{gjam}}.
 }
 \usage{
   gjamPlot(output, plotPars)
 }
 \arguments{
-  \item{output}{\code{list} created by \code{\link{gjamGibbs}}}
+  \item{output}{object of \code{\link{class}} "gjam"}
   
   \item{plotPars}{\code{list} having default values described in \bold{Details}}
 }
@@ -47,7 +47,7 @@
   
     \code{PLOTX = T} \tab plot inverse predicted \code{x}.\cr
     
-    \code{PREDICTX = T} \tab inverse prediction of \code{x}; does not work if \code{PREDICTX = F} in \code{link{gjamGibbs}}.\cr
+    \code{PREDICTX = T} \tab inverse prediction of \code{x}; does not work if \code{PREDICTX = F} in \code{link{gjam}}.\cr
   
     \code{ncluster} \tab number of clusters to highlight in 
     cluster diagrams, default based on \code{S}.\cr
@@ -95,7 +95,7 @@ Box and whisker plots bound 0.68 and 0.95 credible and predictive intervals.
 ## ordinal data
 f   <- gjamSimData(S = 15, Q = 3, typeNames = 'OC') 
 ml  <- list(ng = 50, burnin = 5, typeNames = f$typeNames, holdoutN = 10)
-out <- gjamGibbs(f$formula, f$xdata, f$ydata, modelList = ml)
+out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 
 # repeat with ng = 2000, burnin = 500, then plot data here:
 pl  <- list(trueValues = f$trueValues, width=3, height=2)
@@ -108,11 +108,11 @@ James S Clark, \email{jimclark@duke.edu}
 Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
 }
 \seealso{
-\code{\link{gjamGibbs}}
+\code{\link{gjam}}
 A more detailed vignette is can be obtained with:
 
 \code{browseVignettes('gjam')}
 
-The manual and data are available at 'http://sites.nicholas.duke.edu/clarklab/code/'.
+website 'http://sites.nicholas.duke.edu/clarklab/code/'.
 }
 

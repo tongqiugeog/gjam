@@ -40,9 +40,6 @@
   
   \tabular{ll}{
   
-    \code{sigOnly = T} \tab plot distributions only for parameters having 
-    credible intervals that do not contain zero. \cr
-  
     \code{PLOTY = T} \tab plot predicted \code{y}.\cr
   
     \code{PLOTX = T} \tab plot inverse predicted \code{x}.\cr
@@ -52,17 +49,13 @@
     \code{ncluster} \tab number of clusters to highlight in 
     cluster diagrams, default based on \code{S}.\cr
   
-    \code{corLines = T} \tab draw grid lines on grid plots of R and E.\cr
-    
-    \code{sdScaleY} \tab standardize coefficients by \code{sigma}. \cr
+    \code{CORLINES = T} \tab draw grid lines on grid plots of R and E.\cr
   
     \code{cex = 1} \tab text size for grid plots, see \code{\link{par}}.\cr
   
-    \code{betaGrid = T} \tab draw grid of beta coefficients.\cr
+    \code{BETAGRID = T} \tab draw grid of beta coefficients.\cr
   
-    \code{plotAllY = F} \tab an individual plot for each column in \code{y}.\cr
-    
-    \code{specLabs = T} \tab species names included on cluster and grid plots.\cr
+    \code{PLOTALLY = F} \tab an individual plot for each column in \code{y}.\cr
     
     \code{SMALLPLOTS = T} \tab avoids plot margin error on some devices, better appearance if \code{FALSE}.\cr
     
@@ -92,20 +85,22 @@ Box and whisker plots bound 0.68 and 0.95 credible and predictive intervals.
   
 }
 \examples{
+\dontrun{
 ## ordinal data
 f   <- gjamSimData(S = 15, Q = 3, typeNames = 'OC') 
-ml  <- list(ng = 50, burnin = 5, typeNames = f$typeNames, holdoutN = 10)
+ml  <- list(ng = 2000, burnin = 500, typeNames = f$typeNames, holdoutN = 10)
 out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 
 # repeat with ng = 2000, burnin = 500, then plot data here:
 pl  <- list(trueValues = f$trueValues, width=3, height=2)
 fit <- gjamPlot(output = out, plotPars = pl)
 }
+}
 \author{
 James S Clark, \email{jimclark@duke.edu}
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
 }
 \seealso{
 \code{\link{gjam}}

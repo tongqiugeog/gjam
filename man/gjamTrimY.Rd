@@ -44,8 +44,8 @@ tail(colnames(y))    # last column is 'other'
 James S Clark, \email{jimclark@duke.edu}
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. (in review) 
-Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017. 
+Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data. Ecological Monographs 87, 34-56.
 }
 \seealso{
   \code{\link{gjamSimData}} simulates data

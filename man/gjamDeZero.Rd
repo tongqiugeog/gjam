@@ -2,7 +2,7 @@
 \alias{gjamDeZero}
 \title{Compress (de-zero) gjam data}
 \description{
-  Returns a de-zeroed version of \code{matrix ymat} with objects needed to re-zero it.
+  Returns a de-zeroed (sparse matrix) version of \code{matrix ymat} with objects needed to re-zero it.
 }
 \usage{
   gjamDeZero(ymat)
@@ -29,7 +29,7 @@ Many abundance data sets are mostly zeros.  \code{\link{gjamDeZero}} extacts non
 \examples{
 \dontrun{
 library(repmis)
-source_data("https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True")
+source_data("https://github.com/jimclarkatduke/gjam/blob/master/fungEnd.RData?raw=True")
 
 ymat <- gjamReZero(fungEnd$yDeZero)  # OTUs stored without zeros
 length(fungEnd$yDeZero$yvec)         # size of stored version
@@ -42,7 +42,7 @@ length(yDeZero$yvec)                 # recover de-zeroed vector
 James S Clark, \email{jimclark@duke.edu}
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
 }
 \seealso{
   \code{\link{gjamReZero}} to recover \code{ymat}

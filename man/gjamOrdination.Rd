@@ -44,7 +44,7 @@ eNMDS  <- gjamOrdination(output, PLOT=FALSE, method='NMDS')
 James S Clark, \email{jimclark@duke.edu}
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
 }
 \seealso{
 \code{\link{gjam}} fits the data

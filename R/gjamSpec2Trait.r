@@ -13,6 +13,6 @@ gjamSpec2Trait <- function(pbys, sbyt, tTypes){
     stop( 'length(tTypes) must equal ncol(sbyt)' )
   }
   
-  .spec2Trait(pbys = pbys, sbyt = sbyt, tTypes = tTypes)
+  .spec2Trait(pbys, sbyt, tTypes)
 }
                 

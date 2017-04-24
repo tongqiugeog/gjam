@@ -1,5 +1,5 @@
 
-gjamCensorY <- function(values,intervals,y,whichcol=c(1:ncol(y))){     
+gjamCensorY <- function(values, intervals, y, type='CA', whichcol=c(1:ncol(y))){     
   
   #values    - in data set that are censored
   #intervals - matrix with 2 rows for lower and upper bounds for intervals
@@ -15,6 +15,8 @@ gjamCensorY <- function(values,intervals,y,whichcol=c(1:ncol(y))){
   for(k in 1:length(values)){
     yc[yc > intervals[1,k] & yc <= intervals[2,k]] <- values[k]  # censored data
   }
+  censor <- list(censor)
+  names(censor) <- type
   
   list(censor = censor, y = yc)
 }

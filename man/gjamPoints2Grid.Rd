@@ -40,7 +40,7 @@ The returned \code{gridBySpec} can be analyzed in \code{\link{gjam}} with known 
 }
 \examples{
 ## random data
-n  <- 200
+n  <- 100
 s  <- sample( letters[1:3], n, replace = TRUE)
 xy <- cbind( rnorm(n,0,.2), rnorm(n,10,2) )
 
@@ -63,7 +63,7 @@ text(h$predGrid[,1], h$predGrid[,2], rowSums(h$gridBySpec), col='blue')
 James S Clark, \email{jimclark@duke.edu}
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
 }
 \seealso{
 \code{\link{gjam}}

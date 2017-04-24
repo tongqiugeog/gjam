@@ -7,12 +7,9 @@ citEntry(entry = "Article",
               person('Bijan','Seyednasrollah'),
               person('Phillip','Turner'), 
               person('Stacy','Zhang') ),
-  year = "2016",
-  journal = 'in press',
+  year = "2017",
+  journal = 'Ecological Monographs',
   url = "http://sites.nicholas.duke.edu/clarklab/code/",
-  textVersion  = paste("Clark, J.S., D. Nemergut, B. Seyednasrollah, 
-          P. Turner, and S. Zhang (2016).",
-          "Generalized joint attribute modeling for biodiversity 
-           analysis, Median-zero, multivariate, multifarious data. Ecological Monographs",
-          "in press")
+  textVersion  = paste("Clark, J.S., D. Nemergut, B. Seyednasrollah,  P. Turner, and S. Zhang (2017).","Generalized joint attribute modeling for biodiversity analysis, Median-zero, multivariate, multifarious data. Ecological Monographs",
+          "87, 34-56")
   )

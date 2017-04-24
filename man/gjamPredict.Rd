@@ -41,7 +41,7 @@ See examples below.
  
 }
 \examples{
-S   <- 10
+S   <- 5
 f   <- gjamSimData(n = 200, S = S, Q = 3, typeNames = 'CC') 
 ml  <- list(ng = 50, burnin = 5, typeNames = f$typeNames, holdoutN = 10)
 out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
@@ -71,7 +71,7 @@ lines(x2, p1$piList$yHi[,1], lty=3)
 title('SE and prediction, Sp 1')
 
 # conditional prediction
-ydataCond <- out$y[,1,drop=FALSE]*0          #set first column to zero
+ydataCond <- out$inputs$y[,1,drop=FALSE]*0          #set first column to zero
 newdata   <- list(ydataCond = ydataCond, nsim=50)
 p0        <- gjamPredict(output = out, newdata = newdata)
 
@@ -79,8 +79,8 @@ ydataCond <- ydataCond + 20                  #first column is 20
 newdata   <- list(ydataCond = ydataCond, nsim=50)
 p1        <- gjamPredict(output = out, newdata = newdata)
 
-plot(out$y[,4],p0$sdList$yMu[,4], cex=.4,col='orange'); abline(0,1,lty=2)
-points(out$y[,4],p1$sdList$yMu[,4], cex=.4,col='blue')
+plot(out$inputs$y[,4],p0$sdList$yMu[,4], cex=.4,col='orange'); abline(0,1,lty=2)
+points(out$inputs$y[,4],p1$sdList$yMu[,4], cex=.4,col='blue')
 title('Cond. on 1st Sp')
 }
 
@@ -89,7 +89,7 @@ title('Cond. on 1st Sp')
 James S Clark, \email{jimclark@duke.edu}
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, 87, 34-56.
 }
 \seealso{
 \code{\link{gjamSimData}} simulates data

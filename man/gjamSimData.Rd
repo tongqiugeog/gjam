@@ -71,7 +71,7 @@ website 'http://sites.nicholas.duke.edu/clarklab/code/'.
 James S Clark, \email{jimclark@duke.edu}
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
 }
 \seealso{
 \code{\link{gjam}}
@@ -79,9 +79,9 @@ Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Gen
 \examples{
 ## ordinal data, show true parameter values
 sim <- gjamSimData(S = 5, typeNames = 'OC')  
-sim$ydata[1:5,]
-sim$trueValues$cuts
-sim$trueValues$beta
+sim$ydata[1:5,]                              # example data
+sim$trueValues$cuts                          # simulated partition
+sim$trueValues$beta                          # coefficient matrix
 
 ## continuous data censored at zero, note latent w for obs y = 0
 sim <- gjamSimData(n = 5, S = 5, typeNames = 'CA')  
@@ -94,9 +94,10 @@ sim   <- gjamSimData(n = 10, S = length(types), Q = 4, typeNames = types)
 sim$typeNames
 sim$ydata
                              
-## composition count data
+## composition count data  
 sim <- gjamSimData(n = 10, S = 8, typeNames = 'CC')
-sim$ydata
+totalCount <- rowSums(sim$ydata)
+cbind(sim$ydata, totalCount)  # data with sample effort
 
 ## multiple categorical responses - compare matrix y and data.frqme ydata
 types <- rep('CAT',2)

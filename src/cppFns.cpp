@@ -5,17 +5,17 @@ using namespace Rcpp;
 using namespace arma;
 
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".byRccpCpp")]]
-Rcpp::List byRccpCpp(const int nr, 
+// [[Rcpp::export]]
+Rcpp::List byRccp(const int nr, 
                      const arma::mat frommat,
                      arma::mat totmat, 
                      arma::mat summat, 
                      arma::mat minmat, 
                      arma::mat maxmat){
-  int k, i, j;
+  int i, j;
   double s;
   
-  for(k = 0; k < nr; k++){
+  for(int k = 0; k < nr; k++){
     
     i = frommat(k,0) - 1;
     j = frommat(k,1) - 1;
@@ -37,8 +37,31 @@ Rcpp::List byRccpCpp(const int nr,
 }
 
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".conditionalMVNRcppCpp")]]
-Rcpp::List conditionalMVNRcppCpp(const arma::uvec cdex, 
+// [[Rcpp::export]]
+Rcpp::List byProdRccp(const int nr, 
+                     const arma::mat frommat,
+                     arma::mat totmat,
+                     arma::mat prodmat){
+  int k, i, j;
+  double s;
+  
+  for(k = 0; k < nr; k++){
+    
+    i = frommat(k,0) - 1;
+    j = frommat(k,1) - 1;
+    s = frommat(k,2);
+    totmat(i,j) = totmat(i,j) + 1;
+    prodmat(i,j) = prodmat(i,j) * s;
+    
+  }
+  
+  return Rcpp::List::create(Rcpp::Named("total")=totmat,
+                            Rcpp::Named("prod")=prodmat);
+}
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+Rcpp::List condMVNRcpp(const arma::uvec cdex, 
                                  const arma::uvec gdex, 
                                  const arma::mat xx, arma::mat mu, 
                                  const arma::mat sigma) {
@@ -52,7 +75,8 @@ Rcpp::List conditionalMVNRcppCpp(const arma::uvec cdex,
                             Rcpp::Named("vr")=vr1);
 }
 
-// [[Rcpp::export(name = ".tnorm_cpp")]]
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
 double tnorm_cpp(double lo, double hi, double mu, double sig){
   double q1, q2, z;
   
@@ -65,8 +89,8 @@ double tnorm_cpp(double lo, double hi, double mu, double sig){
 }
 
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".tnormCpp")]]
-double tnormCpp(double lo, double hi, double mu, double sig){
+// [[Rcpp::export]]
+double tnormRcpp(double lo, double hi, double mu, double sig){
   
   double q1, q2, z;
   
@@ -87,14 +111,14 @@ double tnormCpp(double lo, double hi, double mu, double sig){
 }
 
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".any_naCpp")]]
+// [[Rcpp::export]]
 bool any_naCpp(NumericVector x) {
   return is_true(any(is_na(x)));
 }
 
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".tnormMVNmatrixRcppCpp")]]
-arma::mat tnormMVNmatrixRcppCpp(arma::mat avec, arma::mat muvec, 
+// [[Rcpp::export]]
+arma::mat trMVNmatrixRcpp(arma::mat avec, arma::mat muvec, 
                                 arma::mat smat, arma::mat lo,
                                 arma::mat hi, arma::uvec whichSample, 
                                 arma::uvec idxALL){
@@ -104,7 +128,6 @@ arma::mat tnormMVNmatrixRcppCpp(arma::mat avec, arma::mat muvec,
   arma::vec mAs(2);
   int nm = smat.n_rows;
   int nr = muvec.n_rows;
-  int i,k;
   arma::rowvec p1(nm-1);
   arma::mat sin(nm-1, nm-1);
   arma::uvec cid(1);
@@ -112,16 +135,18 @@ arma::mat tnormMVNmatrixRcppCpp(arma::mat avec, arma::mat muvec,
   arma::mat m1(1,1);
   arma::mat s1(1,1);
   double tiny = min(smat.diag())*.0001;
+  int nk = whichSample.n_elem;
   
   arma::mat A(nr, nm); A.fill(NA_REAL);
   arma::umat idxALLm(nm-1, nm);
   
-  for(int j=0; j< nm; j++)
+  for(int j=0; j < nm; j++)
+    
     idxALLm.col(j) = idxALL.elem( find(idxALL != j) );
   
-  for(i = 0; i < nr ; i++){
+  for(int i = 0; i < nr ; i++){
     
-    for(k = 0; k < whichSample.n_elem; k++){
+    for(int k = 0; k < nk; k++){
       
       cindex = whichSample[k]-1;
       
@@ -142,7 +167,7 @@ arma::mat tnormMVNmatrixRcppCpp(arma::mat avec, arma::mat muvec,
       
       double sss = pow(mAs[1],.5);
       
-      avec(i,cindex) = tnormCpp(lo(i,cindex), hi(i,cindex), mAs[0], sss);
+      avec(i,cindex) = tnormRcpp(lo(i,cindex), hi(i,cindex), mAs[0], sss);
       A(i,cindex) = avec(i,cindex);
     
     }
@@ -150,38 +175,32 @@ arma::mat tnormMVNmatrixRcppCpp(arma::mat avec, arma::mat muvec,
   return A;
 }
 
-
-//Sample multivariate normal variates ARMA
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".rmvnormArma")]]
-arma::mat rmvnormArma(int n, arma::vec mu, arma::mat sigma) {
+// [[Rcpp::export]]
+arma::mat rmvnormRcpp(int n, arma::vec mu, arma::mat sigma) {
   int ncols = sigma.n_cols;
   arma::mat Y = randn(n, ncols);
   return arma::repmat(mu, 1, n).t() + Y * chol(sigma);
 }
 
-//Sample matrix normal variates ARMA
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".rmatrixnormArma")]]
-arma::mat rmatrixnormArma(int n, int p, arma::mat M, arma::mat sigmacols, arma::mat sigmarows) {
+// [[Rcpp::export]]
+arma::mat rmatrixnormRcpp(int n, int p, arma::mat M, arma::mat sigmacols, arma::mat sigmarows) {
   arma::mat Y = randn(n, p);
   return M + chol(sigmarows).t()*Y * chol(sigmacols);
 }
 
-//Inverse matrix with arma
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".solveArma")]]
-arma::mat solveArma(arma::mat A) {
+// [[Rcpp::export]]
+arma::mat solveRcpp(arma::mat A) {
   arma::mat AA(A);
   arma::mat Ainv = arma::inv_sympd(AA);
   return Ainv;
 }
 
-//Sample K
-//Inverse matrix with arma
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".obtainpmatKcpp")]]
-arma::mat obtainpmatKcpp(arma::vec pveck, arma::mat Yk, arma::mat Zk, arma::mat Xk,
+// [[Rcpp::export]]
+arma::mat getPmatKRcpp(arma::vec pveck, arma::mat Yk, arma::mat Zk, arma::mat Xk,
                          arma::mat Bk, arma::mat Wk, double sigmasqk) {
   vec pvec = pveck;
   mat Y(Yk);
@@ -202,9 +221,9 @@ arma::mat obtainpmatKcpp(arma::vec pveck, arma::mat Yk, arma::mat Zk, arma::mat 
   mat epmat(q,N);
   vec prdvec(nn);
   
-  for(int i=0;i<q;++i){
+  for(int i = 0; i < q; ++i){
     
-    for(int j=0; j<N; ++j){
+    for(int j = 0; j < N; ++j){
       prdvec = Y.col(i) - X*B.row(i).t() - W*trans(Z.row(j));
       pmat(i,j) = lpvec(j) - (0.5/sigmasq)*dot(prdvec,prdvec);
     }
@@ -217,16 +236,18 @@ arma::mat obtainpmatKcpp(arma::vec pveck, arma::mat Yk, arma::mat Zk, arma::mat 
   
   return epmat;
 }
+
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".rmvnormArma2")]]
+// [[Rcpp::export]]
 arma::mat rmvnormArma2(int n, arma::vec mu, arma::mat sigma) {
   int ncols = sigma.n_cols;
   arma::mat Y = randn(n, ncols);
   return arma::repmat(mu, 1, n).t() + Y * chol(sigma);
 }
+
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".bodyfnZarma")]]
-arma::mat bodyfnZarma(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
+// [[Rcpp::export]]
+arma::mat fnZRcpp(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
                       arma::mat Bk, arma::mat Wk, double sigmasqk, int Nz) {
   vec k = kk;
   mat Y(Yk);
@@ -242,9 +263,9 @@ arma::mat bodyfnZarma(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
   //int q = Y.n_cols;
   int s = 0;
   
-  vec kstar = unique(kk)-1;
+  vec kstar = unique(kk) - 1;
   vec knotstar(N - kstar.size());
-  for(int j=0; j < N; ++j){
+  for(int j = 0; j < N; ++j){
     if(all(kstar != j)){
       knotstar[s] = j;
       s = s+1;
@@ -254,6 +275,7 @@ arma::mat bodyfnZarma(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
   mat Z(N,r);
   mat WtW = W.t()*W;
   mat Dinv = arma::inv_sympd(D);
+  int nkk = knotstar.size();
   
   uvec J;
   int js;
@@ -281,7 +303,7 @@ arma::mat bodyfnZarma(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
     J.reset();
   }
   
-  for(int i=0;i< knotstar.size(); ++i) {
+  for(int i = 0; i < nkk; ++i) {
     Z.row(knotstar(i)) = rmvnormArma2(1,zeros<arma::vec>(r), D);
     //repmat(zeros<arma::vec>(r), 1, 1).t() + randn(1, r) * chol(D);
   }
@@ -290,10 +312,10 @@ arma::mat bodyfnZarma(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
   
   return Z;
 }
-//Matrix Inversion using the Wooburry identity
+
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export(name = ".invWoodburryArma")]]
-arma::mat invWoodburryArma(double sigsq, arma::mat A) {
+// [[Rcpp::export]]
+arma::mat invWbyRcpp(double sigsq, arma::mat A) {
   int s = A.n_rows; 
   int r = A.n_cols; 
   arma::mat Ds = eye<arma::mat>(s,s);

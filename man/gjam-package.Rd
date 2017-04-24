@@ -3,8 +3,9 @@
 \alias{GJAM}
 \docType{package}
 \concept{ecology}
+\concept{Bayesian analysis}
 \concept{microbiome}
-\concept{multivariate regression}
+\concept{multivariate}
 \concept{hierarchical Bayes}
 \concept{Gibbs sampling}
 \concept{dimension reduction}
@@ -12,6 +13,8 @@
 \concept{ecological traits}
 \concept{prediction}
 \concept{ordination}
+\concept{missing data}
+\concept{Tobit regression}
 \title{
   Generalized Joint Attribute Modeling
 }
@@ -23,8 +26,8 @@
   \tabular{ll}{
   Package: \tab gjam\cr
   Type: \tab Package\cr
-  Version: \tab 2.1.1\cr
-  Date: \tab 2016-12-14\cr
+  Version: \tab 2.1.3\cr
+  Date: \tab 2017-4-21\cr
   License: \tab GPL (>= 2)\cr
   URL: \tab http://sites.nicholas.duke.edu/clarklab/code/\cr
   }
@@ -43,11 +46,13 @@ Posterior simulation is done by Gibbs sampling.  Analysis is done by these funct
 
 \code{\link{gjamSimData}} simulates data for analysis by \code{gjamGibbs}.
 
+\code{\link{gjamPriorTemplate}} sets up prior distribution for coefficients.
+
 \code{\link{gjamCensorY}} defines censored values and intervals.
 
 \code{\link{gjamTrimY}} trims the response matrix and aggregates rare types.
 
-\code{\link{gjamPlot}} plots output from \code{gjamGibbs}.
+\code{\link{gjamPlot}} plots output from \code{gjam}.
 
 \code{\link{gjamSpec2Trait}} constructs plot by trait matrix.
 
@@ -74,7 +79,7 @@ Posterior simulation is done by Gibbs sampling.  Analysis is done by these funct
   Author: James S Clark, \email{jimclark@duke.edu}, Daniel Taylor-Rodriquez
 }
 \references{
-Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, in press.
+Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
 
 Clark, J.S. 2016. Why species tell more about traits than traits tell us about species: Predictive models.  Ecology 97, 1979-1993.
   

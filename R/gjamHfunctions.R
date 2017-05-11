@@ -217,13 +217,15 @@
 }
 
 .lambdaPrior <- function(lprior, w, x, tindex, xnames, 
-                         snames, notOther){
+                         snames, other, notOther){
   
   loLambda <- lprior$lo
   hiLambda <- lprior$hi
   lambda   <- (loLambda + hiLambda)/2
   
-  lkeep    <- which(is.finite(loLambda[,notOther]))
+  loLambda[,other] <- hiLambda[,other] <- NA
+  
+  lkeep    <- which(is.finite(loLambda))
   
   timeZero <- NULL
   
@@ -234,11 +236,11 @@
   n  <- nrow(x)
   wz   <- w
   
-  gindex <- kronecker(diag(SS),rep(1,M)) 
+  gindex <- kronecker(diag(S),rep(1,M)) 
   gindex <- gindex[lkeep,]
   
   wg     <- which(gindex == 1,arr.ind=T)
-  wc     <- matrix(rep(1:M,SS*M),SS*M,SS)[lkeep,]
+  wc     <- matrix(rep(1:M,S*M),S*M,S)[lkeep,]
   rowG   <- wc[wg]
   gindex <- cbind(rowG,wg)
   tmp    <- as.vector( t(outer(colnames(lambda)[notOther],
@@ -384,13 +386,14 @@
   sinverse
 }
 
-.fillMissingTimes <- function(xdat, ydat, edata, groups, times, 
+.fillMissingTimes <- function(xdat, ydat, edat, groups, times, 
                               sequences=NULL, fillNA=T, fillTimes=T){
   
   # fill missing times, add initial time for prior
-  # xdat, ydat, edata - x, y, effort
+  # xdat, ydat, edat - x, y, effort
   # fillTimes - insert rows for missing times: integers between "times"
   # fillNA    - fill new rows in ydat with NA; otherwise fitted value
+  # IMPORTANT - groups must uniquely define an 
   
   groupIndex <- xdat[,groups]
   if(is.factor(groupIndex))groupIndex <- as.character(groupIndex)
@@ -428,7 +431,7 @@
   
   xtmp <- xdat[tord,]
   ytmp <- ydat[tord,]
-  etmp <- edata[tord,]
+  etmp <- edat[tord,]
   
   timeIndex  <- xtmp[,'timeIndex']
   groupIndex <- xtmp[,'groupIndex']
@@ -2539,7 +2542,13 @@
     MEDIAN <- F
     nPerBin <- round( n*nk/50,0 )
   } 
-  if(type == 'CC')xlimit[2] <- xlimit[2] + 1
+  if(type == 'CC'){
+    xlimit[2] <- xlimit[2] + 1
+    if(yss <  1){
+      LOG <- T
+      xlimit[1] <- ylimit[1] <- 1
+    }
+  }
   
   if( !is.null(censm) ){
     
@@ -2944,7 +2953,7 @@
           lo <- (yki - .5)/ee          
           hi <- (yki + .5)/ee
           lo[lo < 0]  <- -20/S
-          mu <- (lo + hi)/2
+          mu <- yki/ee
         }
         
         z[,wki] <- yki + 1
@@ -2952,10 +2961,10 @@
         plo[,wki] <- lo
         phi[,wki] <- hi
         
-        tmp <- matrix( .tnorm(nki*n,as.vector(lo),as.vector(hi), mu,sig=5),n,nki )
+        tmp <- matrix( .tnorm(nki*n,as.vector(lo),as.vector(hi), as.vector(mu), sig=5),n,nki )
         
         tt <- tmp
-        if(!wki[1] %in% catCols){
+        if( !wki[1] %in% catCols ){
           tt[tt < 0] <- 0
           tsum <- rowSums(tt)
           tt   <- sweep(tt,1,tsum,'/')
@@ -3153,13 +3162,13 @@
   
   if(fun == 'prod'){
     prodmat <- summat*0 + 1
-    return( byProdRccp(nr,frommat, totmat, prodmat)$prod )
+    return( byProdRcpp(nr,frommat, totmat, prodmat)$prod )
   }
   
   maxmat <- summat*0 - Inf
   minmat <- summat*0 + Inf
   
-  tmp <- byRccp(nr, frommat, totmat, summat, minmat, maxmat)
+  tmp <- byRcpp(nr, frommat, totmat, summat, minmat, maxmat)
   
   if(fun == 'sum')return(tmp$sum)
   if(fun == 'mean'){
@@ -3477,14 +3486,12 @@
   list(N = N, r = r, REDUCT = REDUCT)
 }
 
-.getTimeIndex <- function(timeList, notOther, xdata, x, xl, y, w ){
+.getTimeIndex <- function(timeList, other, notOther, xdata, x, xl, y, w ){
   
   Q <- ncol(x)
+  n <- nrow(x)
   xnames <- colnames(x)
-  
-  n <- nrow(y)
-  
-  snames      <- colnames(y)
+  snames <- colnames(y)
   
   times    <- timeList$times
   if(is.null(times))
@@ -3570,7 +3577,7 @@
     lprior <- timeList$betaPrior
   }
   tmp <- .lambdaPrior(lprior, w, xl, tindex, xnames, 
-                      snames, notOther)
+                      snames, other, notOther)
   Lmat <- tmp$Lmat; loLmat <- tmp$loLmat; hiLmat <- tmp$hiLmat
   wL <- tmp$wL; gindex <- tmp$gindex; Vmat <- tmp$Vmat
   
@@ -3648,8 +3655,11 @@
     if( any(c('DA','CC') %in% typeNames) )
       warning('missing or zero values in effort')
   }
+  effMat[,!typeNames == 'DA'] <- 1
+  effMat[effMat == 0] <- 1
+  effort <- list(columns = effort$columns, values = effMat)
   
-  list(effMat = effMat, effort = effort)
+  effort
 }
 
 .setupFactors <- function(xdata, xnames, factorObject){
@@ -3791,6 +3801,10 @@
   
   for(k in 1:length(modelList))assign( names(modelList)[k], modelList[[k]] )
   
+  if('CCgroups' %in% names(modelList))attr(typeNames,'CCgroups')  <- CCgroups
+  if('FCgroups' %in% names(modelList))attr(typeNames,'FCgroups')  <- FCgroups
+  if('CATgroups' %in% names(modelList))attr(typeNames,'CATgroups') <- CATgroups
+  
   if(!is.null(timeList)){
     if("betaPrior" %in% names(timeList)){
       colnames(timeList$betaPrior$lo) <- colnames(timeList$betaPrior$hi) <- 
@@ -3860,7 +3874,12 @@
         stop( 'rownames(specByTrait) must match colnames(ydata)' )
       }
     }
-    if(typeNames[1] == 'CC')ydata <- round(ydata,0)
+    if(typeNames[1] == 'CC'){
+      ytmp <- round(ydata,0)
+      ytmp[ytmp == 0 & ydata > 0] <- 1
+      ydata <- ytmp
+      rm(ytmp)
+    }
   }
   
   tmp <- .buildYdata(ydata, typeNames)
@@ -3875,9 +3894,14 @@
   S <- ncol(y)
   n <- nrow(y)
   
-  tmp <- .buildEffort(y, effort, typeNames)
-  effMat <- tmp$effMat; effort <- tmp$effort
-  effMat[effMat == 0] <- 1
+  tmp    <- .buildEffort(y, effort, typeNames)
+  effort <- tmp
+  effMat <- effort$values
+  modelList$effort <- effort
+  re <- floor( diff( range(log10(effMat),na.rm=T) ) )
+  if(re > 2)
+    message(paste('sample effort spans > ', re, ' orders of magnitude--consider units, approx 1 is good',sep='') )
+  
   
   tmp      <- .gjamGetTypes(typeNames)
   typeCols <- tmp$typeCols
@@ -3983,8 +4007,13 @@
     sampleW[holdoutIndex,] <- 1
     tgHold  <- cuts
     wHold   <- w[drop=F,holdoutIndex,]
-    ploHold <- plo[drop=F,holdoutIndex,]
+    
+  #  hindex <- rep(1:S, each=holdoutN)
+    
+    ploHold <- plo[drop=F,holdoutIndex,]   # updated in Gibbs sampler to match currently imputed yp
     phiHold <- phi[drop=F,holdoutIndex,]
+  #  ploHold[1:holdoutN,] <- pmin[hindex]
+  #  phiHold[1:holdoutN,] <- wmax[hindex]
   }
 
   byCol <- byRow <- F
@@ -4049,7 +4078,7 @@
      
      BPRIOR <- T
      
-     tmp <- .getTimeIndex(timeList, notOther, xdata, x, xl, y, w)
+     tmp <- .getTimeIndex(timeList, other, notOther, xdata, x, xl, y, w)
      Lmat   <- tmp$Lmat; Lpattern <- tmp$Lpattern;  wL <- tmp$wL
      Vmat   <- tmp$Vmat;    Lrows <- tmp$Lrows; gindex <- tmp$gindex
      loLmat <- tmp$loLmat; hiLmat <- tmp$hiLmat; Arows <- tmp$Arows
@@ -4160,6 +4189,7 @@
     bg[,notOther] <- updateBeta(X = x[inSamp,], Y, sig, beta = bg[,notOther],
                                 loB[,notOther], hiB[,notOther])
     muw <- x%*%bg
+    
   }else{
     
     mua <- Umat%*%Amat
@@ -4272,11 +4302,11 @@
     Qall <- ncol(xpred) - 1
     
     intMat <- numeric(0)
-    if(!is.null(interBeta$intMat)){
+    if( length(interBeta$intMat) > 0 ){
       intMat <- match(xnames[interBeta$intMat],colnames(xpred))
       intMat <- matrix(intMat,nrow(interBeta$intMat),3)
     }
-    if(!is.null(interLambda$intMat)){
+    if( length(interLambda$intMat) > 0){
       ib <- match(xlnames[interLambda$intMat],colnames(xpred))
       ib <- matrix(ib,nrow(interLambda$intMat),3)
       intMat <- rbind(intMat,ib)
@@ -4440,7 +4470,7 @@
                            ph = phi[drop=F,holdoutIndex,],
                            eff = effMat[drop=F,holdoutIndex,], 
                            ymax = wmax, typeNames, cutg, ordCols)
-      plo[holdoutIndex,] <- tmp$pl 
+      plo[holdoutIndex,] <- tmp$pl                                # partition based on current yp
       phi[holdoutIndex,] <- tmp$ph
     }
     
@@ -4737,6 +4767,7 @@
         }
         xpred[,1] <- 1
       }
+      
     }
     
     if(testCC)wgibbs[g,,] <- w[testCCid,]
@@ -5142,7 +5173,8 @@
   modelList$effort    <- effort; modelList$holdoutIndex <- holdoutIndex
   modelList$REDUCT    <- REDUCT;       modelList$TRAITS <- TRAITS
   modelList$ematAlpha <- ematAlpha; modelList$traitList <- traitList
-  modelList$reductList <- reductList
+  modelList$reductList <- reductList; modelList$ng <- ng
+  modelList$burnin <- burnin
   
   inputs <- list(xdata = xdata, x = xunstand, standX = standX,
                  standMat = standMat, standRows = standRows, y = y, 
@@ -5180,7 +5212,7 @@
     parameters <- c(parameters,
                     list(betaTraitMu = btMu, betaTraitSe = btSe, 
                          sigmaTraitMu = stMu, sigmaTraitSe = stSe))
-    predictions <- c(predictions, list(tMuOrd = tMuOrd,tMu = tMu,tSe = tSd))
+    prediction <- c(prediction, list(tMuOrd = tMuOrd,tMu = tMu,tSe = tSd))
     chains <- append( chains,list(agibbs = agibbs,mgibbs = mgibbs) ) 
   }
   if(TIME){
@@ -5272,9 +5304,11 @@ summary.gjam <- function(object,...){
     imputed[ as.numeric(names(xtab)) ] <- xtab
   }
   
-  bb   <- signif(rbind(beta[,notOther], RMSPE[notOther], imputed[notOther]),3)
-  imputed <- c(missingx,NA,NA)
-  bb <- cbind(bb,imputed)
+  RMSPE <- RMSPE[notOther]
+  imputedY <- imputed[notOther]
+  bb   <- signif(rbind(beta[,notOther], RMSPE, imputedY),3)
+  imputedX <- c(missingx,NA,NA)
+  bb <- cbind(bb,imputedX)
   
   cc <- as.vector( signif(beta[,notOther], 3) )
   ss <- object$parameters$betaSe[,notOther]
@@ -5369,7 +5403,7 @@ summary.gjam <- function(object,...){
   }
   
   fc <- ""
-  if(nfact > 0)fc <- paste("There are",nfact,"factors in X. ")
+  if(nfact > 0)fc <- paste(" There are",nfact,"factors in X. ")
   
   ty <- paste0( unique(types), collapse=", ")
   
@@ -5645,6 +5679,7 @@ print.gjam <- function(x, ...){
   ns <- min( c(ng - burnin,1000) )
   simIndex <- sample(nrow(sgibbs),ns,replace=T)
   simIndex <- sort(simIndex)
+  burn <- burnin/ng*1000
   
   tmp <- .expandSigmaChains(snames, sgibbs, otherpar, simIndex, 
                             sigErrGibbs, kgibbs, REDUCT)
@@ -5911,7 +5946,7 @@ print.gjam <- function(x, ...){
         x2 <- which.max(yj)
         xm <- .2*x1 + .8*xj[x2]
         
-        polygon(xj,yj,border=colc[j],col=colc[j],lwd=2)
+        polygon(xj, yj, border=colc[j], col=.getColor(colc[j], .4), lwd=2)
         if(k == length(vnames)) text(xm,ym+k,j,col=colc[j])
         x1 <- xj[x2]
       }
@@ -6021,6 +6056,8 @@ print.gjam <- function(x, ...){
         y1 <- yobs[,wkm,drop=F]
         yp <- ypred[,wkm,drop=F]
         
+        
+        
         tmp <- .gjamPlotPars(type=typeNames[wk[1]],y1,yp,censm)
         y1 <- tmp$y1; yp <- tmp$yp; nbin <- tmp$nbin; nPerBin <- tmp$nPerBin
         vlines <- tmp$vlines; xlimit <- tmp$xlimit; ylimit <- tmp$ylimit
@@ -6037,6 +6074,9 @@ print.gjam <- function(x, ...){
           nPerBin <- nPerBin/2
         }
         
+        
+        if(typeNames[wk[1]] == 'CA')nPerBin <- NULL
+        
         tmp <- .bins4data(y1,nPerBin=nPerBin,breaks=breaks,LOG=LOG)
         breaks <- tmp$breaks
         bins   <- tmp$bins
@@ -6048,8 +6088,8 @@ print.gjam <- function(x, ...){
         }
         
         if( !typeNames[wk[1]] %in% c('PA','CAT') ){
-          ncc   <- max( c(100,max(y1)/20) )
-          xy <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
+          ncc <- max( c(100,max(y1)/20) )
+          xy  <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
           xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
           xy[1,xy[1,] < xlimit[1]] <- xlimit[1]
           xy[2,xy[2,] < ylimit[1]] <- ylimit[1]
@@ -6086,7 +6126,7 @@ print.gjam <- function(x, ...){
         opt <- list(xlabel='Observed',ylabel=ylab,nbin=nbin, 
                     nPerBin=NULL, xlimit=xlimit,ylimit=ylimit,
                     breaks=bins, wide=wide, LOG=LOG, fill=fill, 
-                    box.col='darkblue',POINTS=F, MEDIAN=MEDIAN, add=add)
+                    box.col='darkblue', POINTS=F, MEDIAN=MEDIAN, add=add)
         
         tmp <- .plotObsPred(y1,yp,opt = opt)
         
@@ -6188,9 +6228,12 @@ print.gjam <- function(x, ...){
         noX <- c(noX,fnames)
         cont <- contrast[[kk]]
         
-        refClass <- names (which( rowSums( cont ) == 0) )
+        refClass <- names(which( rowSums( cont ) == 0) )
         
-        hnames <- matrix( unlist( strsplit(fnames,gname) ),nx,2,byrow=T)[,2]
+        hnames <- substring(fnames, nchar(gname) + 1)
+        
+     #   ff <- strsplit(fnames,gname) 
+     #   hnames <- matrix( unlist(ff ),nx,2,byrow=T)[,2]
         knames <- c(paste(gname,'Ref',sep=''),fnames)
         if(TIME){
           xtrue     <- xtime[iy,fnames,drop=F]
@@ -6319,7 +6362,7 @@ print.gjam <- function(x, ...){
           yp <- yp[wn]
         }
         
-        tmp <- .bins4data(y1,nPerBin=nPerBin,breaks=breaks,LOG=LOG)
+        tmp <- .bins4data(y1,nPerBin=nPerBin,breaks=breaks,LOG=LOG, POS=F)
         breaks <- tmp$breaks
         bins   <- tmp$bins
         nbin   <- tmp$nbin
@@ -6329,6 +6372,7 @@ print.gjam <- function(x, ...){
           nPerBin <- NULL
         }
         
+        if(nbin > 2){
         ncc   <- max( c(100,max(y1)/20) )
         xy <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
         xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
@@ -6346,6 +6390,7 @@ print.gjam <- function(x, ...){
           points(x[holdoutIndex,j],xpredMu[holdoutIndex,j],col='brown',
                  pch=21, bg='blue',cex=.4)
         } 
+        }
         
         fill <- .getColor('blue',.3)
         
@@ -6777,7 +6822,9 @@ print.gjam <- function(x, ...){
     for(j in jk){
       lines(chainMat[,j],col=cols[j])
       if(ncol(chainMat) < 15)text(nn,chainMat[nn,j],snamek[j],col=cols[j],pos=4)
-      if(k == 1 & j == 1).plotLabel( paste('burn-in =',burnin),
+      abline(v=burn,lty=2)
+      
+      if(k == 1 & j == 1).plotLabel( paste(burnin,":",ng),
                                      location='topright' )
     }
     .plotLabel(label=paste(letters[k],') ',tname,sep=''),location='topleft',above=T)
@@ -6848,11 +6895,13 @@ print.gjam <- function(x, ...){
         for(j in jk){
           lines(chainMat[,j],col=cols[j])
           if(ncol(chainMat) < 15)text(nn,chainMat[nn,j],snamek[j],col=cols[j],pos=4)
-          if(j == 1).plotLabel( paste('burnin =',burnin),location='topright' )
+          
         }
         
+        if(jj == 1).plotLabel( paste(burnin,":",ng),location='topright' )
         abline(h=0,lwd=4,col='white')
         abline(h=0,lty=2)
+        abline(v=burn,lty=2)
         
         if(ncol(chainMat) >= 15) text(nn,mean(par('usr')[3:4]),
                                       paste(ncol(chainMat),'spp'),pos=4)
@@ -8867,7 +8916,7 @@ print.gjam <- function(x, ...){
 }
 
 .gjamXY <- function(formula, xdata, y, typeNames, notStandard, 
-                    checkX=T, xscale = NULL){
+                    checkX = T, xscale = NULL){
   
   n        <- nrow(xdata)
   S        <- ncol(y)
@@ -8956,10 +9005,12 @@ print.gjam <- function(x, ...){
     
     for(j in 1:length(facNames)){
       
-      ij <- grep(facNames[j],colnames(x))
+   #   ij <- grep(facNames[j],colnames(x))
+      
+      ij <- which( colnames(x) %in% factorList[[j]] )
       ij <- xnames[ij]
-      ix <- grep(':',ij)
-      if(length(ix) > 0)ij <- ij[-ix]
+    #  ix <- grep(':',ij)
+    #  if(length(ix) > 0)ij <- ij[-ix]
       isFactor <- c(isFactor,ij)
       
       print(paste('observations in factor',facNames[j]))
@@ -9476,7 +9527,7 @@ print.gjam <- function(x, ...){
   text(xt,yt,label,cex=cex,font=font,pos=pos)
 }
 
-.bins4data <- function(obs, nPerBin=NULL, breaks=NULL, nbin=NULL, LOG=F){
+.bins4data <- function(obs, nPerBin=NULL, breaks=NULL, nbin=NULL, LOG=F, POS=T){
   
   if( is.null(breaks) ){
     
@@ -9495,11 +9546,15 @@ print.gjam <- function(x, ...){
       
       nPerBin <- NULL
     }
+    
     if( !is.null(nPerBin) ){
       nbb <- nPerBin/length(obs)
       nbb <- seq(0,1,by=nbb)
       if(max(nbb) < 1)nbb <- c(nbb,1)
-      bins <- quantile(obs,nbb,na.rm=T)
+      oo   <- obs
+      if(POS)oo <- obs[obs > 0]
+      bins <- quantile(oo,nbb,na.rm=T)
+      bins <- c(min(oo,na.rm=T),bins)
       bins <- sort(unique(bins))
       
       db <- diff(bins)
@@ -10694,7 +10749,8 @@ print.gjam <- function(x, ...){
                     rate = ((1/1000000) + 2*diag(solveRcpp(D)) ) )  
   
   D    <- .riwish(df = (2 + r + N - 1), S = (crossprod(Z) + 2*2*diag(1/avec)))
-  Z    <- fnZRcpp(kk=K, Yk=Y[inSamples,], Xk=x[inSamples,], Dk=D,Bk=B, 
+  
+  Z    <- fnZRcpp(kk=K, Yk=Y[inSamples,], Xk=x[inSamples,], Dk=D, Bk=B, 
                        Wk=RR[inSamples,], sigmasqk=sigmaerror, Nz=N)
   
   # sigma error
@@ -10868,17 +10924,20 @@ print.gjam <- function(x, ...){
       
       if(length(corCols) > 0){   # corr scale (spp have different sigmaerror)
         SC     <- length(corCols)
-        mef    <- .sqrtRootMatrix(muw[,corCols] + rndEff[,corCols],
+        mef    <- .sqrtRootMatrix(muw[,corCols,drop=F] + rndEff[,corCols,drop=F],
                                   sg[corCols,corCols], DIVIDE=T)
         
-        mef    <- as.vector(t(mef))
+
         w[,corCols] <- matrix( .tnorm(n*SC, as.vector(t(plo[,corCols])), 
-                                      as.vector(t(phi[,corCols])), mef,1),
+                                      as.vector(t(phi[,corCols])), 
+                                      as.vector(t(mef)),1),
                                n,SC, byrow=T) # cor scale
         if(holdoutN > 0){
           wHold[,corCols] <- matrix( .tnorm(holdoutN*SC, as.vector(ploHold[,corCols]), 
-                                            as.vector(phiHold[,corCols]),mef,
-                                            sqrt(sigmaerror)),holdoutN,SC) 
+                                            as.vector(phiHold[,corCols]),
+                                            as.vector(t(mef[holdoutIndex,])),
+                                            sqrt(sigmaerror)),
+                                     holdoutN,SC) 
         }
         yPredict[,corCols] <- matrix( rnorm(n*SC, mef,1),n,SC, byrow=T)
       }
@@ -11093,7 +11152,7 @@ print.gjam <- function(x, ...){
         X <- X[,-w0]
         beta <- beta[-w0,]
         IXX  <- NULL
-        rows[rows == w0] <- NA
+        rows[rows %in% w0] <- NA
       }
         
       if(is.null(IXX) | !ixx){

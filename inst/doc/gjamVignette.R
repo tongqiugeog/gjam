@@ -1,3 +1,17 @@
+## ----outform, echo=F-----------------------------------------------------
+insertPlot <- function(file, caption){
+    outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
+  if(outputFormat == 'latex')
+    paste("![ ", caption, " ](", file, ")",sep="")
+}
+bigskip <- function(){
+  outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
+  if(outputFormat == 'latex')
+    "\\bigskip"
+  else
+    "<br>"
+}
+
 ## ----fig1, fig.width = 5.9, fig.height = 4, echo = FALSE-----------------
 
   sig    <- .9
@@ -98,7 +112,7 @@
 ## ----show formula, eval = F----------------------------------------------
 #  f$formula
 
-## ----plot simulated y, fig.show = "hold", fig.width = 6.5, eval = F------
+## ----plotSimY, fig.show = "hold", fig.width = 6.5, eval = F--------------
 #  par(bty = 'n', mfrow = c(1,2), family='')
 #  h <- hist(c(-1,f$y),nclass = 50,plot = F)
 #  plot(h$counts,h$mids,type = 's')
@@ -199,7 +213,7 @@ x   <- model.matrix(formula, data=tmp)
 #  ml   <- list(ng = 2500, burnin = 500, typeNames = 'DA', reductList = rl)
 #  form <- as.formula( ~ temp*deficit + I(temp^2) + I(deficit^2) )
 #  out  <- gjam(form, xdata = xdata, ydata = treeYdata, modelList = ml)
-#  pl   <- list(SMALLPLOTS = F, GRIDPLOTS=T, CORLINES=F)
+#  pl   <- list(SMALLPLOTS = F, GRIDPLOTS=T)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----plot save, eval = F-------------------------------------------------
@@ -575,7 +589,7 @@ for(j in 1:length(xbox)){
 
   if(j < length(xbox))text(tmp$vec[2] + xgap[j]/2,ymax - ybox[j+1]/2, ti[j])
   if(j == 1)text(tmp$mu[1],tmp$mu[2],
-                 expression(paste(italic(E),'[',bold(U),']')))
+                 expression(paste(italic(E),'[',bold(W),']')))
   if(j == 2)text(tmp$mu[1],tmp$mu[2],expression(bold(X)))
   if(j == 3)text(tmp$mu[1],tmp$mu[2],expression(hat(A)))
 }
@@ -624,7 +638,7 @@ for(j in 1:length(xbox)){
 
 ## ----fit, eval = F-------------------------------------------------------
 #  ml  <- list(ng = 3000, burnin = 500, typeNames = tTypes, holdoutN = 20,
-#              censor=censor, notStandard = c('u1','u2','u3'))
+#              censor=censor, notStandard = c('f1','f2','f3'))
 #  out <- gjam(~ temp + stdage + moisture*deficit + deficit*soil,
 #                   xdata = xdata, ydata = u, modelList = ml)
 #  tnames    <- colnames(u)
@@ -639,6 +653,7 @@ for(j in 1:length(xbox)){
 #  
 #  pl  <- list(GRIDPLOTS = TRUE, PLOTALLY = T, specColor = sc, SMALLPLOTS = F)
 #  fit <- gjamPlot(output = out, plotPars = pl)
+#  summary(out)
 
 ## ----fit pars, eval = F--------------------------------------------------
 #  out$parameters$betaMuUn      # Q by M coefficient matrix alpha

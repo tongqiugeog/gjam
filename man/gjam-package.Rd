@@ -15,6 +15,8 @@
 \concept{ordination}
 \concept{missing data}
 \concept{Tobit regression}
+\concept{zero inflation}
+\concept{sampling effort}
 \title{
   Generalized Joint Attribute Modeling
 }
@@ -26,8 +28,8 @@
   \tabular{ll}{
   Package: \tab gjam\cr
   Type: \tab Package\cr
-  Version: \tab 2.1.3\cr
-  Date: \tab 2017-4-21\cr
+  Version: \tab 2.1.4\cr
+  Date: \tab 2017-5-11\cr
   License: \tab GPL (>= 2)\cr
   URL: \tab http://sites.nicholas.duke.edu/clarklab/code/\cr
   }

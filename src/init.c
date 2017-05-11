@@ -4,7 +4,7 @@
 #include <R_ext/Rdynload.h>
 
 /* .Call calls */
-extern SEXP gjam_byRccp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP gjam_byRcpp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP gjam_condMVNRcpp(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP gjam_trMVNmatrixRcpp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP gjam_rmvnormRcpp(SEXP, SEXP, SEXP);
@@ -14,7 +14,7 @@ extern SEXP gjam_fnZRcpp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP gjam_invWbyRcpp(SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-  {"gjam_byRccp",           (DL_FUNC) &gjam_byRccp,          6},
+  {"gjam_byRcpp",           (DL_FUNC) &gjam_byRcpp,          6},
   {"gjam_condMVNRcpp",      (DL_FUNC) &gjam_condMVNRcpp,     5},
   {"gjam_trMVNmatrixRcpp",  (DL_FUNC) &gjam_trMVNmatrixRcpp, 7},
   {"gjam_rmvnormRcpp",      (DL_FUNC) &gjam_rmvnormRcpp,     3},

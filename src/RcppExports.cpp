@@ -6,9 +6,9 @@
 
 using namespace Rcpp;
 
-// byRccp
-Rcpp::List byRccp(const int nr, const arma::mat frommat, arma::mat totmat, arma::mat summat, arma::mat minmat, arma::mat maxmat);
-RcppExport SEXP gjam_byRccp(SEXP nrSEXP, SEXP frommatSEXP, SEXP totmatSEXP, SEXP summatSEXP, SEXP minmatSEXP, SEXP maxmatSEXP) {
+// byRcpp
+Rcpp::List byRcpp(const int nr, const arma::mat frommat, arma::mat totmat, arma::mat summat, arma::mat minmat, arma::mat maxmat);
+RcppExport SEXP gjam_byRcpp(SEXP nrSEXP, SEXP frommatSEXP, SEXP totmatSEXP, SEXP summatSEXP, SEXP minmatSEXP, SEXP maxmatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -18,13 +18,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type summat(summatSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type minmat(minmatSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type maxmat(maxmatSEXP);
-    rcpp_result_gen = Rcpp::wrap(byRccp(nr, frommat, totmat, summat, minmat, maxmat));
+    rcpp_result_gen = Rcpp::wrap(byRcpp(nr, frommat, totmat, summat, minmat, maxmat));
     return rcpp_result_gen;
 END_RCPP
 }
-// byProdRccp
-Rcpp::List byProdRccp(const int nr, const arma::mat frommat, arma::mat totmat, arma::mat prodmat);
-RcppExport SEXP gjam_byProdRccp(SEXP nrSEXP, SEXP frommatSEXP, SEXP totmatSEXP, SEXP prodmatSEXP) {
+// byProdRcpp
+Rcpp::List byProdRcpp(const int nr, const arma::mat frommat, arma::mat totmat, arma::mat prodmat);
+RcppExport SEXP gjam_byProdRcpp(SEXP nrSEXP, SEXP frommatSEXP, SEXP totmatSEXP, SEXP prodmatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -32,7 +32,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat >::type frommat(frommatSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type totmat(totmatSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type prodmat(prodmatSEXP);
-    rcpp_result_gen = Rcpp::wrap(byProdRccp(nr, frommat, totmat, prodmat));
+    rcpp_result_gen = Rcpp::wrap(byProdRcpp(nr, frommat, totmat, prodmat));
     return rcpp_result_gen;
 END_RCPP
 }

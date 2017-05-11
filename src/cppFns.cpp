@@ -6,7 +6,7 @@ using namespace arma;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-Rcpp::List byRccp(const int nr, 
+Rcpp::List byRcpp(const int nr, 
                      const arma::mat frommat,
                      arma::mat totmat, 
                      arma::mat summat, 
@@ -38,7 +38,7 @@ Rcpp::List byRccp(const int nr,
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-Rcpp::List byProdRccp(const int nr, 
+Rcpp::List byProdRcpp(const int nr, 
                      const arma::mat frommat,
                      arma::mat totmat,
                      arma::mat prodmat){
@@ -275,7 +275,7 @@ arma::mat fnZRcpp(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
   mat Z(N,r);
   mat WtW = W.t()*W;
   mat Dinv = arma::inv_sympd(D);
-  int nkk = knotstar.size();
+  int nkk = kstar.size();
   
   uvec J;
   int js;
@@ -285,7 +285,7 @@ arma::mat fnZRcpp(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
   mat tempmat;
   vec tempvec(r);
   
-  for(int i = 0; i < kstar.size(); ++i){
+  for(int i = 0; i < nkk; ++i){
     J = find(k == (kstar(i) + 1));
     js = J.size();
     CovZj = arma::inv_sympd(as_scalar(js/sigmasq)*WtW + Dinv);
@@ -303,7 +303,9 @@ arma::mat fnZRcpp(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
     J.reset();
   }
   
-  for(int i = 0; i < nkk; ++i) {
+  int nss = knotstar.size();
+  
+  for(int i = 0; i < nss; ++i) {
     Z.row(knotstar(i)) = rmvnormArma2(1,zeros<arma::vec>(r), D);
     //repmat(zeros<arma::vec>(r), 1, 1).t() + randn(1, r) * chol(D);
   }

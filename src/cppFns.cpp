@@ -36,28 +36,6 @@ Rcpp::List byRcpp(const int nr,
                             Rcpp::Named("max")=maxmat);
 }
 
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
-Rcpp::List byProdRcpp(const int nr, 
-                     const arma::mat frommat,
-                     arma::mat totmat,
-                     arma::mat prodmat){
-  int k, i, j;
-  double s;
-  
-  for(k = 0; k < nr; k++){
-    
-    i = frommat(k,0) - 1;
-    j = frommat(k,1) - 1;
-    s = frommat(k,2);
-    totmat(i,j) = totmat(i,j) + 1;
-    prodmat(i,j) = prodmat(i,j) * s;
-    
-  }
-  
-  return Rcpp::List::create(Rcpp::Named("total")=totmat,
-                            Rcpp::Named("prod")=prodmat);
-}
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
@@ -75,18 +53,6 @@ Rcpp::List condMVNRcpp(const arma::uvec cdex,
                             Rcpp::Named("vr")=vr1);
 }
 
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
-double tnorm_cpp(double lo, double hi, double mu, double sig){
-  double q1, q2, z;
-  
-  q1 = Rf_pnorm5(lo,mu,sig,1,0);
-  q2 = Rf_pnorm5(hi,mu,sig,1,0);
-  z = q1 + unif_rand()*(q2-q1);
-  z = Rf_qnorm5(z, mu, sig, 1, 0);
-  
-  return(z);
-}
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
@@ -106,15 +72,9 @@ double tnormRcpp(double lo, double hi, double mu, double sig){
   if(z < lo){
     z = hi;
   }
-  
   return(z);
 }
 
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
-bool any_naCpp(NumericVector x) {
-  return is_true(any(is_na(x)));
-}
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
@@ -148,7 +108,7 @@ arma::mat trMVNmatrixRcpp(arma::mat avec, arma::mat muvec,
     
     for(int k = 0; k < nk; k++){
       
-      cindex = whichSample[k]-1;
+      cindex = whichSample[k] - 1;
       
       av = avec.row(i);
       mv = muvec.row(i);
@@ -175,20 +135,28 @@ arma::mat trMVNmatrixRcpp(arma::mat avec, arma::mat muvec,
   return A;
 }
 
+
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 arma::mat rmvnormRcpp(int n, arma::vec mu, arma::mat sigma) {
   int ncols = sigma.n_cols;
+  bool success = false;
+  arma::mat S = sigma;
+  
   arma::mat Y = randn(n, ncols);
+  
+  success = chol(S, sigma);
+  if(success == false){
+    sigma += 1 + eye(ncols,ncols) * 1e-5;
+  }
+  success = chol(S, sigma);
+  if(success == false){
+    //    throw std::range_error("sigma not positive definite");
+    return arma::repmat(mu*0, 1, n).t();
+  }
   return arma::repmat(mu, 1, n).t() + Y * chol(sigma);
 }
 
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
-arma::mat rmatrixnormRcpp(int n, int p, arma::mat M, arma::mat sigmacols, arma::mat sigmarows) {
-  arma::mat Y = randn(n, p);
-  return M + chol(sigmarows).t()*Y * chol(sigmacols);
-}
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
@@ -237,13 +205,6 @@ arma::mat getPmatKRcpp(arma::vec pveck, arma::mat Yk, arma::mat Zk, arma::mat Xk
   return epmat;
 }
 
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
-arma::mat rmvnormArma2(int n, arma::vec mu, arma::mat sigma) {
-  int ncols = sigma.n_cols;
-  arma::mat Y = randn(n, ncols);
-  return arma::repmat(mu, 1, n).t() + Y * chol(sigma);
-}
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
@@ -298,7 +259,7 @@ arma::mat fnZRcpp(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
     
     tempvec = vectorise(as_scalar(1/sigmasq)*CovZj*W.t()*ssY);
     meanZj = tempvec;
-    Z.row(kstar(i)) = rmvnormArma2(1,meanZj,CovZj);
+    Z.row(kstar(i)) = rmvnormRcpp(1, meanZj, CovZj);
     //arma::repmat(meanZj, 1, 1).t() + randn(1, r) * chol(CovZj);
     J.reset();
   }
@@ -306,7 +267,7 @@ arma::mat fnZRcpp(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk,
   int nss = knotstar.size();
   
   for(int i = 0; i < nss; ++i) {
-    Z.row(knotstar(i)) = rmvnormArma2(1,zeros<arma::vec>(r), D);
+    Z.row(knotstar(i)) = rmvnormRcpp(1, zeros<arma::vec>(r), D);
     //repmat(zeros<arma::vec>(r), 1, 1).t() + randn(1, r) * chol(D);
   }
   

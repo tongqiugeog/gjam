@@ -2,58 +2,38 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 byRcpp <- function(nr, frommat, totmat, summat, minmat, maxmat) {
-    .Call('gjam_byRcpp', PACKAGE = 'gjam', nr, frommat, totmat, summat, minmat, maxmat)
-}
-
-byProdRcpp <- function(nr, frommat, totmat, prodmat) {
-    .Call('gjam_byProdRcpp', PACKAGE = 'gjam', nr, frommat, totmat, prodmat)
+    .Call(`_gjam_byRcpp`, nr, frommat, totmat, summat, minmat, maxmat)
 }
 
 condMVNRcpp <- function(cdex, gdex, xx, mu, sigma) {
-    .Call('gjam_condMVNRcpp', PACKAGE = 'gjam', cdex, gdex, xx, mu, sigma)
-}
-
-tnorm_cpp <- function(lo, hi, mu, sig) {
-    .Call('gjam_tnorm_cpp', PACKAGE = 'gjam', lo, hi, mu, sig)
+    .Call(`_gjam_condMVNRcpp`, cdex, gdex, xx, mu, sigma)
 }
 
 tnormRcpp <- function(lo, hi, mu, sig) {
-    .Call('gjam_tnormRcpp', PACKAGE = 'gjam', lo, hi, mu, sig)
-}
-
-any_naCpp <- function(x) {
-    .Call('gjam_any_naCpp', PACKAGE = 'gjam', x)
+    .Call(`_gjam_tnormRcpp`, lo, hi, mu, sig)
 }
 
 trMVNmatrixRcpp <- function(avec, muvec, smat, lo, hi, whichSample, idxALL) {
-    .Call('gjam_trMVNmatrixRcpp', PACKAGE = 'gjam', avec, muvec, smat, lo, hi, whichSample, idxALL)
+    .Call(`_gjam_trMVNmatrixRcpp`, avec, muvec, smat, lo, hi, whichSample, idxALL)
 }
 
 rmvnormRcpp <- function(n, mu, sigma) {
-    .Call('gjam_rmvnormRcpp', PACKAGE = 'gjam', n, mu, sigma)
-}
-
-rmatrixnormRcpp <- function(n, p, M, sigmacols, sigmarows) {
-    .Call('gjam_rmatrixnormRcpp', PACKAGE = 'gjam', n, p, M, sigmacols, sigmarows)
+    .Call(`_gjam_rmvnormRcpp`, n, mu, sigma)
 }
 
 solveRcpp <- function(A) {
-    .Call('gjam_solveRcpp', PACKAGE = 'gjam', A)
+    .Call(`_gjam_solveRcpp`, A)
 }
 
 getPmatKRcpp <- function(pveck, Yk, Zk, Xk, Bk, Wk, sigmasqk) {
-    .Call('gjam_getPmatKRcpp', PACKAGE = 'gjam', pveck, Yk, Zk, Xk, Bk, Wk, sigmasqk)
-}
-
-rmvnormArma2 <- function(n, mu, sigma) {
-    .Call('gjam_rmvnormArma2', PACKAGE = 'gjam', n, mu, sigma)
+    .Call(`_gjam_getPmatKRcpp`, pveck, Yk, Zk, Xk, Bk, Wk, sigmasqk)
 }
 
 fnZRcpp <- function(kk, Yk, Xk, Dk, Bk, Wk, sigmasqk, Nz) {
-    .Call('gjam_fnZRcpp', PACKAGE = 'gjam', kk, Yk, Xk, Dk, Bk, Wk, sigmasqk, Nz)
+    .Call(`_gjam_fnZRcpp`, kk, Yk, Xk, Dk, Bk, Wk, sigmasqk, Nz)
 }
 
 invWbyRcpp <- function(sigsq, A) {
-    .Call('gjam_invWbyRcpp', PACKAGE = 'gjam', sigsq, A)
+    .Call(`_gjam_invWbyRcpp`, sigsq, A)
 }
 

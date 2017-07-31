@@ -27,7 +27,7 @@
   pmat
 }
 
-.myBoxPlot <- function(mat, tnam, snames, specColor, label){
+.myBoxPlot <- function(mat, tnam, snames, specColor, label, LEG=F){
   
   # tnam is columns of mat, with values of snames used to match specColor
   
@@ -54,6 +54,13 @@
   xtext <- pl[1]
   ytext <- pl[3] + diff(pl[3:4])*.85
   .plotLabel(label,location='topleft', cex=1.0)
+  
+  lg <- unique(names(bb))
+  if(!is.null(lg) & LEG){
+    colb <- bb[lg]
+    legend('bottomright',legend=lg,text.col=colb,bty='n')
+  }
+    
 }
 
 .splitNames <- function(nameVec, snames=NULL, split='_'){
@@ -1062,22 +1069,69 @@
   mmm1
 }
 
+
+.reorderMatrix <- function(mat, DIST, opt=NULL){
+  
+  # row and column order based on correlation or distance
+  
+  mmm <- .distanceMatrix(mat, DIST)
+  imm <- .distanceMatrix(t(mat), DIST)
+  
+  if(is.null(opt)){
+    clist <- list(PLOT=F, DIST = DIST)
+  }else{
+    clist <- opt
+    clist$PLOT <- T
+  }
+  
+  h1   <- .clusterPlot( imm, opt = clist)
+  rord <- h1$corder
+  h2   <- .clusterPlot( mmm, opt = clist )
+  cord <- h2$corder
+  
+  list(rowOrder = rord, colOrder = cord, rowTree = h1, colTree = h2)
+}
+
+.clustMat <- function(mat, SYM){
+  
+  mrow <- mat
+  DIST <- T
+  if(SYM){
+    if(all(diag(mrow) == 1)){
+      DIST <- F
+      mrow <- cor(mat)
+      if(nrow(mrow) != nrow(mat))mrow <- cor(t(mat))
+    }else{
+      mrow <- .cov2Dist(cov(mat))
+      if(nrow(mrow) != nrow(mat))mrow <- .cov2Dist(cov(t(mat)))
+    }
+  }else{
+    mrow <- .cov2Dist(cov(mat))
+    if(nrow(mrow) != nrow(mat))mrow <- .cov2Dist(cov(t(mat)))
+  }
+  list(cmat = mrow, DIST = DIST)
+}
+
 .clusterWithGrid <- function(mat1, mat2=NULL, opt, expand=1){
-  
-  DIST <- leftClus <- rightClus <- topClus1 <- topClus2 <- leftLab <- 
-    rightLab <- topLab1 <- topLab2 <- lower1 <- diag1 <- lower2 <- 
-    diag2  <-  FALSE
-  colOrder1 <- colOrder2 <- rowOrder <- colCode1 <- colCode2 <- rowCode <- 
-    slim1 <- slim2 <- horiz1 <- horiz2 <- vert1 <- vert2 <- NULL
-  mainLeft <- main1 <- main2 <- ' '
-  
-  for(k in 1:length(opt))assign( names(opt)[k], opt[[k]] )
   
   #   layout: mat1 on left, mat2 (if given) on right
   # clusters: left & top or right & top
   #   expand: width of mat1 relative to mat2
-  # if cluster analysis is used to order, then mat1 must be symmetric matrix
+  # if mat1/2 is symmetric can order only rows--stay symmetric
   # if DIST use distance, otherwise correlation
+  
+  leftClus <- rightClus <- 
+    topClus1 <- topClus2 <- leftLab <- 
+    rightLab <- topLab1 <- topLab2 <- lower1 <- diag1 <- lower2 <- 
+    diag2 <- SYM1 <- SYM2 <- FALSE
+  colOrder1 <- colOrder2 <- rowOrder <- colCode1 <- colCode2 <- rowCode <- 
+    slim1 <- slim2 <- horiz1 <- horiz2 <- vert1 <- vert2 <- NULL
+  mainLeft <- main1 <- main2 <- ' '
+  DIST1 <- DIST2 <- T
+  
+  for(k in 1:length(opt))assign( names(opt)[k], opt[[k]] )
+  
+  if(isSymmetric(mat1))SYM1 <- T
   
   doneLeft <- done1 <- done2 <- F
   
@@ -1087,14 +1141,16 @@
   
   twoMat <- F
   if(!is.null(mat2)){
+    if( min(dim(mat2)) < 3 )return()
+    if(isSymmetric(mat2))SYM2 <- T
     twoMat <- T
     nc2 <- ncol(mat2)
     if(nrow(mat2) != nr)stop('matrices must have same no. rows')
   }
-  cwide  <- .15
-  mg     <- .08
-  lg     <- rg <- tg <- mg
-  gg <- .24
+  cwide <- .15
+  mg    <- .08
+  lg    <- rg <- tg <- mg
+  gg    <- .24
   
   if(leftLab) lg <- gg
   if(topLab1 | topLab2)  tg <- gg
@@ -1121,61 +1177,53 @@
   if(topLab1 | topLab2) ywide <- c(ywide,tg)
   ywide <- c(ywide,mg)
   yloc  <- cumsum(ywide)/sum(ywide)
-  
-  
-  mmm1 <- .distanceMatrix(mat1, DIST)
-  rrr  <- .distanceMatrix(t(mat1), DIST)
-  
-  dcorr <- distr <- dcor1 <- dist1 <- dcor2 <- dist2 <- NULL
-  
-  if( DIST){
-    distr <- rrr
-    dist1 <- mmm1
-    labCorr <- rownames(distr)
-    labCor1 <- rownames(dist1)
-  } else {
-    dcorr <- rrr
-    dcor1 <- mmm1
-    labCorr <- rownames(dcorr)
-    labCor1 <- rownames(dcor1)
-  }
-  
-  if(is.null(rowOrder)){    # row clustering
-    tmp <- .clusterPlot( dcor=dcorr, dist=distr, PLOT=F)
-    rowOrder <- tmp$corder  #order bottom to top
-  }
-  if(is.null(colOrder1)){      # column clustering
-    if(isSymmetric(mat1)){
-      colOrder1 <- rowOrder
-    } else {
-      tmp <- .clusterPlot( dcor=dcor1, dist=dist1, PLOT=F)
-      colOrder1 <- tmp$corder
-    }
-  }
-  if(!is.null(mat2) & is.null(colOrder2)){
-    mmm2 <- .distanceMatrix(mat2, DIST)
-    if( DIST){
-      dist2 <- mmm2
-    } else {
-      dcor2 <- mmm2
-    }
-    labCor2 <- colnames(mmm2)
     
-    tmp <- .clusterPlot( dcor=dcor2, dist=dist2,PLOT=F)
-    colOrder2 <- tmp$corder
-  }
-  
   if(is.null(rowCode)) rowCode  <- rep('black',nr)
   if(is.null(colCode1))colCode1 <- rep('black',nc1)
   if(is.null(colCode2))colCode2 <- rep('black',nc2)
+  
+  tmp   <- .clustMat(mat1, SYM1)
+  m1Row <- tmp$cmat
+  DIST1 <- tmp$DIST
+  m1Col <- .clustMat(t(mat1), SYM1)$cmat
+
+  if(is.null(rowOrder)){
+    if(nrow(m1Row) != nrow(mat1))m1Row <- cor(t(mat1))
+    copt     <- list( PLOT=F, DIST = DIST1 )
+    rowOrder <- .clusterPlot( m1Row, copt)$corder
+  }
+  
+  if(is.null(colOrder1)){
+    if(SYM1){
+      colOrder1 <- rowOrder
+    }else{
+      copt      <- list( PLOT=F, DIST = DIST1 )
+      colOrder1 <- .clusterPlot( m1Col, copt)$corder
+    }
+  }
+  
+  if(twoMat){
+    
+    tmp   <- .clustMat(t(mat2), SYM2)
+    m2Col <- tmp$cmat
+    DIST2 <- tmp$DIST
+    
+    if(is.null(colOrder2)){
+      if(SYM1 & SYM2){
+        colOrder2 <- rowOrder
+      }else{
+        copt      <- list( PLOT=F, DIST = DIST2 )
+        colOrder2 <- .clusterPlot( m2Col, copt)$corder
+      }
+    }
+  }
+        
+  rowLabs <- rownames(mat1)[rowOrder]
   
   #######################
   NEW <- add <- F
   xi <- 0:1
   yi <- 1:2
-  
-  m1 <- mat1[rev(rowOrder),colOrder1]
-  if(!is.null(mat2))m2 <- mat2[rev(rowOrder),colOrder2]
   
   ##### lab panel
   if(leftLab){
@@ -1186,8 +1234,8 @@
          xaxt='n',yaxt='n',xlab='',ylab='')
     xl  <- rep(1,nr)
     yl  <- c(1:nr)*nr/diff(par('usr')[3:4])
-    cex <- .fitText2Fig(rownames(rrr),fraction=.96)
-    text( xl,yl,labCorr[rowOrder],pos=2,cex=cex, 
+    cex <- .fitText2Fig(rowLabs,fraction=.96)
+    text( xl,yl, rowLabs ,pos=2,cex=cex, 
           col = rowCode[rowOrder])
     NEW <- add <- T
     mtext(mainLeft,2)
@@ -1198,9 +1246,9 @@
   if(leftClus){
     xi <- xi + 1
     par(plt=c(xloc[xi],yloc[yi]),bty='n',  new=NEW)
-    .clusterPlot( dcor=dcorr, dist=distr ,main=' ',cex=.2, 
-                  colCode=rowCode,
-                  LABELS = F,horiz=T, noaxis=T)
+    copt <- list( main=' ',cex=.2, colCode=rowCode,
+                 LABELS = F, horiz=T, noaxis=T, DIST=DIST1 )
+    tmp <- .clusterPlot( m1Row, copt)
     NEW <- add <- T
     if(!doneLeft)mtext(mainLeft,2)
     doneLeft <- T
@@ -1214,10 +1262,10 @@
   if(topClus1){
     yz <- yz + 1
     par(plt=c(xloc[xi],yloc[yz]),bty='n',new=NEW)
-  
-    .clusterPlot( dcor=dcor1, dist=dist1 ,main=' ', 
-                  colCode=colCode1[colOrder1],      
-                  LABELS = F, horiz=F, noaxis=T, add=T)
+    
+    copt <- list( main=' ', colCode=colCode1, DIST = DIST1,     
+                 LABELS = F, horiz=F, noaxis=T, add=T )
+    tmp <- .clusterPlot( m1Col ,copt)
     NEW <- add <- T
     if(!topLab1){
       mtext(main1,3)
@@ -1226,15 +1274,16 @@
   }
   
   par(plt=c(xloc[xi],yloc[yi]), bty='n', new=NEW)
-  if(is.null(slim1))slim1 = quantile(m1,c(.01,.99))
+  if(is.null(slim1))slim1 = quantile(mat1,c(.01,.99)) ######
   slim1  <- signif(slim1,1)
   
   tmp    <- .colorSequence(slim1)
   scale  <- tmp$scale
   colseq <- tmp$colseq
   
-  ww    <- as.matrix(expand.grid(c(1:nr),c(1:nc1)))  # note reverse order
-  mt    <- m1
+  ww    <- as.matrix(expand.grid(c(1:nr),c(1:nc1)))  # reverse order
+ # mt    <- t(apply(mat1[rowOrder,colOrder1],1,rev)) ###########
+  mt <- mat1[rev(rowOrder),colOrder1]
   
   win <- which(ww[,1] >= ww[,2])
   
@@ -1260,7 +1309,7 @@
           xaxt='n',yaxt='n', add=T)
   
   if(!is.null(horiz1)){
-    cut <- which(diff(horiz1[colOrder1]) != 0) + 1
+    cut <- which(diff(horiz1[rowOrder]) != 0) + 1
     ncc <- length(cut)
     for(i in 1:ncc){
       lines(c(0,cut[i]-2),cut[c(i,i)],lty=2)
@@ -1281,6 +1330,7 @@
   doneLeft <- T
   
   if(topLab1){
+ #   if(isSymmetric(mat1))colCode1 <- rowCode
     yz <- yz + 1
     par(plt=c(xloc[xi], yloc[yz]),bty='n', new=NEW)
     plot(c(0,0),c(0,0),col='white',xlim=c(1,nc1) ,ylim=c(0,1),
@@ -1288,8 +1338,9 @@
     yl <- rep(0,nc1)
     xl <- .99*c(1:nc1)*(nc1-1)/diff(par('usr')[1:2])
  #   xl <- .95*c(1:nc1)*nc1/diff(par('usr')[1:2])
-    cex <- .fitText2Fig(colnames(m1), width=F, fraction=.95)
-    text( xl - .5,yl,colnames(m1),pos=4,cex=cex,srt=90,
+    cex <- .fitText2Fig(colnames(m1Col), 
+                        width=F, fraction=.95)
+    text( xl - .1,yl,colnames(m1Col)[colOrder1],pos=4,cex=cex,srt=90,
           col=colCode1[colOrder1])
   }
   if(!done1)mtext(main1,3)
@@ -1315,12 +1366,17 @@
     xi <- xi + 1
     yz <- yi
  
-    if(topClus2){
+    if( topClus2 ){
       yz <- yz + 1
       par(plt=c(xloc[xi],yloc[yz]),bty='n',new=NEW)
-      tmp <- .clusterPlot( dcor=dcor2, dist=dist2 ,main=' ', LABELS = F,
-                           colCode=colCode2[colOrder2], horiz=F, 
-                           noaxis=T, add=T)
+      
+      copt <- list( main=' ', LABELS = F,
+                   colCode=colCode2, horiz=F, 
+                   noaxis=T, add=T, DIST=DIST2 )
+      ttt <- .clusterPlot( m2Col, copt)
+      
+  #    m2 <- apply(mat1[rowOrder,colOrder1],1,rev)
+      
       if(!topLab2){
         mtext(main2,3)
         done2 <- T
@@ -1328,7 +1384,7 @@
     }
     
     par(plt=c(xloc[xi],yloc[yi]), bty='n', new=T)
-    if(is.null(slim2))slim2 = quantile(m2,c(.01,.99))
+    if(is.null(slim2))slim2 = quantile(mat2,c(.01,.99))
     slim2  <- signif(slim2,1)
     
     tmp <- .colorSequence(slim2)
@@ -1336,7 +1392,7 @@
     colseq <- tmp$colseq
     
     ww    <- as.matrix(expand.grid(c(1:nr),c(1:nc2)))  # note reverse order
-    mt    <- m2
+    mt    <- mat2[rev(rowOrder),colOrder2]
     
     if(lower2){
       mask <- lower.tri(mt,diag=!diag1)
@@ -1362,7 +1418,7 @@
             xaxt='n', yaxt='n', add=T)
     
     if(!is.null(horiz2)){
-      cut <- which(diff(horiz2[colOrder1]) != 0) + 1
+      cut <- which(diff(horiz2[rowOrder]) != 0) + 1
       ncc <- length(cut)
       for(i in 1:ncc){
         xmm <- c(0,cut[i]-2)
@@ -1373,7 +1429,7 @@
       if(!lower2)text(rep(nc2+1,ncc),cut,2:(ncc+1),pos=3)
     }
     if(!is.null(vert2)){
-      cut <- which(diff(vert2[colOrder1]) != 0) + .5
+      cut <- which(diff(vert2[colOrder2]) != 0) + .5
       ncc <- length(cut)
       for(i in 1:ncc){
         lines(cut[c(i,i)],c(cut[i]+2,nc1),lty=2)
@@ -1386,11 +1442,10 @@
       par(plt=c(xloc[xi],yloc[yz]),bty='n', new=NEW)
       plot(c(0,0),c(0,0),col='white',xlim=c(1,nc2),ylim=c(0,1),
            xaxt='n',yaxt='n',xlab='',ylab='')
-      yl <- rep(0,nc2)
-      xl <- c(1:nc2)*(nc2-1)/diff(par('usr')[1:2])
-  #    xl <- .95*c(1:nc2)*nc2/diff(par('usr')[1:2])
-      cex <- .fitText2Fig(colnames(m2),width=F, fraction=.95)
-      text( xl - .05,yl,colnames(m2),pos=4,cex=cex,srt=90, 
+      yl  <- rep(0,nc2)
+      xl  <- c(1:nc2)*(nc2-1)/diff(par('usr')[1:2])
+      cex <- .fitText2Fig(colnames(m2Col),width=F, fraction=.95)
+      text( xl - .05,yl,colnames(m2Col)[colOrder2],pos=4,cex=cex,srt=90, 
             col=colCode2[colOrder2])
     }
     if(!done2)mtext(main2,3)
@@ -1413,8 +1468,10 @@
   if(rightClus){
     xi <- xi + 1
     par(plt=c(xloc[xi], yloc[yi]), bty='n', mgp=c(3,1,0), new=NEW)
-    tmp <- .clusterPlot( dcor = rrr ,main=' ',cex=.2, REV=T,
-                         LABELS = F,horiz=T, noaxis=T)
+    mmm <- .distanceMatrix(t(mat2), DIST1)
+    copt <- list( main=' ',cex=.2, REV=T,
+                 LABELS = F,horiz=T, noaxis=T )
+    tmp <- .clusterPlot( mmm , copt)
   }
   
   if(rightLab){
@@ -1424,38 +1481,51 @@
          xaxt='n',yaxt='n',xlab='',ylab='')
     xl <- rep(0,nr)
     yl <- c(1:nr)*nr/diff(par('usr')[3:4])
-    cex <- .fitText2Fig(rownames(m1),fraction=.8)
-    text( xl,yl,labCorr[rowOrder],pos=4,cex=cex,
+    cex <- .fitText2Fig(rownames(m1Row),fraction=.8)
+    text( xl,yl,rev( rownames(m1Row) ),pos=4,cex=cex,
           col=rev(rowCode[rowOrder]))
   }
 }
 
 
-.clusterPlot <- function(dcor=NULL,dist=NULL,main=' ',xlab='Species',
-                         method='complete', cex=1, ncluster=2, add=F, REV=F,
-                        xlim=NULL, colCode = NULL, horiz=T, textSize=1,
-                        LABELS=T, noaxis=F,PLOT=T){  
+.clusterPlot <- function(dmat, opt = NULL){
   
-  #dcor is a correlation matrix
-  #dist is a distance matrix
+  main <- xlab <- ' '
+  method <- 'complete' 
+  cex <- 1; ncluster <- 2; textSize <- 1
+  add <- REV <- reverse <- noaxis <- DIST <- F
+  xlim <- colCode <- NULL 
+  horiz <- LABELS <- PLOT <- T
+
+  for(k in 1:length(opt))assign( names(opt)[k], opt[[k]] )
   
-  if(!is.null(dist)){
-    if(!LABELS) rownames(dist) <- colnames(dist) <- NULL
-    nn <- nrow(dist)
-    diss <- as.dist( dist )
-    nr   <- nrow(dist)
+  #dmat is a correlation matrix or distance matrix
+  
+  getTreeLabs <- function ( tree ){ #left to right or bottom to top
+    
+    getL <- function(tree_node) {
+      if(is.leaf(tree_node)) 
+        attr(tree_node, 'label')
+    }
+    unlist( dendrapply(tree, getL) )
   }
-  if(is.null(dist)){
-    if(!LABELS) rownames(dcor) <- colnames(dcor) <- NULL
-    nn <- nrow(dcor)
-    diss <- as.dist(.cov2Dist(dcor))
-    nr   <- nrow(dcor)
+  
+  
+ # if(!LABELS) rownames(dmat) <- colnames(dmat) <- NULL
+  nr   <- nrow(dmat)
+  nn   <- nrow(dmat)
+  
+  if(min(c(nr,nn)) < 3)return()
+  
+  if(DIST){
+    if(!isSymmetric(dmat))dmat <- dist(dmat)
+    diss <- as.dist( dmat )
+  }else{
+    diss <- as.dist(.cov2Dist(dmat))
   }
   
-  tmp    <- hclust(diss,method)
-  corder <- tmp$order
-  names(corder) <- tmp$labels
-  ctmp   <- cutree(tmp,k=1:ncluster)
+  htree  <- hclust(diss,method)
+  ctmp   <- cutree(htree,k=1:ncluster)
   
   wclus <- ctmp[,ncluster]
   clusterCol <- NULL
@@ -1484,8 +1554,13 @@
     }
     n
   }
-  tdendro <- as.dendrogram(tmp)
+  tdendro <- as.dendrogram(htree)
+  if(reverse)tdendro <- rev(tdendro)
   dL      <- dendrapply(tdendro,colLab)
+  
+  tlab <- getTreeLabs(tdendro)
+  corder <- match(tlab,colnames(dmat))
+  names(corder) <- colnames(dmat)[corder]
   
   nodePar <- list(cex = .1, lab.cex=textSize)
     leafLab         <- "textlike"
@@ -1504,7 +1579,6 @@
     
   axes <- T
   if(noaxis)axes <- F
-
   new <- F
   if(add)new <- T
  
@@ -3160,11 +3234,6 @@
   
   nr  <- nrow(frommat)
   
-  if(fun == 'prod'){
-    prodmat <- summat*0 + 1
-    return( byProdRcpp(nr,frommat, totmat, prodmat)$prod )
-  }
-  
   maxmat <- summat*0 - Inf
   minmat <- summat*0 + Inf
   
@@ -4010,7 +4079,7 @@
     
   #  hindex <- rep(1:S, each=holdoutN)
     
-    ploHold <- plo[drop=F,holdoutIndex,]   # updated in Gibbs sampler to match currently imputed yp
+    ploHold <- plo[drop=F,holdoutIndex,]   # if LOHI: updated to current yp
     phiHold <- phi[drop=F,holdoutIndex,]
   #  ploHold[1:holdoutN,] <- pmin[hindex]
   #  phiHold[1:holdoutN,] <- wmax[hindex]
@@ -4283,6 +4352,7 @@
   
   priorXIV  <- diag(1e-5,ncol(x))
   priorX    <- colMeans(x)
+  priorX[abs(priorX) < 1e-10] <- 0
   
   linFactor <- NULL
   
@@ -4460,10 +4530,18 @@
     S2UL      <- tmp$S2U
     xlUnstand <- tmp$xu
   }
+  
+  LOHI <- F
+  if(!LOHI & holdoutN > 0){
+    minlo <- apply(plo,2,min)
+    maxhi <- apply(phi,2,max)
+    plo[holdoutIndex,] <- matrix(minlo,holdoutN,S,byrow=T)
+    phi[holdoutIndex,] <- matrix(maxhi,holdoutN,S,byrow=T)
+  }
     
   for(g in 1:ng){ ########################################################
  
-    if(holdoutN > 0){
+    if(holdoutN > 0 & LOHI){
       tmp <- .getHoldLoHi( yh = yp[drop=F,holdoutIndex,], 
                            wh = w[drop=F,holdoutIndex,],
                            pl = plo[drop=F,holdoutIndex,],
@@ -4694,8 +4772,9 @@
       wHold <- tmp$wHold    #values for w if not held out
       
       Y <- w[,notOther]
+      if(holdoutN > 0) Y[holdoutIndex,] <- wHold[,notOther]  # if w not held out
       
-      if(REDUCT)Y <- Y + rndEff[,notOther]
+   #   if(REDUCT)Y <- Y + rndEff[,notOther]
       
       if(nmiss > 0){
         
@@ -4709,9 +4788,6 @@
       }
       
       if( PREDICTX & length(predXcols) > 0){
-        
-        ww <- w
-        if(holdoutN > 0) ww[holdoutIndex,] <- wHold
         
         if( length(interBeta$isNonLinX) > 0 ){
           
@@ -4759,7 +4835,6 @@
             ix  <- apply(tmp,1,which.max)   
             
             tmp <- tmp*0
-            
             tmp[ cbind(1:n,ix) ] <- 1
             tmp <- tmp[,-1,drop=F]
             xpred[,mm[-1]] <- tmp
@@ -4790,7 +4865,6 @@
     bgibbs[g,] <- bg             # standardized
  
     if(TRAITS){
- 
       Atrait <- bgs%*%t(specTrait[,colnames(yp)])
       Strait <- specTrait[,colnames(yp)]%*%sg%*%t(specTrait[,colnames(yp)])
       agibbs[g,] <- Atrait
@@ -5055,6 +5129,7 @@
       xrow <- match(xrow,colnames(xpredMu))
       names(xrow) <- colnames(xpredMu)[xrow]
     }
+    
     xpredMu <- .getUnstandX(xpredMu, xrow, xmu, xsd, intMat)$xu
     xpredSd[,xrow] <- xpredSd[,xrow]*matrix( xsd[xrow], n, length(xrow),byrow=T ) 
    
@@ -5248,7 +5323,7 @@
   
   all
 }
- 
+   
 .contrastCoeff <- function(beta, sigma, sinv, notStand, stand, factorObject){ 
    
   if(!is.null(notStand)){
@@ -5391,7 +5466,7 @@ summary.gjam <- function(object,...){
                 wr[1], " to ", wr[2], ".",sep="")
   }
   if( 'CC' %in% types ){
-    wd  <- which(types == 'DA')
+    wd  <- which(types == 'CC')
     rr  <- round( range(object$inputs$y[,wd]) )
     ef <- paste(ef, " CC count range is (", rr[1],", ", rr[2], ").", sep="")
   }
@@ -5516,7 +5591,8 @@ print.gjam <- function(x, ...){
   cex <- 1
   holdoutIndex <- numeric(0)
   clusterIndex <- clusterOrder <- numeric(0)
-  parameterTables <- NULL
+  
+  ncluster   <- min(c(4,ncol(y)))
 
   outFolder <- 'gjamOutput'
   outfile   <- character(0)
@@ -5574,7 +5650,6 @@ print.gjam <- function(x, ...){
     if(!ff)dir.create(outFolder)
   }
   
-  ncluster   <- min(c(4,ncol(y)))
   chainNames <- names(chains)
   allTypes   <- unique(typeNames)
   
@@ -5591,6 +5666,7 @@ print.gjam <- function(x, ...){
   ng      <- nrow(chains$bgibbs)
   gindex  <- burnin:ng
   
+  if(S < 20)SPECLABS <- T
   if(S > 10)CORLINES <- F
   if(S < 8){
     if(GRIDPLOTS)message('no GRIDPLOTS if S < 8')
@@ -6089,6 +6165,7 @@ print.gjam <- function(x, ...){
         
         if( !typeNames[wk[1]] %in% c('PA','CAT') ){
           ncc <- max( c(100,max(y1)/20) )
+          if(min(y1) < bins[1])bins[1] <- min(y1)
           xy  <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
           xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
           xy[1,xy[1,] < xlimit[1]] <- xlimit[1]
@@ -6334,8 +6411,11 @@ print.gjam <- function(x, ...){
         x2 <- xpredMu[iy,j]
         
         type <- 'CON'
-        for(kk in 1:length(modelSummary$factorList)){
-          if( xnames[j] %in% modelSummary$factorList[[kk]] )type <- 'PA'
+        if(length(inputs$factorBeta$factorList) > 0){
+          for(kk in 1:length(inputs$factorBeta$factorList)){
+            if( xnames[j] %in% inputs$factorBeta$factorList[[kk]] )type <- 'PA'
+            if(all(x[,j] %in% c(0,1)))type <- 'PA'
+          }
         }
         
         tmp <- .gjamPlotPars(type=type,x1,x2)
@@ -6344,7 +6424,7 @@ print.gjam <- function(x, ...){
         breaks <- tmp$breaks; wide <- tmp$wide; LOG <- tmp$LOG; POINTS <- F
         MEDIAN <- tmp$MEDIAN
         
-        LOG <- F
+        LOG <- add <- F
         
         if(nhold > 0){
           x1 <- x1[-holdoutIndex]
@@ -6361,6 +6441,7 @@ print.gjam <- function(x, ...){
           y1 <- y1[wn]
           yp <- yp[wn]
         }
+        
         
         tmp <- .bins4data(y1,nPerBin=nPerBin,breaks=breaks,LOG=LOG, POS=F)
         breaks <- tmp$breaks
@@ -6493,6 +6574,8 @@ print.gjam <- function(x, ...){
         
         if( !typeNames[wk[1]] %in% c('PA','CAT') ){
           ncc   <- max( c(100,max(y1)/20) )
+          if(bins[1] > min(y1))bins <- c(min(y1),bins)
+          if(max(bins) > max(y1))bins[length(bins)] <- max(y1)
           xy <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
           xy[2,] <- ylimit[1] + .8*xy[2,]*diff(ylimit)/max(xy[2,])
           plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
@@ -7059,7 +7142,8 @@ print.gjam <- function(x, ...){
         par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
         
         .myBoxPlot( mat = bfSig[,wc], tnam = vnam[ wc ], snames = snames,
-                    specColor, label=fnames[j])
+                    specColor, label=fnames[j], LEG=T)
+        
         
         if(!SAVEPLOTS){
           readline('95% posterior -- return to continue ')
@@ -7088,7 +7172,7 @@ print.gjam <- function(x, ...){
           k <- k + 1
           
           .myBoxPlot( mat = bfSig[,wc], tnam = vnam[ wc ], snames = snames,
-                      specColor, label=' ')
+                      specColor, label=' ', LEG=F)
           .plotLabel(fnames[j],'bottomleft')
         }
         
@@ -7175,11 +7259,8 @@ print.gjam <- function(x, ...){
     if(TRAITS){
       
       M  <- nrow(specByTrait)
-      nc    <- 0
-      #   vnam  <- matrix( unlist( strsplit(colnames(chains$agibbs),'_') ),
-      #                    ncol=2,byrow=T)
-      vnam <- .splitNames(colnames(chains$agibbs))$vnam
-      
+      nc     <- 0
+      vnam   <- .splitNames(colnames(chains$agibbs))$vnam
       mnames <- colnames(specByTrait)
       
       if( length(is.finite(match(mnames,vnam[,1]))) > 0 )nc <- 2
@@ -7208,27 +7289,12 @@ print.gjam <- function(x, ...){
         if(length(wc) > 100)wc <- sample(wc,100)
         
         mat <- chains$agibbs[,wc]*xSd[j]/traitSd
-        ord <- order(apply(mat,2,mean),decreasing=F)
-        tnam <- vnam[ wc[ord] ]
-        bx   <- tboxCol[ match(tnam, mnames) ]
-        bb   <- traitColor[ match(tnam, mnames) ]
-        ry   <- range(mat)
-        ymin <- min(mat) - diff(ry)*.15
-        ymax <- max(mat) + diff(ry)*.15
+        vn  <- .splitNames(colnames(mat))$vnam[,1]
         
-        tmp <- .boxplotQuant( mat[,ord],xaxt='n',outline=F,ylim=c(ymin,ymax),
-                              col='grey', border='black', xaxt='n',lty=1)
-        abline(h=0,lwd=2,col='grey',lty=1)
+        .myBoxPlot( mat, tnam = vn, snames = mnames,
+                    traitColor, label=' ', LEG=T)
         
-        dy <- .05*diff(par()$yaxp[1:2])
-        text((1:length(wc)) - .1,dy + tmp$stats[5,],tnam,srt=70,pos=4,
-             col=bb, cex=.7)
-        
-        pl    <- par('usr')
-        xtext <- pl[1]
-        ytext <- pl[3] + diff(pl[3:4])*.2
-        #   text(xtext, ytext, expression(hat(bold(alpha))),pos=4,cex=1.5)    
-        .plotLabel(xnames[j],location='bottomleft')  
+        .plotLabel(xnames[j],location='bottomright')  
         
         if(!SAVEPLOTS){
           readline('95% posterior -- return to continue ')
@@ -7264,8 +7330,8 @@ print.gjam <- function(x, ...){
     clusterOrder <- NULL
     
     if(S >= 8){
-      
-      clusterDat <- .clusterPlot( dcor = ematrix , ncluster=ncluster, PLOT=F)
+      opt <- list( ncluster=ncluster, PLOT=F, DIST=F )
+      clusterDat <- .clusterPlot( ematrix , opt)
       colCode    <- clusterDat$colCode
       cord       <- rev(clusterDat$corder)
       dord       <- notOther[!notOther %in% omit][cord]
@@ -7291,9 +7357,10 @@ print.gjam <- function(x, ...){
   dcor <- .cov2Cor(covy)
   dcor[is.na(dcor)] <- 0
   
-  tmp <- .clusterPlot( dcor =  dcor,main='',cex=.2,
-                       ncluster=ncluster,colCode=specColor[notOmit], 
-                       textSize=.4, LABELS = LABELS)
+  opt <- list( main='',cex=.2,ncluster=ncluster,
+               colCode=specColor[notOmit], textSize=.4, 
+               LABELS = LABELS, DIST=F )
+  tmp <- .clusterPlot( dcor, opt)
   colCode <- tmp$colCode
   
   clusterIndex <- tmp$clusterIndex
@@ -7301,9 +7368,16 @@ print.gjam <- function(x, ...){
   
   .plotLabel('a) Data correlation',above=T, cex=1.7)
   
-  tmp <- .clusterPlot( dcor = ematrix[notOther,notOther] ,main='',cex=.2,
-                       ncluster=ncluster, 
-                       colCode=colCode, textSize=.5, LABELS = LABELS)
+  
+  tmp   <- .clustMat(ematrix[notOther,notOther], SYM = T)
+  ecor <- tmp$cmat
+  
+  
+  
+  opt <- list( main='',cex=.2, ncluster=ncluster, 
+               colCode=specColor[notOmit], textSize=.5, 
+               LABELS = LABELS, DIST=F)
+  tmp <- .clusterPlot( ecor , opt )
   .plotLabel('b) E correlation',above=T, cex=1.7)
   
   clusterIndex <- cbind( clusterIndex, tmp$clusterIndex )
@@ -7457,13 +7531,14 @@ print.gjam <- function(x, ...){
   if(SMALLPLOTS)psize <- psize/2
   
   par(plt=c(.03,.15,.1,.9), bty='n', new=F)
-  tmp <- .clusterPlot( dcor = corMu[notOmit,notOmit] ,main=' ',cex=.2,
-                       ncluster=ncluster, 
-                       colCode=specColor[notOmit], textSize=.5, 
-                       LABELS = F)
+  opt <- list( main=' ',cex=.2, ncluster=ncluster, 
+               colCode=specColor[notOmit], textSize=.5, 
+               LABELS = F, DIST=F )
+  tmp <- .clusterPlot( corMu[notOmit,notOmit] , opt)
   colCode   <- tmp$colCode
   corder    <- rev(tmp$corder)
-  specOrder <- snames[notOmit[corder]]
+ # specOrder <- snames[notOmit[corder]]
+  rOrder <- snames[notOmit[corder]]
   
   clusterIndex <- cbind( clusterIndex, tmp$clusterIndex )
   clusterOrder <- cbind( clusterOrder, tmp$corder )
@@ -7478,15 +7553,15 @@ print.gjam <- function(x, ...){
          xaxt='n',yaxt='n',xlab='',ylab='')
     xl <- rep(.5,SO)
     
-    yl <- c(1:SO) + par('usr')[3] - .5
-    cex <- .fitText2Fig(specOrder,fraction=1.2)
-    text( xl,yl,rev(specOrder),pos=3,cex=cex, col=rev(colCode[corder]))
+    yl <- c(1:SO) + par('usr')[3] - .75
+    cex <- .fitText2Fig(rOrder,fraction=1.2)
+    text( xl,yl,rev(rOrder),pos=3,cex=cex, col=rev(colCode[corder]))
   }
   
-  knames <- snames[notOmit]
+ # knames <- snames[notOmit]
   
   tmp <- .invMatZero(sgibbs,nsim=nrow(sgibbs),snames=snames,
-                     knames=specOrder,index=NULL, COMPRESS=T, 
+                     knames=rOrder,index=NULL, COMPRESS=T, 
                      REDUCT=REDUCT,
                      sigErrGibbs = output$chains$sigErrGibbs, 
                      kgibbs = output$chains$kgibbs,
@@ -7547,7 +7622,7 @@ print.gjam <- function(x, ...){
     main1 <- expression( paste('Sensitivity ',hat(F)))
     main2 <- expression( paste('Responses ',hat(B)))
     
-    fBetaMu <- output$parameterTables$fBetaMu
+    fBetaMu <- output$parameters$fBetaMu
     
     ws <- which( rowSums(fMat) == 0)
     if(length(ws) > 0){
@@ -7556,15 +7631,15 @@ print.gjam <- function(x, ...){
       fBetaMu <- fBetaMu[not0,]
     }
     
- #   mat1 <- .cov2Cor(fMat)
     mat1 <- fMat
     mat2 <- fBetaMu
     
     opt <- list(mainLeft=main1, main1=main1, main2 = main2,
-                leftClus=T, topClus2=T, rightLab=T, topLab1=T, 
+                leftClus=T, topClus2=T, rightLab=F, topLab1=T, 
+                topLab2 = T, leftLab=T,
                 colCode2 = specColor[notOther], lower1 = T, diag1 = T,
                 lower2 = F)
-    .clusterWithGrid(mat1, mat2, expand=3, opt)
+    .clusterWithGrid(mat1, mat2, expand=5, opt)
     
     if(!SAVEPLOTS){
       readline('F & beta structure -- return to continue ')
@@ -7581,6 +7656,7 @@ print.gjam <- function(x, ...){
   main1 <- expression(paste('Species ',hat(E)))
   opt <- list(mainLeft=main1, leftClus=T, leftLab=T, 
               colCode1 = boxCol[notOther], rowCode = specColor[notOther],
+              topLab1=T,
               lower1 = T, diag1 = F,horiz1=clusterIndex[,'E'])
   .clusterWithGrid(mat1, mat2=NULL, expand=1, opt)
   
@@ -7595,15 +7671,20 @@ print.gjam <- function(x, ...){
   graphics.off()
   if(SAVEPLOTS)pdf( file=.outFile(outFolder,'gridR_E.pdf') ) # start plot
   
-  mat1 <- crr
+  
+  dcor <- .cov2Cor(covy)
+  dcor[is.na(dcor)] <- 0
+  
+  mat1 <- dcor    #####################################
   mat2 <- ematrix[notOther,notOther]
   main1 <- expression(paste('Ordered by error ',hat(R)))
   main2 <- expression(paste('Response ',hat(E)))
   opt <- list(mainLeft='Species', main1=main1, main2 = main2,
               leftClus=T, leftLab=T, rowCode = specColor[notOther],
+              topLab1 = T, topLab2 = T,rightLab=F,
               lower1 = T, diag1 = F,lower2 = T, diag2 = T)
   .clusterWithGrid(mat1, mat2, expand=1, opt)
-  # rowCode=rev(colCode[corder][notOther]),
+ 
   if(!SAVEPLOTS){
     readline('comparison R vs E -- return to continue ')
   } else {
@@ -7645,15 +7726,18 @@ print.gjam <- function(x, ...){
     main1 <- expression(paste('Species ',hat(E)))
     main2 <- expression(paste(hat(B),' by predictor'))
     topLab1 <- F
-    if(S < 40)topLab1 <- T
+    if(S < 30)topLab1 <- T
     
     ee <- ncol(mat2)/(ncol(mat1) + ncol(mat2) )
     ee <- max(ee,.05)
     opt <- list(mainLeft=main1, main1=main1, main2 = main2,
                 topClus1=T, topClus2=T, topLab1 = topLab1, topLab2=T,
-                colCode1 = boxCol[notOther], lower1 = T, diag1 = F,
+           #     colCode1 = boxCol[notOther], 
+                leftLab=T,lower1 = T, diag1 = F, ncluster = ncluster,
+                colCode1 = specColor[notOther],
                 vert1=clusterIndex[,'E'], horiz2=clusterIndex[,'E'])
     .clusterWithGrid(mat1, mat2, expand=ee, opt)
+    
     
     if(!SAVEPLOTS){
       readline('beta ordered by response to X -- return to continue ')
@@ -7751,11 +7835,15 @@ print.gjam <- function(x, ...){
        
        ht <- nrow(bb)/ncol(bb)*width
        
-       .corPlot(bb,slim=NULL,PDIAG=F,plotScale=plotScale,
-                makeColor=NULL,textSize=.7, SPECLABS = SPECLABS,
-                CORLINES=CORLINES,tri='both', 
-                cex=.6,squarePlot=F,LEGEND=T,
-                widex=width,widey=ht,new=F)
+       
+
+       
+       opt <- list(mainLeft='', main1='', main2 = '',
+                   topClus1=T, topClus2=T, topLab1 = T, topLab2=F,
+                   leftClus=T, 
+                   leftLab=T, 
+                   colCode1 = traitColor)
+       .clusterWithGrid(mat1=betaTraitMu[-1,], mat2=NULL, expand=1, opt)
        
        if(!SAVEPLOTS){
          readline('trait beta -- return to continue ')
@@ -7766,13 +7854,13 @@ print.gjam <- function(x, ...){
   }
   
   all <- list(summaryCoeffs = summaryCoeffs, fit = fit, ematrix = ematrix,
-              eComs = eComs,
+              eComs = eComs, ncluster = ncluster,
               clusterIndex = clusterIndex, clusterOrder = clusterOrder,
               eVecs = eVecs, eValues = eValues) 
   all <- all[ order(names(all)) ]
   invisible(all)
 }
-  
+   
 .gjamPrediction <- function(output, newdata, y2plot, PLOT, ylim){
   
   xdata <- ydataCond <- interBeta <- NULL
@@ -7931,7 +8019,6 @@ print.gjam <- function(x, ...){
     
     tmp <- .gjamXY(formula, xdata, yp, typeNames, 
                    notStandard=names(xdata), checkX = F, xscale = xscale)
-    
     x  <- tmp$x     
     
     beta <- output$parameters$betaMu
@@ -7972,16 +8059,16 @@ print.gjam <- function(x, ...){
     }
     
     if(length(CCgroups) > 0){
-      ysum <- rep(1000,n)                   # CC use sum of 1000
+      ysum <- rep(100,n)                   # CC use sum of 100
       ntt  <- max(CCgroups)
       if(ntt > 0){
-      for(i in 1:ntt){  ## normalize y 
-        wk      <- which( CCgroups == i )
-        wo      <- which(wk %in% notOther)
-        yp[,wk] <- .gjamCompW2Y(yp[,wk,drop=F], notOther=wo)$ww
-        yp[,wk][yp[,wk] < 0] <- 0
-        yp[,wk] <- round( sweep(yp[,wk],1,ysum,'*'), 0) 
-      }
+        for(i in 1:ntt){  ## normalize y 
+          wk      <- which( CCgroups == i )
+          wo      <- which(wk %in% notOther)
+          yp[,wk] <- .gjamCompW2Y(yp[,wk,drop=F], notOther=wo)$ww
+          yp[,wk][yp[,wk] < 0] <- 0
+          yp[,wk] <- round( sweep(yp[,wk],1,ysum,'*'), 0) 
+        }
       }
     }
     
@@ -8154,16 +8241,15 @@ print.gjam <- function(x, ...){
   
   for(g in gvals){
     
-    bg   <- matrix( output$chains$bgibbs[g,], Q, S)
-    
-    muw  <- x%*%bg
+    bg  <- matrix( output$chains$bgibbs[g,], Q, S)
+    muw <- x%*%bg
     
     if(REDUCT){
       Z  <- matrix(output$chains$sgibbs[g,],N,r)
       sg <- .expandSigma(output$chains$sigErrGibbs[g], S, Z = Z, 
                          output$chains$kgibbs[g,], REDUCT = T)
       K    <- output$chains$kgibbs[g,]
-      covR <- solveRcpp( (1/sigmaerror)*crossprod(Z[K,]) + diag(r) ) # Sigma_W
+      covR <- solveRcpp( (1/sigmaerror)*crossprod(Z[K,]) + diag(r) ) 
       z1   <- crossprod( Z[K,]/sigmaerror,t(w - muw) )        
       RR   <- rmvnormRcpp(n, mu = rep(0,r), sigma = covR ) + t(crossprod( covR,z1))
       endEff <- RR%*%t(Z[K,])
@@ -8610,7 +8696,9 @@ print.gjam <- function(x, ...){
 
 .gjamWLoopTypes <- function(wo, type, yy, wp, yp, cutg, censor, 
                             censorCA, censorDA, censorCON,
-                            effMat, groups, k, typeCols, notOther, wk = wo, sampW ){
+                            eff, groups, k, typeCols, notOther, wk = wo, sampW ){
+  
+  #returns [[1]] in-sample w for x prediction, and [[2]] out-of-sample y prediction
   
   if( type == 'continuous'){
     yy[sampW == 1] <- wp[sampW == 1]
@@ -8641,7 +8729,7 @@ print.gjam <- function(x, ...){
     yp[yp < 0] <- 0
     if(length(censorDA) > 0) wp[-censorDA] <- yy[-censorDA]
     
-    yp <- yp*effMat
+    yp <- yp*eff
     
     return( list(wp,yp) )
   }
@@ -10909,7 +10997,7 @@ print.gjam <- function(x, ...){
       mef <- as.vector(muf[,scol])
       
       w[w0] <- .tnorm(length(w0), plo[w0], phi[w0], muf[w0], sqrt(sigmaerror))
-      w[-w0] <- y[-w0]
+      w[-w0] <- y[-w0]          
       
       yPredict[,scol] <- matrix( rnorm(n*SC,mef,sqrt(sigmaerror)),n,SC)
       
@@ -10944,7 +11032,7 @@ print.gjam <- function(x, ...){
       
       if(!is.null(sampleW))w[sampleW == 0] <- y[sampleW == 0]
       if(holdoutN > 0){
-        wHold[sampleWhold == 0] <- y[holdoutIndex,][sampleWhold == 0]
+        wHold[sampleWhold == 0] <- y[holdoutIndex,][sampleWhold == 0]  # to sample x
       }
       
       FCgroups  <- attr(typeNames,'FCgroups')
@@ -10974,8 +11062,9 @@ print.gjam <- function(x, ...){
           phi     <- tmp$phi
           
           if(holdoutN > 0){
-            wHold[,wo] <- .gjamWcatLoop2(y, ws = w[, wk, drop=F], 
-                                         mus = muf, sgs = sigvec, 
+            ws <- w[, wk, drop=F]
+            ws[holdoutIndex,] <- wHold[, wk, drop=F]
+            wHold[,wo] <- .gjamWcatLoop2(y, ws, mus = muf, sgs = sigvec, 
                                          notOther = notOther, ploHold, phiHold, 
                                          groups = CATgroups, REDUCT=T) 
           }
@@ -10989,12 +11078,13 @@ print.gjam <- function(x, ...){
         if(holdoutN > 0){
           wp  <- wHold[,wk,drop=F]
           yp  <- yPredict[holdoutIndex, wk, drop=F]
-          tmp <- .gjamWLoopTypes(wo, typeFull[wk[1]], y[holdoutIndex,wk,drop=F], wp, 
+          tmp <- .gjamWLoopTypes(wo, type = typeFull[wk[1]], yy = y[holdoutIndex,wk,drop=F], wp, 
                                  yp, cutg, censor, censorCA, censorDA, censorCON, 
-                                 effMat[holdoutIndex, wk, drop=F], 
-                                 groups, k, typeCols, notOther, wk = wk, sampleW[,wk])
-          wHold[,wk] <- tmp[[1]]
-          yPredict[holdoutIndex,wk] <- tmp[[2]]
+                                 eff = effMat[holdoutIndex, wk, drop=F], 
+                                 groups, k, typeCols, notOther, wk = wk, 
+                                 sampW = sampleW[,wk])
+          wHold[,wk] <- tmp[[1]]                 #in-sample for x prediction
+          yPredict[holdoutIndex,wk] <- tmp[[2]]  #out-of-sample prediction
         }
         yPredict[,wk] <- .censorValues(censor,y,yPredict)[,wk]
       }

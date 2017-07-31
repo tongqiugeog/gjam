@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // byRcpp
 Rcpp::List byRcpp(const int nr, const arma::mat frommat, arma::mat totmat, arma::mat summat, arma::mat minmat, arma::mat maxmat);
-RcppExport SEXP gjam_byRcpp(SEXP nrSEXP, SEXP frommatSEXP, SEXP totmatSEXP, SEXP summatSEXP, SEXP minmatSEXP, SEXP maxmatSEXP) {
+RcppExport SEXP _gjam_byRcpp(SEXP nrSEXP, SEXP frommatSEXP, SEXP totmatSEXP, SEXP summatSEXP, SEXP minmatSEXP, SEXP maxmatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,23 +22,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// byProdRcpp
-Rcpp::List byProdRcpp(const int nr, const arma::mat frommat, arma::mat totmat, arma::mat prodmat);
-RcppExport SEXP gjam_byProdRcpp(SEXP nrSEXP, SEXP frommatSEXP, SEXP totmatSEXP, SEXP prodmatSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int >::type nr(nrSEXP);
-    Rcpp::traits::input_parameter< const arma::mat >::type frommat(frommatSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type totmat(totmatSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type prodmat(prodmatSEXP);
-    rcpp_result_gen = Rcpp::wrap(byProdRcpp(nr, frommat, totmat, prodmat));
-    return rcpp_result_gen;
-END_RCPP
-}
 // condMVNRcpp
 Rcpp::List condMVNRcpp(const arma::uvec cdex, const arma::uvec gdex, const arma::mat xx, arma::mat mu, const arma::mat sigma);
-RcppExport SEXP gjam_condMVNRcpp(SEXP cdexSEXP, SEXP gdexSEXP, SEXP xxSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
+RcppExport SEXP _gjam_condMVNRcpp(SEXP cdexSEXP, SEXP gdexSEXP, SEXP xxSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -51,23 +37,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// tnorm_cpp
-double tnorm_cpp(double lo, double hi, double mu, double sig);
-RcppExport SEXP gjam_tnorm_cpp(SEXP loSEXP, SEXP hiSEXP, SEXP muSEXP, SEXP sigSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
-    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
-    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type sig(sigSEXP);
-    rcpp_result_gen = Rcpp::wrap(tnorm_cpp(lo, hi, mu, sig));
-    return rcpp_result_gen;
-END_RCPP
-}
 // tnormRcpp
 double tnormRcpp(double lo, double hi, double mu, double sig);
-RcppExport SEXP gjam_tnormRcpp(SEXP loSEXP, SEXP hiSEXP, SEXP muSEXP, SEXP sigSEXP) {
+RcppExport SEXP _gjam_tnormRcpp(SEXP loSEXP, SEXP hiSEXP, SEXP muSEXP, SEXP sigSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -79,20 +51,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// any_naCpp
-bool any_naCpp(NumericVector x);
-RcppExport SEXP gjam_any_naCpp(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(any_naCpp(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 // trMVNmatrixRcpp
 arma::mat trMVNmatrixRcpp(arma::mat avec, arma::mat muvec, arma::mat smat, arma::mat lo, arma::mat hi, arma::uvec whichSample, arma::uvec idxALL);
-RcppExport SEXP gjam_trMVNmatrixRcpp(SEXP avecSEXP, SEXP muvecSEXP, SEXP smatSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP whichSampleSEXP, SEXP idxALLSEXP) {
+RcppExport SEXP _gjam_trMVNmatrixRcpp(SEXP avecSEXP, SEXP muvecSEXP, SEXP smatSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP whichSampleSEXP, SEXP idxALLSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -109,7 +70,7 @@ END_RCPP
 }
 // rmvnormRcpp
 arma::mat rmvnormRcpp(int n, arma::vec mu, arma::mat sigma);
-RcppExport SEXP gjam_rmvnormRcpp(SEXP nSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
+RcppExport SEXP _gjam_rmvnormRcpp(SEXP nSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -120,24 +81,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rmatrixnormRcpp
-arma::mat rmatrixnormRcpp(int n, int p, arma::mat M, arma::mat sigmacols, arma::mat sigmarows);
-RcppExport SEXP gjam_rmatrixnormRcpp(SEXP nSEXP, SEXP pSEXP, SEXP MSEXP, SEXP sigmacolsSEXP, SEXP sigmarowsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< int >::type p(pSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type M(MSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type sigmacols(sigmacolsSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type sigmarows(sigmarowsSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatrixnormRcpp(n, p, M, sigmacols, sigmarows));
-    return rcpp_result_gen;
-END_RCPP
-}
 // solveRcpp
 arma::mat solveRcpp(arma::mat A);
-RcppExport SEXP gjam_solveRcpp(SEXP ASEXP) {
+RcppExport SEXP _gjam_solveRcpp(SEXP ASEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -148,7 +94,7 @@ END_RCPP
 }
 // getPmatKRcpp
 arma::mat getPmatKRcpp(arma::vec pveck, arma::mat Yk, arma::mat Zk, arma::mat Xk, arma::mat Bk, arma::mat Wk, double sigmasqk);
-RcppExport SEXP gjam_getPmatKRcpp(SEXP pveckSEXP, SEXP YkSEXP, SEXP ZkSEXP, SEXP XkSEXP, SEXP BkSEXP, SEXP WkSEXP, SEXP sigmasqkSEXP) {
+RcppExport SEXP _gjam_getPmatKRcpp(SEXP pveckSEXP, SEXP YkSEXP, SEXP ZkSEXP, SEXP XkSEXP, SEXP BkSEXP, SEXP WkSEXP, SEXP sigmasqkSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -163,22 +109,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rmvnormArma2
-arma::mat rmvnormArma2(int n, arma::vec mu, arma::mat sigma);
-RcppExport SEXP gjam_rmvnormArma2(SEXP nSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type sigma(sigmaSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmvnormArma2(n, mu, sigma));
-    return rcpp_result_gen;
-END_RCPP
-}
 // fnZRcpp
 arma::mat fnZRcpp(arma::vec kk, arma::mat Yk, arma::mat Xk, arma::mat Dk, arma::mat Bk, arma::mat Wk, double sigmasqk, int Nz);
-RcppExport SEXP gjam_fnZRcpp(SEXP kkSEXP, SEXP YkSEXP, SEXP XkSEXP, SEXP DkSEXP, SEXP BkSEXP, SEXP WkSEXP, SEXP sigmasqkSEXP, SEXP NzSEXP) {
+RcppExport SEXP _gjam_fnZRcpp(SEXP kkSEXP, SEXP YkSEXP, SEXP XkSEXP, SEXP DkSEXP, SEXP BkSEXP, SEXP WkSEXP, SEXP sigmasqkSEXP, SEXP NzSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -196,7 +129,7 @@ END_RCPP
 }
 // invWbyRcpp
 arma::mat invWbyRcpp(double sigsq, arma::mat A);
-RcppExport SEXP gjam_invWbyRcpp(SEXP sigsqSEXP, SEXP ASEXP) {
+RcppExport SEXP _gjam_invWbyRcpp(SEXP sigsqSEXP, SEXP ASEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -205,4 +138,22 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(invWbyRcpp(sigsq, A));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_gjam_byRcpp", (DL_FUNC) &_gjam_byRcpp, 6},
+    {"_gjam_condMVNRcpp", (DL_FUNC) &_gjam_condMVNRcpp, 5},
+    {"_gjam_tnormRcpp", (DL_FUNC) &_gjam_tnormRcpp, 4},
+    {"_gjam_trMVNmatrixRcpp", (DL_FUNC) &_gjam_trMVNmatrixRcpp, 7},
+    {"_gjam_rmvnormRcpp", (DL_FUNC) &_gjam_rmvnormRcpp, 3},
+    {"_gjam_solveRcpp", (DL_FUNC) &_gjam_solveRcpp, 1},
+    {"_gjam_getPmatKRcpp", (DL_FUNC) &_gjam_getPmatKRcpp, 7},
+    {"_gjam_fnZRcpp", (DL_FUNC) &_gjam_fnZRcpp, 8},
+    {"_gjam_invWbyRcpp", (DL_FUNC) &_gjam_invWbyRcpp, 2},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_gjam(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }

@@ -1,14 +1,14 @@
 ## ----outform, echo=F-----------------------------------------------------
 insertPlot <- function(file, caption){
-    outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
-  if(outputFormat == 'latex')
-    paste("![ ", caption, " ](", file, ")",sep="")
+#    outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
+#  if(outputFormat == 'latex')
+#    paste("![ ", caption, " ](", file, ")",sep="")
 }
 bigskip <- function(){
-  outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
-  if(outputFormat == 'latex')
-    "\\bigskip"
-  else
+#  outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
+#  if(outputFormat == 'latex')
+#    "\\bigskip"
+#  else
     "<br>"
 }
 
@@ -213,7 +213,13 @@ x   <- model.matrix(formula, data=tmp)
 #  ml   <- list(ng = 2500, burnin = 500, typeNames = 'DA', reductList = rl)
 #  form <- as.formula( ~ temp*deficit + I(temp^2) + I(deficit^2) )
 #  out  <- gjam(form, xdata = xdata, ydata = treeYdata, modelList = ml)
-#  pl   <- list(SMALLPLOTS = F, GRIDPLOTS=T)
+#  specNames <- colnames(treeYdata)
+#  specColor <- rep('black',ncol(treeYdata))
+#  specColor[ c(grep('quer',specNames),grep('cary',specNames)) ] <- 'brown'
+#  specColor[ c(grep('acer',specNames),grep('frax',specNames)) ] <- 'darkgreen'
+#  specColor[ c(grep('abie',specNames),grep('pice',specNames)) ] <- 'blue'
+#  
+#  pl   <- list(SMALLPLOTS = F, GRIDPLOTS=T, specColor = specColor)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----plot save, eval = F-------------------------------------------------
@@ -352,14 +358,14 @@ cbind(ml,mx)
 
 ## ----many types, eval = FALSE--------------------------------------------
 #  types <- c('OC','OC','OC','OC','CC','CC','CC','CC','CC','CA','CA','PA','PA')
-#  f     <- gjamSimData(S = length(types), Q = 3, typeNames = types)
+#  f     <- gjamSimData(S = length(types), Q = 5, typeNames = types)
 #  ml    <- list(ng = 2000, burnin = 500, typeNames = f$typeNames)
 #  out   <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 #  tmp   <- data.frame(f$typeNames, out$inputs$classBySpec[,1:10])
 #  print(tmp)
 
 ## ----mixed analysis, eval = FALSE----------------------------------------
-#  pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F)
+#  pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F, GRIDPLOTS = T)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----simulate missing data, eval = FALSE---------------------------------
@@ -408,10 +414,6 @@ cbind(ml,mx)
 ## ----effortPredictNew, eval = FALSE--------------------------------------
 #  new <- list(xdata = f$xdata, effort=eff, nsim = 500 ) # effort unchanged
 #  p1  <- gjamPredict(output = out, newdata = new)
-#  
-#  
-#  p1 <- .gjamPrediction(output = out, newdata = new, y2plot = NULL, ylim=NULL)
-#  
 #  
 #  plot(f$y[,tn == 'DA'], p1$sdList$yMu[,tn == 'DA'],ylab = 'Predicted',cex=.1)
 #  abline(0,1)

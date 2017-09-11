@@ -211,11 +211,11 @@ It's easiest to start with the examples from `gjam` help pages.  This section pr
 
 ##<span style="color:teal">simulated data</span>
 
-Simulated data are used to check that the algorithm can recover true parameter values and predict data, including underlying latent variables.  To illustrate I simulate a sample of size $n = 500$ for $S = 10$ species and $Q = 3$ predictors.  To indicate that all species are *continuous abundance* data I specify `typeNames` as `'CA'`.  `CA` data are continuous above zero, with point mass at zero. 
+Simulated data are used to check that the algorithm can recover true parameter values and predict data, including underlying latent variables.  To illustrate I simulate a sample of size $n = 500$ for $S = 10$ species and $Q = 4$ predictors.  To indicate that all species are *continuous abundance* data I specify `typeNames` as `'CA'`.  `CA` data are continuous above zero, with point mass at zero. 
 
 ```{r simulate CA, eval = F}
 library(gjam)
-f <- gjamSimData(n = 500, S = 10, Q = 3, typeNames = 'CA')
+f <- gjamSimData(n = 500, S = 10, Q = 4, typeNames = 'CA')
 summary(f)
 ```
 
@@ -589,7 +589,7 @@ To analyze data that are censored at specific intervals, I specify the censored 
 # assumes there is a data matrix ydata
 upper <- 100
 intv  <- matrix(c(upper,Inf),2)
-rownames(i) <- c('lower','upper')
+rownames(intv) <- c('lower','upper')
 tmp <- gjamCensorY(values = upper, intervals = intv, y = ydata, type='DA')
 ```
 
@@ -900,6 +900,57 @@ In the first case, I held the values for columns 1 and 2 at the values observed.
 
 When there are large covariances in the estimates of $\Sigma$ the conditional predictions can differ dramatically from anything observed.  In fact, if I condition on values of y that are well outside the data predictions will make no sense at all.  Conversely, if covariances in $\Sigma$ are near zero conditional distributions will not look much different from unconditional predictions.  With dimension reduction we have only a crude estimate of $\Sigma$, so conditional prediction was be judged accordingly.
 
+Here is a second example, where I ask how knowledge of some species affects ability to predict others.  
+
+```{r input, eval = F}
+library(repmis)
+d <- "https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True"
+source_data(d)
+
+xdata <- forestTraits$xdata                          # n X Q
+ydata  <- gjamReZero(forestTraits$treesDeZero)        # n X S
+ydata <- ydata[,colnames(ydata) != 'other']
+ydata <- gjamTrimY(ydata, 10, OTHER=F)$y
+```
+
+Here is a model fitted to the forest `"CA"` data:
+
+```{r gjamCA, eval=F}
+rl      <- list(N = 15, r = 15)
+ml      <- list(ng = 5000, burnin = 2000, typeNames = 'CA', 
+                reductList = rl, PREDICTX = F)
+out <- gjam(formula, xdata, ydata, modelList = ml)
+
+#prediction
+newdata <- list(xdata = xdata, nsim=100)
+tmp     <- gjamPredict(out, newdata=newdata)
+full    <- tmp$sdList$yMu
+```
+
+Here I condition on half of the species and predict the other half:
+
+```{r cond, eval=F}
+cnames <- sample(colnames(ydata),S/2)
+wc     <- match(cnames, colnames(ydata))
+
+yc <- ydata[,cnames]
+
+newdata <- list(ydataCond = yc, nsim=200)
+tmp     <- gjamPredict(out, newdata = newdata)
+condy   <- tmp$sdList$yMu
+
+plot(ydata[,-wc], full[,-wc], ylim=c(range(ydata)), cex=.2)
+abline(0,1)
+points(ydata[,-wc],condy[,-wc],col=2, cex=.2)
+rmspe <- c( mean((ydata[,-wc] - full[,-wc])^2),
+            mean((ydata[,-wc] - condy[,-wc])^2))
+names(rmspe) <- c('unconditional','conditional')
+rmspe
+```
+
+The rmspe for the unconditional prediction is lower, because there are residual relationships between species.
+
+
 ##<span style="color:teal">presence-only data with effort</span>
 
 If I have a model for effort, then incidence data can have a likelihood, i.e., a probability assigned to observations that are aggregated into groups of known effort. I cannot model absence for the aggregate data unless I know how much effort was devoted to searching for it.  Effort is widely known to have large spatio-temporal and taxonomic bias.  
@@ -1021,7 +1072,7 @@ fit <- gjamPlot(output, plotPars)
 fit$eComs[1:5,]
 ``` 
 
-Check the chains for convergence.
+Check the chains for convergence.  Those coefficients that do not converge are poorly represented in factorial factor combinations.  
 
 
 Again, the low dimensional version of covariance $\boldsymbol{\Sigma}$ is expected to perform best when there is structure in the data.  The responses in matrix $\mathbf{E}$, returned in `fit$ematrix`, classify OTUs in three main groups, contained in `fit$eComs`.
@@ -1063,15 +1114,15 @@ fit1 <- gjamIIE(output, xvector, omitY = 'other')
 par(mfrow=c(1,3), bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0), 
     mar = c(3,2,2,1), tcl = -0.5, mgp = c(3,1,0))
 gjamIIEplot(fit1, response = 'status', effectMu = 'direct', 
-            effectSd = 'direct', legLoc = 'bottomright', ylim=c(-2,2))
+            effectSd = 'direct', legLoc = 'bottomright', ylim=c(-5,10))
 title('Direct effect by host')
 
 gjamIIEplot(fit1, response = 'status', effectMu = 'int', effectSd = 'int',
-            legLoc = 'topright', ylim=c(-2,2))
+            legLoc = 'topright', ylim=c(-5,10))
 title('Interactions with polyculture')
 
 gjamIIEplot(fit1, response = 'status', effectMu = 'ind', effectSd = 'ind',
-            legLoc = 'topright', ylim=c(-2,2))
+            legLoc = 'topright', ylim=c(-1,1))
 title('Indirect effect of microbiome')
 ```
 
@@ -1182,7 +1233,7 @@ for(j in 1:length(xbox)){
 
 Data contained in `forestTraits` include predictors in `xdata`, a character vector of data types in `traitTypes`, and `treesDeZero`, which contains tree biomass in de-zeroed format.  Here the data are loaded, re-zeroed with `gjamReZero`:
 
-```{r input, eval = F}
+```{r input6, eval = F}
 library(repmis)
 d <- "https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True"
 source_data(d)
@@ -1198,7 +1249,7 @@ identical(rownames(sbyt),colnames(pbys))
 
 The matrix `pbys` holds biomass values for species, rounded off to reduce storage. The first six columns of `sbyt` are centered and standardized.  The three ordinal classes are integer values, but do not represent an absolute scale (see below).  The three groups of categorical variables in `data.frame sbyt` have different numbers of levels shown here:
 
-```{r input2, eval = F}
+```{r input7, eval = F}
 table(sbyt$leaf)      # four levels
 
 table(sbyt$xylem)     # diffuse/tracheid vs ring-porous
@@ -1208,7 +1259,7 @@ table(sbyt$repro)     # two levels
 
 These species traits are translated into community-weighted means and modes (CWMM) by the function `gjamSpec2Trait`:
 
-```{r input3, eval = F}
+```{r input8, eval = F}
 tmp         <- gjamSpec2Trait(pbys, sbyt, types)
 tTypes      <- tmp$traitTypes                  # M = 15 values
 u           <- tmp$plotByCWM                   # n X M
@@ -1302,8 +1353,8 @@ ml  <- list(ng = 3000, burnin = 500, typeNames = tTypes, holdoutN = 20,
             censor=censor, notStandard = c('f1','f2','f3'))
 out <- gjam(~ temp + stdage + moisture*deficit + deficit*soil, 
                  xdata = xdata, ydata = u, modelList = ml)
-tnames    <- colnames(u)
-specColor <- rep('black', M)                           # highlight types
+tnames <- colnames(u)
+sc <- rep('black', M)                           # highlight types
 wo <- which(tnames %in% c("leafN","leafP","SLA") )     # foliar traits
 wf <- grep("leaf",tnames)                              # leaf habit
 wc <- which(tnames %in% c("woodSG","diffuse","ring") ) # wood anatomy
@@ -1485,7 +1536,7 @@ The PTM begins by fitting `pbys`, followed by predicting `plotByTraits`.  This r
 ```{r PTM, eval = F}
 tl  <- list(plotByTrait = u, traitTypes = tTypes, specByTrait = specByTrait)
 rl  <- list(r = 8, N = 25)
-ml  <- list(ng = 1000, burnin = 200, typeNames = 'CC', holdoutN = 20,
+ml  <- list(ng = 2000, burnin = 500, typeNames = 'CC', holdoutN = 20,
                   traitList = tl, reductList = rl)
 out <- gjam(~ temp + stdage + deficit*soil, xdata = xdata, 
                      ydata = pbys, modelList = ml)
@@ -1722,6 +1773,20 @@ $\mathbf{D} = diag(\boldsymbol{\Sigma})$.
 For other variables that are discrete or censored, latent variables are drawn on the covariance scale, $\mathbf{W}| \boldsymbol{\Sigma}, \mathbf{B}, \mathcal{P}$.
 
 Parameters in `$chains$bgibbsUn` are returned on the original scale $\mathbf{X}_u$.  Let $\mathbf{X}_u$ be the uncentered/unstandardized version of $\mathbf{X}$.  Parameters are returned as $\mathbf{B}_u = \left(\mathbf{X}'_u \mathbf{X}_u \right)^{-1}\mathbf{X}'_u \mathbf{X}\mathbf{B}$.  Likewise, `$x` is returned on the original scale, i.e., it is $\mathbf{X}_u$.
+
+Dimension reduction represents the covariance matrix as $\Sigma = \mathbf{A} \mathbf{A}' + \sigma^2 \mathbf{I}$. The $S \times r$ matrix $\mathbf{A}$ generates a random effect with prior distribution $\mathbf{a}_i \sim \mathbf{A} \times MVN(\mathbf{0}_r, \mathbf{I}_r )$.  The (posterior) estimate of $\mathbf{a}_i$ depends on observed $\mathbf{y}_i$.  For in-sample prediction, we have $\mathbf{w}_i \sim MVN( \boldsymbol{\mu}_i + \mathbf{a}_i, \sigma^2 \mathbf{I})$.  For out-of-sample prediction the random effect is marginalized $\mathbf{w}_i \sim MVN( \boldsymbol{\mu}_i, \Sigma)$.  For variables on the correlation scale, both the mean and the covariance are on the correlation scale.
+
+Below are mean and variance for prediction sampling, where $\boldsymbol{\mu}_i = \mathbf{B}'\mathbf{x}_i$. Values are (mean, covariance/correlation).  Most importantly, for prediction, there is no partition, because $\mathbf{y}_i$ is unknown and, thus, $\mathbf{w}_i$ is unconstrained by observation:
+
+  .    | covariance scale                  | correlation scale
+:---------------------: | :-------------------------------: | :----------------------------
+Not dimension reduction: |            |         
+in-                      | $\boldsymbol{\mu}_i, \Sigma$ | $\mathbf{D}^{-1/2} \boldsymbol{\mu}_i, \mathbf{R}$  
+out-                     | $\boldsymbol{\mu}_i, \Sigma$   |  $\mathbf{D}^{-1/2} \boldsymbol{\mu}_i, \mathbf{R}$
+Dimension reduction:     |         . |
+in-                      | $\boldsymbol{\mu}_i + \mathbf{a}_i$ | $\mathbf{D}^{-1/2} ( \boldsymbol{\mu}_i + \mathbf{a}_i), \mathbf{I}_s$ 
+out-                     | $\boldsymbol{\mu}_i, \Sigma$  | $\mathbf{D}^{-1/2}  \boldsymbol{\mu}_i, \mathbf{R}$
+
 
 Inverse prediction of input variables provides sensitivity analysis (Clark et al. 2011, 2014).  Columns in $\mathbf{X}$ that are linear (not involved in interactions, polynomial terms, or factors) are sampled directly from the inverted model.  Others are sampled by Metropolis.  Sampling is described in the Supplement file to Clark et al. (2017). 
 

@@ -88,7 +88,7 @@ Box and whisker plots bound 0.68 and 0.95 credible and predictive intervals.
 \dontrun{
 ## ordinal data
 f   <- gjamSimData(S = 15, Q = 3, typeNames = 'OC') 
-ml  <- list(ng = 2000, burnin = 500, typeNames = f$typeNames, holdoutN = 10)
+ml  <- list(ng = 200, burnin = 50, typeNames = f$typeNames, holdoutN = 10)
 out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 
 # repeat with ng = 2000, burnin = 500, then plot data here:

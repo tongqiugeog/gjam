@@ -10,7 +10,7 @@ importFrom("graphics", "arrows", "barplot", "bxp", "strheight","strwidth")
 importFrom("graphics", "abline", "axis", "boxplot", "hist", "legend",
             "lines", "mtext", "par", "plot", "points", "polygon",
             "rect", "symbols", "text", "title")
-importFrom("stats", "as.dendrogram", "as.dist", "as.formula", "cor",
+importFrom("stats", "aggregate", "as.dendrogram", "as.dist", "as.formula", "cor",
             "cov", "cutree", "dendrapply", "density", "dist", "hclust",
             "is.leaf", "lm", "median", "model.frame", "model.matrix",
             "pnorm", "qnorm", "quantile", "rbeta", "rgamma", "rnorm",

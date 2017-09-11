@@ -106,7 +106,7 @@ bigskip <- function(){
 
 ## ----simulate CA, eval = F-----------------------------------------------
 #  library(gjam)
-#  f <- gjamSimData(n = 500, S = 10, Q = 3, typeNames = 'CA')
+#  f <- gjamSimData(n = 500, S = 10, Q = 4, typeNames = 'CA')
 #  summary(f)
 
 ## ----show formula, eval = F----------------------------------------------
@@ -252,7 +252,7 @@ x   <- model.matrix(formula, data=tmp)
 #  # assumes there is a data matrix ydata
 #  upper <- 100
 #  intv  <- matrix(c(upper,Inf),2)
-#  rownames(i) <- c('lower','upper')
+#  rownames(intv) <- c('lower','upper')
 #  tmp <- gjamCensorY(values = upper, intervals = intv, y = ydata, type='DA')
 
 ## ----lowerLim, eval=F----------------------------------------------------
@@ -438,6 +438,45 @@ cbind(ml,mx)
 #  points(f$y[,tn == 'DA'], p2,col='orange',cex=.1)
 #  abline(0,1)
 
+## ----input, eval = F-----------------------------------------------------
+#  library(repmis)
+#  d <- "https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True"
+#  source_data(d)
+#  
+#  xdata <- forestTraits$xdata                          # n X Q
+#  ydata  <- gjamReZero(forestTraits$treesDeZero)        # n X S
+#  ydata <- ydata[,colnames(ydata) != 'other']
+#  ydata <- gjamTrimY(ydata, 10, OTHER=F)$y
+
+## ----gjamCA, eval=F------------------------------------------------------
+#  rl      <- list(N = 15, r = 15)
+#  ml      <- list(ng = 5000, burnin = 2000, typeNames = 'CA',
+#                  reductList = rl, PREDICTX = F)
+#  out <- gjam(formula, xdata, ydata, modelList = ml)
+#  
+#  #prediction
+#  newdata <- list(xdata = xdata, nsim=100)
+#  tmp     <- gjamPredict(out, newdata=newdata)
+#  full    <- tmp$sdList$yMu
+
+## ----cond, eval=F--------------------------------------------------------
+#  cnames <- sample(colnames(ydata),S/2)
+#  wc     <- match(cnames, colnames(ydata))
+#  
+#  yc <- ydata[,cnames]
+#  
+#  newdata <- list(ydataCond = yc, nsim=200)
+#  tmp     <- gjamPredict(out, newdata = newdata)
+#  condy   <- tmp$sdList$yMu
+#  
+#  plot(ydata[,-wc], full[,-wc], ylim=c(range(ydata)), cex=.2)
+#  abline(0,1)
+#  points(ydata[,-wc],condy[,-wc],col=2, cex=.2)
+#  rmspe <- c( mean((ydata[,-wc] - full[,-wc])^2),
+#              mean((ydata[,-wc] - condy[,-wc])^2))
+#  names(rmspe) <- c('unconditional','conditional')
+#  rmspe
+
 ## ---- eval=FALSE---------------------------------------------------------
 #  S   <- 200
 #  f   <- gjamSimData(n = 100, S = S, typeNames='CA')
@@ -514,15 +553,15 @@ cbind(ml,mx)
 #  par(mfrow=c(1,3), bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0),
 #      mar = c(3,2,2,1), tcl = -0.5, mgp = c(3,1,0))
 #  gjamIIEplot(fit1, response = 'status', effectMu = 'direct',
-#              effectSd = 'direct', legLoc = 'bottomright', ylim=c(-2,2))
+#              effectSd = 'direct', legLoc = 'bottomright', ylim=c(-5,10))
 #  title('Direct effect by host')
 #  
 #  gjamIIEplot(fit1, response = 'status', effectMu = 'int', effectSd = 'int',
-#              legLoc = 'topright', ylim=c(-2,2))
+#              legLoc = 'topright', ylim=c(-5,10))
 #  title('Interactions with polyculture')
 #  
 #  gjamIIEplot(fit1, response = 'status', effectMu = 'ind', effectSd = 'ind',
-#              legLoc = 'topright', ylim=c(-2,2))
+#              legLoc = 'topright', ylim=c(-1,1))
 #  title('Indirect effect of microbiome')
 
 ## ----predict, eval=F-----------------------------------------------------
@@ -596,7 +635,7 @@ for(j in 1:length(xbox)){
   if(j == 3)text(tmp$mu[1],tmp$mu[2],expression(hat(A)))
 }
 
-## ----input, eval = F-----------------------------------------------------
+## ----input6, eval = F----------------------------------------------------
 #  library(repmis)
 #  d <- "https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True"
 #  source_data(d)
@@ -609,14 +648,14 @@ for(j in 1:length(xbox)){
 #  sbyt  <- sbyt[match(colnames(pbys),rownames(sbyt)),] # trait matrix matches ydata
 #  identical(rownames(sbyt),colnames(pbys))
 
-## ----input2, eval = F----------------------------------------------------
+## ----input7, eval = F----------------------------------------------------
 #  table(sbyt$leaf)      # four levels
 #  
 #  table(sbyt$xylem)     # diffuse/tracheid vs ring-porous
 #  
 #  table(sbyt$repro)     # two levels
 
-## ----input3, eval = F----------------------------------------------------
+## ----input8, eval = F----------------------------------------------------
 #  tmp         <- gjamSpec2Trait(pbys, sbyt, types)
 #  tTypes      <- tmp$traitTypes                  # M = 15 values
 #  u           <- tmp$plotByCWM                   # n X M
@@ -643,8 +682,8 @@ for(j in 1:length(xbox)){
 #              censor=censor, notStandard = c('f1','f2','f3'))
 #  out <- gjam(~ temp + stdage + moisture*deficit + deficit*soil,
 #                   xdata = xdata, ydata = u, modelList = ml)
-#  tnames    <- colnames(u)
-#  specColor <- rep('black', M)                           # highlight types
+#  tnames <- colnames(u)
+#  sc <- rep('black', M)                           # highlight types
 #  wo <- which(tnames %in% c("leafN","leafP","SLA") )     # foliar traits
 #  wf <- grep("leaf",tnames)                              # leaf habit
 #  wc <- which(tnames %in% c("woodSG","diffuse","ring") ) # wood anatomy
@@ -758,7 +797,7 @@ for(j in 1:length(xbox)){
 ## ----PTM, eval = F-------------------------------------------------------
 #  tl  <- list(plotByTrait = u, traitTypes = tTypes, specByTrait = specByTrait)
 #  rl  <- list(r = 8, N = 25)
-#  ml  <- list(ng = 1000, burnin = 200, typeNames = 'CC', holdoutN = 20,
+#  ml  <- list(ng = 2000, burnin = 500, typeNames = 'CC', holdoutN = 20,
 #                    traitList = tl, reductList = rl)
 #  out <- gjam(~ temp + stdage + deficit*soil, xdata = xdata,
 #                       ydata = pbys, modelList = ml)

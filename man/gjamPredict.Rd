@@ -17,7 +17,7 @@
   \item{ylim}{vector of lower and upper bounds for prediction plot}
 }
 \details{
- If \code{newdata} is not specified, the response is predicted from \code{xdata}. If \code{newdata} is specified, prediction is either conditional or out-of-sample. 
+ If \code{newdata} is not specified, the response is predicted from \code{xdata}  as an in-sample prediction. If \code{newdata} is specified, prediction is either conditional or out-of-sample. 
  
 Conditional prediction on a new set of \code{y} values is done if \code{newdata} includes the \code{matrix ycondData}, which holds columns to condition on.  \code{ycondData} must be a \code{matrix} and have column names matching those in \code{y} that it will replace.  \code{ycondData} must have at least one column, but fewer than \code{ncol(y)} columns.  Columns not included in \code{ycondData} will be predicted conditionally.
  
@@ -48,7 +48,7 @@ out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 
 # predict data
 par(mfrow=c(1,3),bty='n')             
-gjamPredict(out, y2plot = colnames(f$ydata)) #predict the data
+gjamPredict(out, y2plot = colnames(f$ydata)) #predict the data in-sample
 title('full sample')
 
 # out-of-sample prediction
@@ -60,7 +60,8 @@ p1 <- gjamPredict(out, newdata = newdata)
 
 # plus/minus 1 prediction SE, default effort = 1000
 x2   <- p1$x[,2]
-plot(x2, p1$sdList$yMu[,1],type='l',lwd=2, ylim=c(0,300), xlab='x2',
+ylim <- c(0, max(p1$sdList$yMu[,1] + p1$sdList$yPe[,1]))
+plot(x2, p1$sdList$yMu[,1],type='l',lwd=2, ylim=ylim, xlab='x2',
      ylab = 'Predicted')
 lines(x2, p1$sdList$yMu[,1] + p1$sdList$yPe[,1], lty=2)
 lines(x2, p1$sdList$yMu[,1] - p1$sdList$yPe[,1], lty=2)

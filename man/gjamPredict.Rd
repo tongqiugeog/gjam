@@ -5,7 +5,8 @@
   Predicts data from a gjam object, including conditional and out-of-sample prediction.
 }
 \usage{
-  gjamPredict(output, newdata = NULL, y2plot = NULL, ylim = NULL)
+  gjamPredict(output, newdata = NULL, y2plot = NULL, ylim = NULL, 
+              FULL = FALSE)
 }
 \arguments{
   \item{output}{object of \code{\link{class}} "gjam".}
@@ -15,6 +16,8 @@
   \item{y2plot}{\code{character} vector of columns in \code{output$y} to plot.}
   
   \item{ylim}{vector of lower and upper bounds for prediction plot}
+  
+  \item{FULL}{will return full chains for predictions as \code{output$ychains}}
 }
 \details{
  If \code{newdata} is not specified, the response is predicted from \code{xdata}  as an in-sample prediction. If \code{newdata} is specified, prediction is either conditional or out-of-sample. 
@@ -38,6 +41,10 @@ See examples below.
  \item{\code{piList}}{predictive intervals, only generated if \code{length(y) < 10000}, includes \code{yLo, yHi} (0.025, 0.975) prediction interval, \code{wLo, wHi} (0.025, 0.975) for latent states } 
  
   \item{\code{prPresent}}{\code{n x S matrix} of probabilities of presence}
+  
+  \item{\code{ematrix}}{effort}
+  
+  \item{\code{ychains}}{full prediction chains if \code{FULL = T}}
  
 }
 \examples{

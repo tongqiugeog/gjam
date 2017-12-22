@@ -5,7 +5,7 @@ gjamTrimY <- function(y, minObs = 2, maxCols = NULL, OTHER = TRUE){
     # maxCols   - number of columns to retain, those with highest values
     # OTHER     - logical or names to include in 'other' class
     # if(OTHER) sum of rare are returned in 'other' column
-    # if already a column 'other', they combined
+    # if already a column 'other', they are combined
     
     y      <- as.matrix(y)
     nc     <- ncol(y)

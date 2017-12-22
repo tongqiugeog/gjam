@@ -40,7 +40,7 @@ bigskip <- function(){
 
 `gjam` models multivariate responses that can be combinations of discrete and continuous variables, where interpretation is needed on the observation scale. It was motivated by the challenges of modeling distribution and abundance of multiple species, so-called joint species distribution models (JSDMs).  Because species and other attributes are often recorded on many different scales and with different levels of sampling effort, many analyses are limited to presence-absence, the lowest common denominator.  Combining species and other attributes is challenging because some species groups are counted.  Some may be continuous cover values or basal area.  Some may be recorded in ordinal bins, such as 'rare', 'moderate', and 'abundant'.  Others may be presence-absence.  Some are composition data, either fractional (continuous on (0, 1)) or counts (e.g., molecular and fossil pollen data).  Attributes such as body condition, infection status, and herbivore damage are often included in field data.  `gjam` accommodate multifarious observations.
 
-To allow transparent interpretation `gjam` avoids non-linear link functions.  This is a departure from generalized linear models (GLMs).  
+To allow transparent interpretation `gjam` avoids non-linear link functions.  This is a departure from generalized linear models (GLMs) and most hierarchical Bayes models.  
 
 The integration of discrete and continuous data on the observed scales makes use of *censoring*.  Censoring extends a model for continuous variables across censored intervals.  Continuous observations are uncensored.  Censored observations are discrete and can depend on sample effort.  
 
@@ -255,7 +255,7 @@ $^4$ sensitivities based on unstandardized $\mathbf{B}$ and covariance scales $\
 
 $^5$ Only when `ydata` includes ordinal types `"OC"`.
 
-$^6$ Only with dimension reduction, `reductList` is included in `modelList` (Dimension reduction vignette).
+$^6$ Only with dimension reduction, `reductList` is included in `modelList`.
 
 $^7$ Only for trait analysis, `traitList` is included in `modelList` (Trait vignette).
 
@@ -304,7 +304,7 @@ Among the objects to consider initially are the design matrix `out$inputs$x`, re
 summary(out$chains)
 ```
 
-`$chains` is a list of matrices, each with `ng` rows and as many columns as needed to hold parameter estimates.  For example, each row of `$chains$bgibbs` is a length-$QS$ vector of values for the $Q \times S$ matrix $\mathbf{B}$, standardized for $\mathbf{X}$. In other words, a coefficient $\mathbf{B}_{qs}$ has the units of $w_s$.  `$chains$sgibbs` holds either the $S(S + 1)/2$ unique values of $\boldsymbol{\Sigma}$ or the $N \times r$ unique values of the dimension reduced covariance matrix (see Dimension reduction `vignette`).  A summary of the `chains` is given in Table 2.  
+`$chains` is a list of matrices, each with `ng` rows and as many columns as needed to hold parameter estimates.  For example, each row of `$chains$bgibbs` is a length-$QS$ vector of values for the $Q \times S$ matrix $\mathbf{B}$, standardized for $\mathbf{X}$. In other words, a coefficient $\mathbf{B}_{qs}$ has the units of $w_s$.  `$chains$sgibbs` holds either the $S(S + 1)/2$ unique values of $\boldsymbol{\Sigma}$ or the $N \times r$ unique values of the dimension reduced covariance matrix.  A summary of the `chains` is given in Table 2.  
 
 Additional summaries are available in the list `inputs`:
 
@@ -335,7 +335,7 @@ signif( out$parameters$betaSeUn, 3 )
 Again, check Table 2 for names of all fitted coefficients.
 
 
-The data are also predicted in `gjam`, summarized by predictive means and standard errors.  These are contained in $n \times Q$ matrices `$prediction$xpredMu` and `$prediction$xpredSd` and $n \times S$ matrices `$prediction$ypredMu` and `$prediction$ypredSd`.  
+The data are also predicted in `gjam`, summarized by predictive means and standard errors.  These are contained in $n \times Q$ matrices `$prediction$xpredMu` and `$prediction$xpredSd` and $n \times S$ matrices `$prediction$ypredMu` and `$prediction$ypredSd`.  These are in-sample predictions.
 
 The output can be viewed with the function `gjamPlot`:  
 
@@ -1001,6 +1001,13 @@ The full matrix is not stored, so gjam needs time to construct versions of it as
 The massive reduction in rank of the covariance matrix means that the we cannot estimate the 'true' version of $\boldsymbol{\Sigma}$, particularly given the fact that the simulator does not generate a structured $\boldsymbol{\Sigma}$.  These appear as highly structured `GRIDPLOTS` for the posterior mean estimates of the correlation matrix $\mathbf{R}$.  However, we can still obtain estimates of $\mathbf{B}$ and predictions of $\mathbf{Y}$ that are close to true values.
 
 To override the automatic dimension reduction for a large response matrix, specify `modelList$REDUCT <- FALSE`.
+
+Orthogonalization:
+
+$$
+\mathbf{B} + \left( \mathbf{X}'\mathbf{X} \right)^{-1} \mathbf{X}' 
+\mathbf{W}
+$$
 
 ##<span style="color:teal">*big-S* composition data: fungal endophytes</span>
 

@@ -56,6 +56,8 @@ Both predictors in \code{xdata} and responses \code{ydata} can include missing v
     censoring, see \code{\link{gjamCensorY}}.
     
   \code{effort = NULL}, \code{list} containing \code{'columns'}, a vector of length \code{<= S} giving the names of columns in in \code{y}, and \code{'values'}, a length-\code{n} vector of effort or a \code{n} by \code{S} matrix (see Examples).  \code{effort} can be plot area, search time, etc. for discrete count data \code{'DA'}.
+  
+  \code{FULL = F} in \code{modelList} will save full prediction chains in \code{$chains$ygibbs}.
      
   \code{notStandard = NULL}, \code{character vector} of column names in \code{xdata} that should not be standardized.
   

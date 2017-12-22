@@ -12,7 +12,7 @@
 
 <meta name="author" content="James S. Clark" />
 
-<meta name="date" content="2017-09-10" />
+<meta name="date" content="2017-12-21" />
 
 <title>Generalized joint attribute modeling - gjam</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Generalized joint attribute modeling - gjam</h1>
 <h4 class="author"><em><a href="http://sites.nicholas.duke.edu/clarklab/">James S. Clark</a></em></h4>
-<h4 class="date"><em>2017-09-10</em></h4>
+<h4 class="date"><em>2017-12-21</em></h4>
 
 
 <div id="TOC">
@@ -138,7 +138,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="overview" class="section level1">
 <h1><span style="color:darkgreen">overview</span></h1>
 <p><code>gjam</code> models multivariate responses that can be combinations of discrete and continuous variables, where interpretation is needed on the observation scale. It was motivated by the challenges of modeling distribution and abundance of multiple species, so-called joint species distribution models (JSDMs). Because species and other attributes are often recorded on many different scales and with different levels of sampling effort, many analyses are limited to presence-absence, the lowest common denominator. Combining species and other attributes is challenging because some species groups are counted. Some may be continuous cover values or basal area. Some may be recorded in ordinal bins, such as ‘rare’, ‘moderate’, and ‘abundant’. Others may be presence-absence. Some are composition data, either fractional (continuous on (0, 1)) or counts (e.g., molecular and fossil pollen data). Attributes such as body condition, infection status, and herbivore damage are often included in field data. <code>gjam</code> accommodate multifarious observations.</p>
-<p>To allow transparent interpretation <code>gjam</code> avoids non-linear link functions. This is a departure from generalized linear models (GLMs).</p>
+<p>To allow transparent interpretation <code>gjam</code> avoids non-linear link functions. This is a departure from generalized linear models (GLMs) and most hierarchical Bayes models.</p>
 <p>The integration of discrete and continuous data on the observed scales makes use of <em>censoring</em>. Censoring extends a model for continuous variables across censored intervals. Continuous observations are uncensored. Censored observations are discrete and can depend on sample effort.</p>
 <p>Censoring is used with the <em>effort</em> for an observation to combine continuous and discrete variables with appropriate weight. In count data, effort is determined by the size of the sample plot, search time, or both. It is comparable to the offset in GLMs. In count composition data (e.g., microbiome, fossil pollen), effort is the total count taken over all species. In <code>gjam</code>, discrete observations can be viewed as censored versions of an underlying continuous space.</p>
 <p><code>gjam</code> generates an object of <code>class</code> <code>&quot;gjam&quot;</code>, allowing it to appropriate the <code>summary</code> and <code>print</code> functions in R. To avoid conflicts with other packages, <code>gjam function</code> names begin with <code>&quot;gjam&quot;</code>. <code>gjam</code> uses the <code>RcppArmadillo</code> linear algebra library with the <code>Rcpp</code> interface library for R/C++.</p>
@@ -436,7 +436,7 @@ f &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class=
 <p><span class="math inline">\(^3\)</span> coefficients are <span class="math inline">\((\mathbf{B}_u)\)</span>: unstandardized; <span class="math inline">\((\mathbf{B})\)</span>: standardized for <span class="math inline">\(\mathbf{X}\)</span>; <span class="math inline">\(\tilde{\mathbf{B}}\)</span>: standardized for <span class="math inline">\(\mathbf{X}\)</span>, correlation scale for <span class="math inline">\(\mathbf{Y}\)</span> and factor levels relative to the mean for each factor (see section <em><span style="color:teal">factors in <span class="math inline">\(\mathbf{X}\)</span></em></span>**).</p>
 <p><span class="math inline">\(^4\)</span> sensitivities based on unstandardized <span class="math inline">\(\mathbf{B}\)</span> and covariance scales <span class="math inline">\(\Sigma\)</span>.</p>
 <p><span class="math inline">\(^5\)</span> Only when <code>ydata</code> includes ordinal types <code>&quot;OC&quot;</code>.</p>
-<p><span class="math inline">\(^6\)</span> Only with dimension reduction, <code>reductList</code> is included in <code>modelList</code> (Dimension reduction vignette).</p>
+<p><span class="math inline">\(^6\)</span> Only with dimension reduction, <code>reductList</code> is included in <code>modelList</code>.</p>
 <p><span class="math inline">\(^7\)</span> Only for trait analysis, <code>traitList</code> is included in <code>modelList</code> (Trait vignette).</p>
 <p><br></p>
 <p>The dimension for response <span class="math inline">\(Y\)</span> is <span class="math inline">\(W \times E\)</span>, where <span class="math inline">\(W\)</span> is the latent variable scale, and <span class="math inline">\(E\)</span> is sample effort. When effort <span class="math inline">\(E\)</span> = 1, then <span class="math inline">\(Y\)</span> and <span class="math inline">\(W\)</span> have the same dimension.</p>
@@ -456,7 +456,7 @@ out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdat
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(out)</code></pre></div>
 <p>Among the objects to consider initially are the design matrix <code>out$inputs$x</code>, response matrix <code>out$inputs$y</code>, and the MCMC <code>out$chains</code> with these names and sizes:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(out$chains)</code></pre></div>
-<p><code>$chains</code> is a list of matrices, each with <code>ng</code> rows and as many columns as needed to hold parameter estimates. For example, each row of <code>$chains$bgibbs</code> is a length-<span class="math inline">\(QS\)</span> vector of values for the <span class="math inline">\(Q \times S\)</span> matrix <span class="math inline">\(\mathbf{B}\)</span>, standardized for <span class="math inline">\(\mathbf{X}\)</span>. In other words, a coefficient <span class="math inline">\(\mathbf{B}_{qs}\)</span> has the units of <span class="math inline">\(w_s\)</span>. <code>$chains$sgibbs</code> holds either the <span class="math inline">\(S(S + 1)/2\)</span> unique values of <span class="math inline">\(\boldsymbol{\Sigma}\)</span> or the <span class="math inline">\(N \times r\)</span> unique values of the dimension reduced covariance matrix (see Dimension reduction <code>vignette</code>). A summary of the <code>chains</code> is given in Table 2.</p>
+<p><code>$chains</code> is a list of matrices, each with <code>ng</code> rows and as many columns as needed to hold parameter estimates. For example, each row of <code>$chains$bgibbs</code> is a length-<span class="math inline">\(QS\)</span> vector of values for the <span class="math inline">\(Q \times S\)</span> matrix <span class="math inline">\(\mathbf{B}\)</span>, standardized for <span class="math inline">\(\mathbf{X}\)</span>. In other words, a coefficient <span class="math inline">\(\mathbf{B}_{qs}\)</span> has the units of <span class="math inline">\(w_s\)</span>. <code>$chains$sgibbs</code> holds either the <span class="math inline">\(S(S + 1)/2\)</span> unique values of <span class="math inline">\(\boldsymbol{\Sigma}\)</span> or the <span class="math inline">\(N \times r\)</span> unique values of the dimension reduced covariance matrix. A summary of the <code>chains</code> is given in Table 2.</p>
 <p>Additional summaries are available in the list <code>inputs</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(out$inputs)</code></pre></div>
 <p>The matrix <code>classBySpec</code> shows the number of observations in each interval. For this example of continuous data censored at zero, the two labels are <span class="math inline">\(k \in \{0, 1\}\)</span> corresponding to the intervals <span class="math inline">\((p_{s,0}, p_{s,1}] = (-\infty,0]\)</span> and <span class="math inline">\((p_{s,1}, p_{s,2}) = (0, \infty)\)</span>. The length-<span class="math inline">\((K + 1)\)</span> partition vector is the same for all species, <span class="math inline">\(\mathbf{p} = (-\infty, 0, \infty)\)</span>. Here is <code>classBySpec</code> for this example:</p>
@@ -467,7 +467,7 @@ out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdat
 <p>The <code>Un</code> in the name <code>betaMuUn</code> indicates that it is on the unstandardized units, <span class="math inline">\(W/X\)</span>, where <span class="math inline">\(X\)</span> has the units supplied by the user in <code>xdata</code>. Here are the standard errors,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">signif</span>( out$parameters$betaSeUn, <span class="dv">3</span> )</code></pre></div>
 <p>Again, check Table 2 for names of all fitted coefficients.</p>
-<p>The data are also predicted in <code>gjam</code>, summarized by predictive means and standard errors. These are contained in <span class="math inline">\(n \times Q\)</span> matrices <code>$prediction$xpredMu</code> and <code>$prediction$xpredSd</code> and <span class="math inline">\(n \times S\)</span> matrices <code>$prediction$ypredMu</code> and <code>$prediction$ypredSd</code>.</p>
+<p>The data are also predicted in <code>gjam</code>, summarized by predictive means and standard errors. These are contained in <span class="math inline">\(n \times Q\)</span> matrices <code>$prediction$xpredMu</code> and <code>$prediction$xpredSd</code> and <span class="math inline">\(n \times S\)</span> matrices <code>$prediction$ypredMu</code> and <code>$prediction$ypredSd</code>. These are in-sample predictions.</p>
 <p>The output can be viewed with the function <code>gjamPlot</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n =</span> <span class="dv">500</span>, <span class="dt">S =</span> <span class="dv">10</span>, <span class="dt">typeNames =</span> <span class="st">'CA'</span>)
 ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">200</span>, <span class="dt">typeNames =</span> f$typeNames)
@@ -807,21 +807,21 @@ keep &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="k
 <h2><span style="color:teal">categorical data</span></h2>
 <p>Categorical data have levels within groups. The levels are unordered. The columns in <code>ydata</code> that hold categorical responses are declared as <code>typeNames = &quot;CAT&quot;</code>. In observation vector <span class="math inline">\(\mathbf{y}_{i}\)</span> there are elements for one less than the number of factor levels. Suppose that observations are obtained on attributes of individual plants, each plant being an observation. The group <code>leaf</code> type might have four levels broadleaf decidious <code>bd</code>, needleleaf decidious <code>nd</code>, broadleaf evergreen <code>be</code>, and needleaf evergreen <code>ne</code>. A second group <code>xylem</code> anatomy might have three levels diffuse porous <code>dp</code>, ring porous <code>rp</code>, and tracheid <code>tr</code>. In both cases I assign the last class to be a reference class, <code>other</code>. Ten rows of the response matrix data might look like this:</p>
 <pre><code>##    leaf xylem
-## 1    be    dp
-## 2    be    dp
-## 3    be other
-## 4 other    dp
-## 5    bd other
-## 6 other    rp
+## 1 other    rp
+## 2    nd    rp
+## 3 other    rp
+## 4    nd    dp
+## 5    be    rp
+## 6    bd other
 ## 7    nd    dp</code></pre>
 <p>This <code>data.frame ydata</code> becomes this response matrix <code>y</code>:</p>
 <pre><code>##      leaf_bd leaf_nd leaf_be leaf_other xylem_dp xylem_rp xylem_other
-## [1,]       0       0       1          0        1        0           0
-## [2,]       0       0       1          0        1        0           0
-## [3,]       0       0       1          0        0        0           1
-## [4,]       0       0       0          1        1        0           0
-## [5,]       1       0       0          0        0        0           1
-## [6,]       0       0       0          1        0        1           0
+## [1,]       0       0       0          1        0        1           0
+## [2,]       0       1       0          0        0        1           0
+## [3,]       0       0       0          1        0        1           0
+## [4,]       0       1       0          0        1        0           0
+## [5,]       0       0       1          0        0        1           0
+## [6,]       1       0       0          0        0        0           1
 ## [7,]       0       1       0          0        1        0           0</code></pre>
 <p><code>gjam</code> expands the two groups into four and three columns in <code>y</code>, respectively. As for composition data there is one redundant column for each group. Here is an example with simulated data, having two categorical groups:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'CAT'</span>,<span class="st">'CAT'</span>)
@@ -997,6 +997,11 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
 <p>The full matrix is not stored, so gjam needs time to construct versions of it as needed. The setting <code>PREDICTX = F</code> can be included in <code>modelList</code> to speed up computation, when prediction of inputs is not of interest.</p>
 <p>The massive reduction in rank of the covariance matrix means that the we cannot estimate the ‘true’ version of <span class="math inline">\(\boldsymbol{\Sigma}\)</span>, particularly given the fact that the simulator does not generate a structured <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. These appear as highly structured <code>GRIDPLOTS</code> for the posterior mean estimates of the correlation matrix <span class="math inline">\(\mathbf{R}\)</span>. However, we can still obtain estimates of <span class="math inline">\(\mathbf{B}\)</span> and predictions of <span class="math inline">\(\mathbf{Y}\)</span> that are close to true values.</p>
 <p>To override the automatic dimension reduction for a large response matrix, specify <code>modelList$REDUCT &lt;- FALSE</code>.</p>
+<p>Orthogonalization:</p>
+<p><span class="math display">\[
+\mathbf{B} + \left( \mathbf{X}'\mathbf{X} \right)^{-1} \mathbf{X}' 
+\mathbf{W}
+\]</span></p>
 <div id="big-s-composition-data-fungal-endophytes" class="section level2">
 <h2><span style="color:teal"><em>big-S</em> composition data: fungal endophytes</span></h2>
 <p>Microbiome data are often <em>big-S, small-n</em>; with thousands of response variables, columns in <span class="math inline">\(\mathbf{Y}\)</span> (e.g., OTUs). They are also composition count (<code>'CC'</code>) data, discrete counts, but not related to absolute abundance; they are meaningful in a relative sense. Because data only inform about relative abundance, there is information for only <span class="math inline">\(S - 1\)</span> species. If there are thousands of OTUs, most of which are rare and thus not explained by the model, consider aggregating the many rare types into a single <code>other</code> class.</p>

@@ -3,6 +3,9 @@
   #cnames - column names in data to operate on
   #gather   - list of indices, all of same length
   
+  cnames <- cnames[cnames %in% colnames(data)]
+  if(length(cnames) == 0)return( list(data = numeric(0)) )
+  
   FAC <- F
   df <- data[,cnames]
   
@@ -22,7 +25,7 @@
   }
   
   tmp <- aggregate(df, by=gather, FUN=FUN)
-  ord <- do.call(order,tmp[,names(gather)])
+  ord <- do.call(order,list(tmp[,names(gather)]))
   colnames(tmp)[-c(1:length(gather))] <- cnames
   
   if(FAC){
@@ -1163,6 +1166,7 @@
     slim1 <- slim2 <- horiz1 <- horiz2 <- vert1 <- vert2 <- NULL
   mainLeft <- main1 <- main2 <- ' '
   DIST1 <- DIST2 <- T
+  ncluster <- 4
   
   for(k in 1:length(opt))assign( names(opt)[k], opt[[k]] )
   
@@ -1220,25 +1224,35 @@
   tmp   <- .clustMat(mat1, SYM1)
   m1Row <- tmp$cmat
   DIST1 <- tmp$DIST
-  m1Col <- .clustMat(t(mat1), SYM1)$cmat
+  tmp <- .clustMat(t(mat1), SYM1)
+  m1Col <- tmp$cmat
+  
 
   if(is.null(rowOrder)){
     if(nrow(m1Row) != nrow(mat1))m1Row <- cor(t(mat1))
-    copt     <- list( PLOT=F, DIST = DIST1 )
-    rowOrder <- .clusterPlot( m1Row, copt)$corder
+    copt <- list( PLOT=F, DIST = DIST1, ncluster=ncluster )
+    tmp  <- .clusterPlot( m1Row, copt)
+    clus <- tmp$clusterIndex
+    cord <- tmp$corder
+    rowClust <- clus[cord]
+    rowOrder <- cord
   }
   
   if(is.null(colOrder1)){
     if(SYM1){
       colOrder1 <- rowOrder
+      colClust1 <- rowClust
     }else{
-      copt      <- list( PLOT=F, DIST = DIST1 )
-      colOrder1 <- .clusterPlot( m1Col, copt)$corder
+      copt      <- list( PLOT=F, DIST = DIST1, ncluster=ncluster )
+      tmp  <- .clusterPlot( m1Col, copt)
+      clus <- tmp$clusterIndex
+      cord <- tmp$corder
+      colClust1 <- clus[cord]
+      colOrder1 <- cord
     }
   }
   
   if(twoMat){
-    
     tmp   <- .clustMat(t(mat2), SYM2)
     m2Col <- tmp$cmat
     DIST2 <- tmp$DIST
@@ -1248,25 +1262,31 @@
         colOrder2 <- rowOrder
         m2Col <- t(mat2)
       }else{
-        copt      <- list( PLOT=F, DIST = DIST2 )
-        colOrder2 <- .clusterPlot( m2Col, copt)$corder
+        copt <- list( PLOT=F, DIST = DIST2 )
+        tmp  <- .clusterPlot( m2Col, copt)
+        clus <- tmp$clusterIndex
+        cord <- tmp$corder
+        colClust2 <- clus[cord]
+        colOrder2 <- cord
       }
     }
   }
         
   rowLabs <- rownames(mat1)[rowOrder]
   
+  #rowClust <- horiz1[rowOrder]
+  
   #######################
   NEW <- add <- F
   xi <- 0:1
   yi <- 1:2
   
-  ##### lab panel
-  if(leftLab){
+  ##### lab panel -- bottom to top
+  if(leftLab){  
     xi <- xi + 1
     par(plt=c(xloc[xi],yloc[yi]),bty='n', new=NEW)
     
-    plot(c(0,0),c(0,0),col='white',xlim=c(0,1),ylim=c(0,nr),
+    plot(NULL,col='white',xlim=c(0,1),ylim=c(0,nr),
          xaxt='n',yaxt='n',xlab='',ylab='')
     xl  <- rep(1,nr)
     yl  <- c(1:nr)*nr/diff(par('usr')[3:4])
@@ -1282,9 +1302,14 @@
   if(leftClus){
     xi <- xi + 1
     par(plt=c(xloc[xi],yloc[yi]),bty='n',  new=NEW)
-    copt <- list( main=' ',cex=.2, colCode=rowCode,
+    copt <- list( main=' ',cex=.2, colCode=rowCode, ncluster=ncluster,
                  LABELS = F, horiz=T, noaxis=T, DIST=DIST1 )
     tmp <- .clusterPlot( m1Row, copt)
+    clus <- tmp$clusterIndex
+    cord <- tmp$corder
+    
+    rowClust <- clus[cord]
+    
     NEW <- add <- T
     if(!doneLeft)mtext(mainLeft,2)
     doneLeft <- T
@@ -1337,7 +1362,7 @@
   ylim=c(range(ww[,1])); ylim[2] <- ylim[2] + 1
   
   sides <- cbind( rep(1,nrow(ww)), rep(1,nrow(ww)) )
-  plot(0,0,cex=.1,xlab=' ',ylab=' ', col='white',
+  plot(NULL,cex=.1,xlab=' ',ylab=' ', col='white',
        xaxt='n',yaxt='n', xlim=xlim, ylim=ylim)
   
   symbols(ww[,2] + .5,nr - ww[,1] + 1 + .5,rectangles=sides,
@@ -1345,15 +1370,24 @@
           xaxt='n',yaxt='n', add=T)
   
   if(!is.null(horiz1)){
-    cut <- which(diff(horiz1[rowOrder]) != 0) + 1
+  #  cut <- which(diff(horiz1[rowOrder]) != 0) + 1
+    
+    cut <- which(diff(rowClust) != 0) + 1
+      
     ncc <- length(cut)
     for(i in 1:ncc){
       lines(c(0,cut[i]-2),cut[c(i,i)],lty=2)
     }
     text(rep(1,ncc),cut,2:(ncc+1),pos=3)
   }
+  
+  
+  
   if(!is.null(vert1)){
-    cut <- which(diff(vert1[colOrder1]) != 0) + .5
+  #  cut <- which(diff(vert1[colOrder1]) != 0) + .5
+    
+    cut <- which(diff(colClust1) != 0) + .5
+    
     ncc <- length(cut)
     for(i in 1:ncc){
       lines(cut[c(i,i)],c(cut[i]+2,nc1),lty=2)
@@ -1454,7 +1488,11 @@
             xaxt='n', yaxt='n', add=T)
     
     if(!is.null(horiz2)){
-      cut <- which(diff(horiz2[rowOrder]) != 0) + 1
+      
+    #  cut <- which(diff(horiz2[rowOrder]) != 0) + 1
+      
+      cut <- which(diff(rowClust) != 0) + 1
+      
       ncc <- length(cut)
       for(i in 1:ncc){
         xmm <- c(0,cut[i]-2)
@@ -3888,7 +3926,7 @@
   reductList <- y0 <- N  <- r <- otherpar <- pg <- NULL
   ng     <- 2000
   burnin <- 500
-  REDUCT <- TRAITS <- F
+  REDUCT <- TRAITS <- FULL <- F
   PREDICTX <- T
   lambdaPrior <- betaPrior <- NULL
   
@@ -4226,8 +4264,10 @@
     XX    <- crossprod(x)
     IXX <- chol2inv(chol( XX ) )
   }
+  
     
-  updateBeta <- .betaWrapper(REDUCT, TIME, BPRIOR, notOther, IXX)
+  updateBeta <- .betaWrapper(REDUCT, TIME, BPRIOR, notOther, IXX, 
+                             betaLim=max(wmax)/2)
     
   ############ dimension reduction
   
@@ -4582,6 +4622,14 @@
   notPA <- which(!typeNames == 'PA' & !typeNames == 'CON')
     
   
+  if(length(y) < 10000 | FULL) FULL <- T
+  
+  if(FULL){
+    ygibbs <- matrix(0,ng,length(y))
+  }
+  if(RICHNESS){
+    ypredPres <- ypredPres2 <- ypredPresN <- y*0
+  }
     
   for(g in 1:ng){ ########################################################
  
@@ -4607,6 +4655,7 @@
       sdg  <- sqrt(sigmaerror)
       
       if(!TIME){
+        
         bg[,notOther] <- updateBeta(X = x[inSamp,], Y = w[inSamp,notOther] -
                                       rndEff[inSamp,notOther], 
                                     sig = sigmaerror, beta = bg[,notOther],
@@ -4944,11 +4993,15 @@
       asensGibbs[g,] <- asens
     }
     
+    if(FULL)ygibbs[g,] <- as.vector(yp)
+    
     if(g > burnin){
       
       ntot   <- ntot + 1
       ypred  <- ypred + yp
       ypred2 <- ypred2 + yp^2
+      
+
 
       sumDev <- sumDev - 2*sum(.dMVN(w[,notOther],muw[,notOther],
                                      sg[notOther,notOther], log=T ) )
@@ -4976,6 +5029,12 @@
           yy[,notPA][w0] <- 0
           yy[,notPA][w1] <- 1
         }
+        
+        wpp <- which(yy > 0)
+        ypredPres[wpp]  <- ypredPres[wpp] + yp[wpp]
+        ypredPres2[wpp] <- ypredPres2[wpp] + yp[wpp]^2
+        ypredPresN[wpp] <- ypredPresN[wpp] + 1
+        
         
         presence[,notRichness] <- presence[,notRichness] + yy[,notRichness]
         ones <- round(rowSums(yy[,notRichness]))
@@ -5064,6 +5123,12 @@
     richness <- cbind(yr, rmu, rsd, rfull )
     colnames(richness) <- c('obs','predMu','predSd','predNotMissing')
     if(TIME)richness[timeZero,] <- NA
+    
+    ypredPresMu  <- ypredPres/ypredPresN   #predictive mean and se given presence
+    ypredPresMu[ypredPresN == 0] <- 0
+    yvv <- ypredPres2/ypredPresN - ypredPresMu^2
+    yvv[!is.finite(yvv)] <- 0
+    ypredPresSe <- sqrt(yvv)
   }
   
   if('OC' %in% typeNames){
@@ -5352,7 +5417,11 @@
   fit <- list(DIC = DIC, yscore = yscore, 
               xscore = xscore, rmspeAll = rmspeAll,
               rmspeBySpec = rmspeBySpec)
-  
+  if(FULL)chains <- append(chains, list(ygibbs = ygibbs))
+  if(RICHNESS){
+    prediction <- append(prediction, 
+                         list(yPresentMu = ypredPresMu, yPresentSe = ypredPresSe))
+  }
   if(REDUCT) {
     parameters <- append(parameters, list(rndEff = rndTot/ntot))#, specRand = specRand))
     chains <- append(chains,list(kgibbs = kgibbs, sigErrGibbs = sigErrGibbs))
@@ -5650,7 +5719,7 @@ print.gjam <- function(x, ...){
   PLOTALLY <- TRAITS <- GRIDPLOTS <- SAVEPLOTS <- 
     REDUCT <- TV <- SPECLABS <- F
   PREDICTX <- BETAGRID <- PLOTY <- PLOTX <- SMALLPLOTS <- 
-    CORLINES <- SIGONLY <- T
+    CORLINES <- SIGONLY <- CHAINS <- T
   omitSpec   <- trueValues  <- censor <- otherpar <- NULL
   traitList  <- specByTrait <- typeNames <- classBySpec <- 
     x <- y   <- burnin      <- richness <- betaTraitMu <-  
@@ -6222,8 +6291,6 @@ print.gjam <- function(x, ...){
         y1 <- yobs[,wkm,drop=F]
         yp <- ypred[,wkm,drop=F]
         
-        
-        
         tmp <- .gjamPlotPars(type=typeNames[wk[1]],y1,yp,censm)
         y1 <- tmp$y1; yp <- tmp$yp; nbin <- tmp$nbin; nPerBin <- tmp$nPerBin
         vlines <- tmp$vlines; xlimit <- tmp$xlimit; ylimit <- tmp$ylimit
@@ -6240,7 +6307,6 @@ print.gjam <- function(x, ...){
           nPerBin <- nPerBin/2
         }
         
-        
         if(typeNames[wk[1]] == 'CA')nPerBin <- NULL
         
         tmp <- .bins4data(y1,nPerBin=nPerBin,breaks=breaks,LOG=LOG)
@@ -6254,8 +6320,8 @@ print.gjam <- function(x, ...){
         }
         
         if( !typeNames[wk[1]] %in% c('PA','CAT') ){
-          ncc <- max( c(100,max(y1)/20) )
-          if(min(y1) < bins[1])bins[1] <- min(y1)
+          ncc <- max( c(100,max(y1, na.rm=T)/20) )
+          if(min(y1) < bins[1])bins[1] <- min(y1, na.rm=T)
           xy  <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
           xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
           xy[1,xy[1,] < xlimit[1]] <- xlimit[1]
@@ -6288,7 +6354,7 @@ print.gjam <- function(x, ...){
         
         fill <- .getColor('blue',.3)
         
-        if(xlimit[2] < max(bins))xlimit[2] <- max(bins) + 1
+        if(xlimit[2] < max(bins, na.rm=T))xlimit[2] <- max(bins, na.rm=T) + 1
         
         opt <- list(xlabel='Observed',ylabel=ylab,nbin=nbin, 
                     nPerBin=NULL, xlimit=xlimit,ylimit=ylimit,
@@ -6962,8 +7028,8 @@ print.gjam <- function(x, ...){
   xnam <- unique(tmp$xnam[tmp$xnam != 'intercept'])
   
   if(SAVEPLOTS)pdf( file=.outFile(outFolder,'betaChains.pdf') ) # start plot
-  
-  
+
+  if(CHAINS){
   cseq <- 1:nrow(bgibbs)
   if(length(cseq) > 1000)cseq <- seq(1,length(cseq),length=1000)
   
@@ -7022,11 +7088,12 @@ print.gjam <- function(x, ...){
   } else {
     dev.off()
   }
-  
+}
   ######################### correlation chains, species at random
   
-  if(SAVEPLOTS)pdf( file=.outFile(outFolder,'corChains.pdf') ) # start plot
-  
+  if(CHAINS){
+    if(SAVEPLOTS)pdf( file=.outFile(outFolder,'corChains.pdf') ) # start plot
+    
     par(mfrow=c(2,2), bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
     
     w0 <- 1:ncol(sgibbs)
@@ -7094,9 +7161,10 @@ print.gjam <- function(x, ...){
     } else {
       dev.off()
     }
+  }
     ##################### time chains
     
-  if(TIME){
+  if(TIME & CHAINS){
     
     if(SAVEPLOTS)pdf( file=.outFile(outFolder,'lambdaChains.pdf') ) 
     
@@ -7737,7 +7805,7 @@ print.gjam <- function(x, ...){
     
     opt <- list(mainLeft=main1, main1=main1, main2 = main2,
                 leftClus=T, topClus2=T, rightLab=F, topLab1=T, 
-                topLab2 = T, leftLab=T,
+                topLab2 = T, leftLab=T, ncluster = ncluster,
                 colCode2 = specColor[notOther], lower1 = T, diag1 = T,
                 lower2 = F)
     .clusterWithGrid(mat1, mat2, expand=expand, opt)
@@ -7757,8 +7825,12 @@ print.gjam <- function(x, ...){
   main1 <- expression(paste('Species ',hat(E)))
   opt <- list(mainLeft=main1, leftClus=T, leftLab=T, 
               colCode1 = specColor[notOther], rowCode = specColor[notOther],
-              topLab1=T,
+              topLab1=T,ncluster = ncluster,
               lower1 = T, diag1 = F,horiz1=clusterIndex[,'E'])
+  
+  
+  
+  
   .clusterWithGrid(mat1, mat2=NULL, expand=1, opt)
   
   if(!SAVEPLOTS){
@@ -7782,7 +7854,7 @@ print.gjam <- function(x, ...){
   main2 <- expression(paste('Response ',hat(E)))
   opt <- list(mainLeft='Species', main1=main1, main2 = main2,
               leftClus=T, leftLab=T, rowCode = specColor[notOther],
-              topLab1 = T, topLab2 = T,rightLab=F,
+              topLab1 = T, topLab2 = T,rightLab=F,ncluster = ncluster,
               lower1 = T, diag1 = F,lower2 = T, diag2 = T)
   .clusterWithGrid(mat1, mat2, expand=1, opt)
  
@@ -7810,7 +7882,7 @@ print.gjam <- function(x, ...){
   
   opt <- list(mainLeft='Species', main1=main1, main2 = main2,
               leftClus=T, leftLab=T, lower1 = T, diag1 = F,
-              topLab1 = topLab1, topLab2 = topLab2,
+              topLab1 = topLab1, topLab2 = topLab2,ncluster = ncluster,
               lower2 = T, diag2 = T, sameOrder = T)
   .clusterWithGrid(mat1, mat2=mat2, expand=1, opt )
   
@@ -7836,13 +7908,15 @@ print.gjam <- function(x, ...){
     
     ee <- ncol(mat1)/ncol(mat2)
     ee <- max(c(ee,.8))
-    ee <- min(c(ee, 1.2))
+    ee <- min(c(ee, 1.1))
     opt <- list(mainLeft=main1, main1=main1, main2 = main2,
                 topClus1=T, topClus2=T, topLab1 = topLab1, topLab2=T,
                 leftLab=T,lower1 = T, diag1 = F, ncluster = ncluster,
                 colCode1 = specColor[notOther],
                 vert1=clusterIndex[,'E'], horiz2=clusterIndex[,'E'])
     .clusterWithGrid(mat1, mat2, expand=ee, opt)
+    
+    
     
     
     if(!SAVEPLOTS){
@@ -7875,7 +7949,7 @@ print.gjam <- function(x, ...){
       ee <- max(ee,.3)
       slim1 <- range(mat1)
       if(slim1[2] == 0)slim1[2] <- .0001
-      opt <- list(mainLeft=side1, main1=main1, main2 = main2,
+      opt <- list(mainLeft=side1, main1=main1, main2 = main2,ncluster = ncluster,
                   topClus1=F, topClus2=F, topLab1 = topLab1, 
                   topLab2=T, rowOrder = c(1:S)[notOther], colOrder1 = c(1:S)[notOther], 
                   colOrder2 = 1:ncol(mat2), slim1 = slim1,
@@ -7903,7 +7977,7 @@ print.gjam <- function(x, ...){
       
       ee <- ncol(mat2)/(ncol(mat1) + ncol(mat2) )
       ee <- max(ee,.05)
-      opt <- list(mainLeft=main1, main1=main1, main2 = main2,
+      opt <- list(mainLeft=main1, main1=main1, main2 = main2,ncluster = ncluster,
                   topClus1=T, topClus2=T, topLab1 = topLab1, topLab2=T,
                   colCode1 = boxCol[notOther], lower1 = T, diag1 = F,
                   vert1=clusterIndex[,'E'], horiz2=clusterIndex[,'E'])
@@ -7944,7 +8018,7 @@ print.gjam <- function(x, ...){
        opt <- list(mainLeft='', main1='', main2 = '',
                    topClus1=T, topClus2=T, topLab1 = T, topLab2=F,
                    leftClus=T, 
-                   leftLab=T, 
+                   leftLab=T, ncluster = ncluster,
                    colCode1 = traitColor)
        .clusterWithGrid(mat1=betaTraitMu[-1,], mat2=NULL, expand=1, opt)
        
@@ -7964,7 +8038,7 @@ print.gjam <- function(x, ...){
   invisible(all)
 }
    
-.gjamPrediction <- function(output, newdata, y2plot, PLOT, ylim){
+.gjamPrediction <- function(output, newdata, y2plot, PLOT, ylim, FULL){
   
   xnew <- ydataCond <- interBeta <- NULL
   tiny  <- 1e-10
@@ -8085,6 +8159,11 @@ print.gjam <- function(x, ...){
     nx   <- n <- nrow(xnew)
     colnames(xnew) <- .cleanNames(colnames(xnew))
     
+    wna <- which(is.na(xnew),arr.ind=T)
+    if(length(wna) > 0)
+      stop('cannot have NA in prediction grid newdata$xdata')
+    
+    
     effMat <- matrix(1, nx, S)
     holdoutN <- nx
     holdoutIndex <- 1:nx
@@ -8122,7 +8201,6 @@ print.gjam <- function(x, ...){
     xnew[,wss] <- t( (t(xnew[,wss]) - standX[wss,'xmean'])/
                        standX[wss,'xsd'])
     
-    
     tmp <- .gjamXY(formula, xnew, yp, typeNames, 
                    notStandard=names(xnew), checkX = F, xscale = xscale)
     x  <- tmp$x     
@@ -8142,9 +8220,6 @@ print.gjam <- function(x, ...){
       yp[,wda] <- round(yp[,wda]*effMat[,wda],0)
       yp[,wda][yp[,wda] < 0] <- 0
     }
-    
-    
-    
     
     ordCols <- which(typeNames == 'OC')
     if(length(ordCols) > 0){
@@ -8182,6 +8257,9 @@ print.gjam <- function(x, ...){
         }
       }
     }
+    
+    
+    
     
     tmp <- .gjamSetup(typeNames, x, yp, breakList=NULL, holdoutN=NULL, 
                       holdoutIndex=NULL,censor=NULL, effort=effort) 
@@ -8266,8 +8344,7 @@ print.gjam <- function(x, ...){
   
   yg <- yp
   
-  FULL <- F
-  if(length(yp) < 10000) FULL <- T
+  if(length(yp) < 10000 | FULL) FULL <- T
   
   if(FULL){
     ygibbs <- wgibbs <- matrix(0,nsim,length(yp))
@@ -8679,10 +8756,12 @@ print.gjam <- function(x, ...){
     
   }
     
-  list( x = xunstand, sdList = sdList, piList = piList, prPresent = prPresent,
-        ematrix = ematrix)
+  bk <- list( x = xunstand, sdList = sdList, piList = piList, prPresent = prPresent,
+               ematrix = ematrix)
+  if(FULL)bk <- append( bk, list(ychains = ygibbs) )
+  bk
 }
-
+ 
 .updateBetaTime <- function(X, Y, sig, rows, pattern, lo=NULL, hi=NULL){
   
   SS <- ncol(Y)
@@ -11439,7 +11518,9 @@ print.gjam <- function(x, ...){
 }
     
 
-.betaWrapper <- function(REDUCT, TIME, BPRIOR, notOther, IXX){
+.betaWrapper <- function(REDUCT, TIME, BPRIOR, notOther, IXX, betaLim=50){
+  
+  # betaLim - outer prior limit for beta
   
   if(REDUCT){
     
@@ -11471,6 +11552,16 @@ print.gjam <- function(x, ...){
       
       if(!BPRIOR){
         B   <- .rMVN( SS, rep(0,length(SS)), omega) + muB
+        
+        ws <- which(abs(B) > betaLim, arr.ind=T)
+        
+        if(length(ws) > 0){
+          ws <- unique(ws[,1])
+          bs <- B[drop=F,ws,]
+          B[ws,] <- .tnormMVNmatrix(avec = bs, muvec = muB[drop=F,ws,], 
+                                    smat = omega, lo = bs*0 - betaLim, 
+                                    hi = bs*0 + betaLim)
+        }
         return(t(B))
       }
       

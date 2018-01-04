@@ -204,7 +204,7 @@ x   <- model.matrix(formula, data=tmp)
 
 ## ----get trees, eval = F-------------------------------------------------
 #  y  <- gjamReZero(forestTraits$treesDeZero)  # extract y
-#  treeYdata  <- gjamTrimY(y,10)$y                 # at least 10 plots
+#  treeYdata  <- gjamTrimY(y,10)$y             # at least 10 plots
 #  dim(treeYdata)
 #  treeYdata[1:5,1:6]
 
@@ -221,6 +221,44 @@ x   <- model.matrix(formula, data=tmp)
 #  
 #  pl   <- list(SMALLPLOTS = F, GRIDPLOTS=T, specColor = specColor)
 #  gjamPlot(output = out, plotPars = pl)
+
+## ----gsens, eval = F-----------------------------------------------------
+#  types <- c('DA','DA','OC','OC','OC','OC','CC','CC','CC','CC','CC','CA','CA','PA','PA')
+#  f    <- gjamSimData(S = length(types), typeNames = types)
+#  ml   <- list(ng = 50, burnin = 5, typeNames = f$typeNames)
+#  out  <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
+#  
+#  ynames <- colnames(f$y)
+#  group  <- ynames[types == 'CC']
+#  
+#  full <- gjamSensitivity(out)
+#  cc   <- gjamSensitivity(out, group)
+#  
+#  nt <- ncol(full)
+#  
+#  boxplot( full, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
+#           xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
+#  boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
+#           xaxt = 'n')
+#  axis(1,at=1:nt,labels=colnames(full))
+#  legend('bottomright',c('full response','CC data'),
+#         text.col=c('blue','forestgreen'))
+
+## ----sens2, eval=F-------------------------------------------------------
+#  group  <- ynames[types == 'CA']
+#  ca   <- gjamSensitivity(out, group)
+#  
+#  ylim <- range( rbind(cc,ca) )
+#  
+#  nt <- ncol(full)
+#  
+#  boxplot( ca, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
+#           xaxt = 'n', ylim = ylim, xlab = 'Predictors', ylab='Sensitivity')
+#  boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
+#           xaxt = 'n')
+#  axis(1,at=1:nt,labels=colnames(full))
+#  legend('bottomright',c('CA data','CC data'),
+#         text.col=c('blue','forestgreen'))
 
 ## ----plot save, eval = F-------------------------------------------------
 #  plotPars <- list(SMALLPLOTS = F, GRIDPLOTS=T, SAVEPLOTS = T, outfolder = 'plots')

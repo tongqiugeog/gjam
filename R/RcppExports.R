@@ -37,3 +37,7 @@ invWbyRcpp <- function(sigsq, A) {
     .Call(`_gjam_invWbyRcpp`, sigsq, A)
 }
 
+dmvnormRcpp <- function(x, mean, sigma, logd = FALSE) {
+    .Call(`_gjam_dmvnormRcpp`, x, mean, sigma, logd)
+}
+

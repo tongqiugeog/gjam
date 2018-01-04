@@ -39,6 +39,7 @@ The returned \code{gridBySpec} can be analyzed in \code{\link{gjam}} with known 
   
 }
 \examples{
+\dontrun{
 ## random data
 n  <- 100
 s  <- sample( letters[1:3], n, replace = TRUE)
@@ -58,6 +59,7 @@ text(g$predGrid[,1], g$predGrid[,2], rowSums(g$gridBySpec), col='brown')
 p  <- cbind( runif(30, -1, 1), runif(30, 0, 20) ) # irregular lattice
 h  <- gjamPoints2Grid(s, xy, predGrid = p)
 text(h$predGrid[,1], h$predGrid[,2], rowSums(h$gridBySpec), col='blue')
+}
 }
 \author{
 James S Clark, \email{jimclark@duke.edu}

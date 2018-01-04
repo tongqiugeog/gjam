@@ -12,6 +12,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+##version 2.1.8
+
 
 ```{r outform, echo=F}
 insertPlot <- function(file, caption){
@@ -458,7 +460,7 @@ I can use this model to analyze a tree data set.  For my data set I use the tree
 
 ```{r get trees, eval = F}
 y  <- gjamReZero(forestTraits$treesDeZero)  # extract y
-treeYdata  <- gjamTrimY(y,10)$y                 # at least 10 plots
+treeYdata  <- gjamTrimY(y,10)$y             # at least 10 plots
 dim(treeYdata)
 treeYdata[1:5,1:6]
 ```
@@ -482,6 +484,69 @@ gjamPlot(output = out, plotPars = pl)
 ```
 
 Additional information on variable types and their treatment in `gjam` is included later in this document and in the other `gjam vignettes`.
+
+
+`r bigskip()`
+
+#<span style="color:darkgreen">sensitivity to predictors</span>
+
+The sensitivity of an individual response variable $s$ to an individual predictor $q$ is given by the coefficient $\beta_{qs}$.  This granularity is useful, but it is often desirable to have a sensitivity that applies to the full response matrix.  That sensitivity is given by 
+
+$$
+\mathbf{f} = diag \left( \mathbf{B} \Sigma^{-1} \mathbf{B'} \right)
+$$
+(Brynjarsdottir and Gelfand. 2014, Clark et al. 2017).  These coefficients are evaluated on the scale that is standardized scale for $\mathbf{X}$ and correlation scale $\mathbf{Y}$--they are dimensionless. In the notation of the Appendix this is $\mathbf{B}_r$.  A plot of these values is displayed when I call `gjamPlot`.  
+
+I can also evaluate sensitivity for a species group $g$ as
+
+
+$$
+\mathbf{f}_g = diag \left( \mathbf{B}_g \Sigma_g^{-1} \mathbf{B'}_g \right)
+$$
+where $\mathbf{B}_g$ includes columns for the species in group $g$, and $\Sigma_g$ is the covariance matrix for group $g$ conditional on remaining species in the model.
+
+In the help page for the function `gjamSensitivity` is this example comparing sensitivity for a simulated data set with multiple data types against a group that includes only the composition count (`'CC'`) data.  Note that the latter is supplied identified by `group`, which is a `character string` of column names in `ydata`:
+
+```{r gsens, eval = F}
+types <- c('DA','DA','OC','OC','OC','OC','CC','CC','CC','CC','CC','CA','CA','PA','PA')         
+f    <- gjamSimData(S = length(types), typeNames = types)
+ml   <- list(ng = 50, burnin = 5, typeNames = f$typeNames)
+out  <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
+
+ynames <- colnames(f$y)
+group  <- ynames[types == 'CC']
+
+full <- gjamSensitivity(out)
+cc   <- gjamSensitivity(out, group)
+
+nt <- ncol(full)
+
+boxplot( full, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
+         xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
+boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
+         xaxt = 'n')
+axis(1,at=1:nt,labels=colnames(full))
+legend('bottomright',c('full response','CC data'),
+       text.col=c('blue','forestgreen'))
+```
+Again, the scale is dimensionless.  Here is a comparison between two groups:
+
+```{r sens2, eval=F}
+group  <- ynames[types == 'CA']
+ca   <- gjamSensitivity(out, group)
+
+ylim <- range( rbind(cc,ca) )
+
+nt <- ncol(full)
+
+boxplot( ca, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
+         xaxt = 'n', ylim = ylim, xlab = 'Predictors', ylab='Sensitivity')
+boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
+         xaxt = 'n')
+axis(1,at=1:nt,labels=colnames(full))
+legend('bottomright',c('CA data','CC data'),
+       text.col=c('blue','forestgreen'))
+```
 
 `r bigskip()`
 

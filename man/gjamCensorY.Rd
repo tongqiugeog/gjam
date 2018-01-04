@@ -36,6 +36,7 @@
 Any values in \code{y} that fall within censored \code{intervals} are replaced with censored \code{values}.  The example below simulates data collected on an 'octave scale': 0, 1, 2, 4, 8, ..., an approach to accelerate data collection with approximate bins.
 }
 \examples{
+\dontrun{
 # data in octaves
 v  <- up <- c(0, 2^c(0:4), Inf)         
 dn <- c(-Inf, v[-length(v)])
@@ -53,7 +54,6 @@ output <- gjam(f$formula, xdata = f$xdata, ydata = y, modelList = ml)
 pl  <- list(trueValues = f$trueValues, width = 3, height = 3)   
 gjamPlot(output, pl)
 
-\dontrun{
 # upper detection limit
 up <- 5
 v  <- up

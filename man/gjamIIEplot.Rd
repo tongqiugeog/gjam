@@ -31,6 +31,7 @@ For plotting direct effects, interactions, and indirect effects from an object \
 For factors, effects are plotted relative to the mean over all factor levels.
 }
 \examples{
+\dontrun{
 sim <- gjamSimData(S = 10, Q = 6, typeNames = 'OC')
 ml  <- list(ng = 50, burnin = 5, typeNames = sim$typeNames)
 out <- gjam(sim$formula, sim$xdata, sim$ydata, modelList = ml)
@@ -42,6 +43,7 @@ fit <- gjamIIE(out, xvector)
 
 gjamIIEplot(fit, response = 'S1', effectMu = c('main','ind'), 
             effectSd = c('main','ind'), legLoc = 'topleft')
+}
 }
 \author{
 James S Clark, \email{jimclark@duke.edu}

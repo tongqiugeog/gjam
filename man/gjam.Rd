@@ -115,7 +115,7 @@ out  <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 summary(out)
 
 # repeat with ng = 5000, burnin = 500, then plot data:
-pl  <- list(trueValues = f$trueValues)
+pl  <- list(trueValues = f$trueValues, SMALLPLOTS=F)
 gjamPlot(out, plotPars = pl)
 
 ## discrete abundance with heterogeneous effort 

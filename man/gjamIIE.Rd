@@ -33,6 +33,7 @@ If \code{sdScaleX = T} effects are standandardized from the Y/X to Y scale.  Thi
   A list of objects for plotting by \code{\link{gjamIIEplot}}.
 }
 \examples{
+\dontrun{
 sim <- gjamSimData(S = 12, Q = 5, typeNames = 'CA')
 ml  <- list(ng = 50, burnin = 5, typeNames = sim$typeNames)
 out <- gjam(sim$formula, sim$xdata, sim$ydata, modelList = ml)
@@ -44,6 +45,7 @@ fit <- gjamIIE(output = out, xvector)
 
 gjamIIEplot(fit, response = 'S1', effectMu = c('main','ind'), 
             effectSd = c('main','ind'), legLoc = 'topleft')
+}
 }
 \author{
 James S Clark, \email{jimclark@duke.edu}

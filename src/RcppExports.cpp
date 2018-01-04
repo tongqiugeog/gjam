@@ -139,6 +139,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// dmvnormRcpp
+arma::vec dmvnormRcpp(arma::mat x, arma::mat mean, arma::mat sigma, bool logd);
+RcppExport SEXP _gjam_dmvnormRcpp(SEXP xSEXP, SEXP meanSEXP, SEXP sigmaSEXP, SEXP logdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type logd(logdSEXP);
+    rcpp_result_gen = Rcpp::wrap(dmvnormRcpp(x, mean, sigma, logd));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_gjam_byRcpp", (DL_FUNC) &_gjam_byRcpp, 6},
@@ -150,6 +164,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gjam_getPmatKRcpp", (DL_FUNC) &_gjam_getPmatKRcpp, 7},
     {"_gjam_fnZRcpp", (DL_FUNC) &_gjam_fnZRcpp, 8},
     {"_gjam_invWbyRcpp", (DL_FUNC) &_gjam_invWbyRcpp, 2},
+    {"_gjam_dmvnormRcpp", (DL_FUNC) &_gjam_dmvnormRcpp, 4},
     {NULL, NULL, 0}
 };
 

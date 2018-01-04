@@ -17,6 +17,7 @@
 \concept{Tobit regression}
 \concept{zero inflation}
 \concept{sampling effort}
+\concept{sensitivity}
 \title{
   Generalized Joint Attribute Modeling
 }
@@ -28,8 +29,8 @@
   \tabular{ll}{
   Package: \tab gjam\cr
   Type: \tab Package\cr
-  Version: \tab 2.1.7\cr
-  Date: \tab 2017-12-21\cr
+  Version: \tab 2.1.8\cr
+  Date: \tab 2018-1-5\cr
   License: \tab GPL (>= 2)\cr
   URL: \tab http://sites.nicholas.duke.edu/clarklab/code/\cr
   }
@@ -42,13 +43,15 @@ gjam was motivated by species distribution and abundance data in ecology, but ca
 
 gjam can be used to model ecological trait data, where species traits are translated to locations as community-weighted means and modes.
 
-Posterior simulation is done by Gibbs sampling.  Analysis is done by these functions:
+Posterior simulation is done by Gibbs sampling.  Analysis is done by these functions, roughly in order of how frequently they might be used:
 
 \code{\link{gjam}} fits model with Gibbs sampling.
 
-\code{\link{gjamSimData}} simulates data for analysis by \code{gjamGibbs}.
+\code{\link{gjamSimData}} simulates data for analysis by \code{gjam}.
 
 \code{\link{gjamPriorTemplate}} sets up prior distribution for coefficients.
+
+\code{\link{gjamSensitivity}} evaluates sensitivity to predictors from \code{gjam}.
 
 \code{\link{gjamCensorY}} defines censored values and intervals.
 
@@ -90,7 +93,8 @@ Taylor-Rodriguez, D., K. Kaufeld, E. M. Schliep, J. S. Clark, and A. E. Gelfand.
 \keyword{ package }
 \seealso{
   \code{\link{gjam}}, 
-  \code{\link{gjamSimData}}, 
+  \code{\link{gjamSimData}},
+  \code{\link{gjamSensitivity}},
   \code{\link{gjamCensorY}}, 
   \code{\link{gjamTrimY}}, 
   \code{\link{gjamPredict}}, 

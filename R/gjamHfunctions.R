@@ -78,7 +78,7 @@
   ymax <- max(mat) + diff(ry)*.15
   bx   <- .getColor(bb,.4)
   
-  tmp <- .boxplotQuant( mat,xaxt='n',outline=F,ylim=c(ymin,ymax),
+  tmp <- .boxplotQuant( mat, xaxt='n',outline=F,ylim=c(ymin,ymax),
                         col=bx, border=bb, xaxt='n',lty=1)
   abline(h=0,lwd=2,col='grey',lty=2)
   
@@ -1230,6 +1230,7 @@
 
   if(is.null(rowOrder)){
     if(nrow(m1Row) != nrow(mat1))m1Row <- cor(t(mat1))
+    if(ncluster > nrow(m1Row)/2)ncluster <- 2
     copt <- list( PLOT=F, DIST = DIST1, ncluster=ncluster )
     tmp  <- .clusterPlot( m1Row, copt)
     clus <- tmp$clusterIndex
@@ -1967,11 +1968,14 @@
   if(!is.matrix(xx))xx <- matrix(xx,1)
   if(!is.matrix(mu))mu <- matrix(mu,1)
   
+  tmp <- try( dmvnormRcpp(xx, mu, smat, logd=log),silent=T  )     
+  if( !inherits(tmp,'try-error') )return(tmp)
+  
   xx <- xx - mu
   
   if(!is.null(sinv)){
     distval <- diag( xx%*%sinv%*%t(xx) )
-    ev      <- eigen(sinv, only.values = TRUE)$values
+    ev      <- eigen(sinv, only.values = T)$values
     logd    <- -sum(log(ev))
   }
   
@@ -1984,7 +1988,7 @@
     }
     covm    <- chol2inv(testv)
     distval <- rowSums((xx %*% covm) * xx)
-    ev      <- eigen(smat, only.values = TRUE)$values 
+    ev      <- eigen(smat, only.values = T)$values 
     logd    <- sum(log( ev ))
   }
 
@@ -3899,6 +3903,72 @@
        q1 = q1, lCont = lCont, dCont = dCont, eCont = eCont, findex = findex)
 }
 
+
+
+gjamSensitivity <- function(output, group=NULL, nsim=100){
+  
+  REDUCT <- F
+  
+  standRows   <- output$inputs$standRows
+  factorBeta  <- output$inputs$factorBeta
+  notOther    <- output$inputs$notOther
+  standMat    <- output$inputs$standMat
+  notStandard <- output$modelList$notStandard
+  ng          <- output$modelList$ng
+  burnin      <- output$modelList$burnin
+  x           <- output$inputs$x
+  y           <- output$inputs$y
+  beta        <- output$parameters$betaMu
+  snames      <- colnames(y)
+  xnames      <- colnames(x)
+  Q <- length(xnames)
+  S <-  length(snames)
+  S1 <- length(notOther)
+  
+  bgibbs    <- output$chains$bgibbs
+  sgibbs    <- output$chains$sgibbs
+  if('kgibbs' %in% names(output$chains)){
+    REDUCT <- T
+    kgibbs      <- output$chains$kgibbs   
+    sigErrGibbs <- output$chains$sigErrGibbs
+    N <- output$modelList$reductList$N
+    r <- output$modelList$reductList$r
+  }
+  
+  jj <- sample(burnin:ng,nsim,replace=T)
+  
+  fmat <- matrix(0,nsim,(Q-1))
+  i <- 1
+  
+  for(j in jj){
+    
+    bg <-  matrix(bgibbs[j,],Q,S)
+    rownames(bg) <- xnames
+    colnames(bg) <- snames
+    
+    if(!REDUCT){
+      sg <- .expandSigma(sgibbs[j,], S = S, REDUCT = F) 
+      si <- solveRcpp( sg ) 
+      
+    } else {
+      Z  <- matrix(sgibbs[j,],N,r)
+      sg <- .expandSigma(sigErrGibbs[j], S, Z = Z, kgibbs[j,], REDUCT = T)
+      si <- invWbyRcpp(sigErrGibbs[j], Z[kgibbs[j,],])
+    }
+
+    tmp <- .contrastCoeff(beta=bg[,notOther], 
+                          notStand = notStandard[notStandard %in% xnames], 
+                          sigma = sg[notOther,notOther],
+                          sinv = si[notOther,notOther],
+                          stand = standMat, factorObject=factorBeta,
+                          conditional = group)
+    fmat[i,] <- diag(tmp$sens)
+    i <- i + 1
+  }
+  colnames(fmat) <- colnames(tmp$sens)
+  fmat
+}
+
 .factorCoeffs2Zero <- function(factorObject, snames, priorObject){
   
   zero  <- numeric(0)
@@ -3993,6 +4063,14 @@
   if(length(typeNames) == 1)typeNames <- rep(typeNames,S)
   if(length(typeNames) != S) 
     stop('typeNames must be one value or no. columns in y')
+  
+  
+  
+  
+ # colnames(xdata) <- .cleanNames(colnames(xdata))
+  
+  
+  
   
   ############### factors in y
   
@@ -4978,7 +5056,8 @@
     
     if(TIME){
       
-      tmp <- .contrastCoeff(beta=lambda[,notOther], notStand = notStandardL[notStandardL %in% xlnames], 
+      tmp <- .contrastCoeff(beta=lambda[,notOther], 
+                            notStand = notStandardL[notStandardL %in% xlnames], 
                             sigma = sg[notOther,notOther],sinv = sinv,
                             stand=standMatL, factorObject=factorLambda)
       lgg   <- tmp$ag
@@ -5001,10 +5080,9 @@
       ypred  <- ypred + yp
       ypred2 <- ypred2 + yp^2
       
+      tmp <- .dMVN(w[,notOther],muw[,notOther], sg[notOther,notOther], log=T)
 
-
-      sumDev <- sumDev - 2*sum(.dMVN(w[,notOther],muw[,notOther],
-                                     sg[notOther,notOther], log=T ) )
+      sumDev <- sumDev - 2*sum(tmp) 
       yerror <- yerror + (yp - y)^2
       
       fmat <- fmat + fsens
@@ -5236,9 +5314,11 @@
   }
   
   meanDev <- sumDev/ntot
+  
+  tmp <- .dMVN(wMu[,notOther],x%*%betaMu[,notOther],
+                     sMean[notOther,notOther], log=T)
 
-  pd  <- meanDev - 2*sum(.dMVN(wMu[,notOther],x%*%betaMu[,notOther],
-                               sMean[notOther,notOther], log=T ) )
+  pd  <- meanDev - 2*sum(tmp )
   DIC <- pd + meanDev
   
   yscore <- colSums( .getScoreNorm(y[,notOther],yMu[,notOther],
@@ -5296,8 +5376,10 @@
       
       muw <- x%*%betaMu[,notOther] + Vmat%*%Lmat + Umat%*%Amat
       
-      pd  <- meanDev - 2*sum(.dMVN(wMu[,notOther],muw[,notOther],
-                                   sMean[notOther,notOther], log=T ) )
+      tmp <- .dMVN(wMu[,notOther],muw[,notOther],
+                         sMean[notOther,notOther], log=T )
+      
+      pd  <- meanDev - 2*sum(tmp )
       DIC <- pd + meanDev
     }
   }
@@ -5473,7 +5555,8 @@
   all
 }
     
-.contrastCoeff <- function(beta, sigma, sinv, notStand, stand, factorObject){ 
+.contrastCoeff <- function(beta, sigma, sinv, notStand, stand, factorObject,
+                           conditional=NULL){ 
    
   if(!is.null(notStand)){
     beta[notStand,] <- beta[notStand,]*stand[notStand,]
@@ -5496,7 +5579,18 @@
     agg <- agg[drop=F,-1,]
     egg <- agg
   }
-  sens <- egg%*%sinv%*%t(egg)
+  if(is.null(conditional)){
+    
+    sens <- egg%*%sinv%*%t(egg)
+    
+  }else{
+    con <- which(colnames(beta) %in% conditional)
+    nc  <- c(1:SO)[-con]
+    sg  <- sigma[con,con] - 
+           sigma[con,nc]%*%solve(sigma[nc,nc])%*%sigma[nc,con]
+    sens <- egg[,con]%*%solve(sg)%*%t(egg[,con])
+  }
+    
   
   list(ag = agg, eg = egg, sens = sens)
 }
@@ -6321,7 +6415,7 @@ print.gjam <- function(x, ...){
         
         if( !typeNames[wk[1]] %in% c('PA','CAT') ){
           ncc <- max( c(100,max(y1, na.rm=T)/20) )
-          if(min(y1) < bins[1])bins[1] <- min(y1, na.rm=T)
+          if(min(y1, na.rm=T) < bins[1])bins[1] <- min(y1, na.rm=T)
           xy  <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
           xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
           xy[1,xy[1,] < xlimit[1]] <- xlimit[1]
@@ -6807,7 +6901,7 @@ print.gjam <- function(x, ...){
     if(ncol(yy) > 16){
       
       rmspe <- sqrt( colSums( (plotByTrait - tMu)^2 )/n )
-      o <- order(rmspe)[1:9]
+      o <- order(rmspe)[1:16]
       yy <- plotByTrait[,o]
     }
     
@@ -7801,7 +7895,7 @@ print.gjam <- function(x, ...){
     mat1 <- fMat
     mat2 <- fBetaMu
     expand <- ncol(mat1)/ncol(mat2)
-    expand <- max(c(.8,expand))
+    expand <- max(c(2,expand))
     
     opt <- list(mainLeft=main1, main1=main1, main2 = main2,
                 leftClus=T, topClus2=T, rightLab=F, topLab1=T, 
@@ -9469,8 +9563,9 @@ print.gjam <- function(x, ...){
   colnames(x) <- xnames
   
   if(length(isNonLinX) == 0)isNonLinX <- NULL
+  if(length(notStandard) == 0)notStandard <- NULL
   
-  if(!is.null(notStandard)){
+  if( !is.null(notStandard) ){
     ns <- notStandard
     for(k in 1:length(ns)){
       wk <- grep(ns[k],colnames(x))
@@ -10126,7 +10221,7 @@ print.gjam <- function(x, ...){
     xnew[,intMat[,1]] <- xnew[,intMat[,2]]*xnew[,intMat[,3]]
   }
   
-  pnow <- .dMVN(yy,xx%*%bb,smat=ss,log=T)
+  pnow <- .dMVN(yy,xx%*%bb,ss,log=T)
   pnew <- .dMVN(yy,xnew%*%bb,smat=ss,log=T)
   
   a  <- exp(pnew - pnow)
@@ -11124,10 +11219,16 @@ print.gjam <- function(x, ...){
           Vmat[i11,]    <- ww[,gindex[,'colW']]*xl[i11,gindex[,'rowG']]
         }
       }else{
+        #      pnow <- .dMVN(w[i00,notOther],muw[i00,notOther],sinv=sinv,log=T) + 
+        #         .dMVN(w[i11,notOther],muw[i11,notOther],sinv=sinv,log=T)
+        #      pnew <- .dMVN(ww[,notOther],muw[i00,notOther],sinv=sinv,log=T) + 
+        #        .dMVN(w[i11,notOther],muStar[,notOther],sinv=sinv,log=T)
+        
         pnow <- .dMVN(w[i00,notOther],muw[i00,notOther],sinv=sinv,log=T) + 
           .dMVN(w[i11,notOther],muw[i11,notOther],sinv=sinv,log=T)
         pnew <- .dMVN(ww[,notOther],muw[i00,notOther],sinv=sinv,log=T) + 
           .dMVN(w[i11,notOther],muStar[,notOther],sinv=sinv,log=T)
+        
         za <- which( runif(length(pnow),0,1) < exp(pnew - pnow) )
         if(length(za) > 0){
           w[i00[za],]   <- W[i00[za],]
@@ -11171,6 +11272,7 @@ print.gjam <- function(x, ...){
                     sinv=sinv,log=T)
       pnew <- .dMVN(w[timeZero+1,notOther],muStar[,notOther],
                     sinv=sinv,log=T)
+      
       za   <- which( runif(length(pnow),0,1) < exp(pnew - pnow) )
       if(length(za) > 0){
         w[timeZero[za],]   <- W[timeZero[za],]
@@ -11264,8 +11366,11 @@ print.gjam <- function(x, ...){
                                               1),
                                        holdoutN,SC) 
         }
-        w[holdoutIndex,corCols] <- yPredict[holdoutIndex,corCols]  <- 
-                                    .rMVN(holdoutN,muo,css[corCols,corCols])
+  #      w[holdoutIndex,corCols] <- yPredict[holdoutIndex,corCols]  <- 
+  #                                  .rMVN(holdoutN,muo,css[corCols,corCols])
+          w[holdoutIndex,corCols] <- yPredict[holdoutIndex,corCols]  <- 
+                                              rmvnormRcpp(holdoutN,rep(0,length(corCols)),
+                                                          css[corCols,corCols]) + muo
       }
     }
       
@@ -11367,7 +11472,10 @@ print.gjam <- function(x, ...){
       yPredict <- w*0
       if(length(notCorCols) > 0){
         muw <- x%*%bg
-        yPredict[,notOther] <- .rMVN(n,muw[,notOther],sg[notOther,notOther])
+  #      yPredict[,notOther] <- .rMVN(n,muw[,notOther],sg[notOther,notOther])
+        yPredict[,notOther] <- rmvnormRcpp(n,rep(0,length(notOther)),sg[notOther,notOther]) + 
+                                  muw[,notOther]
+          
       }
       
       if( length(corCols) > 0 ){    #expanded w on this scale
@@ -11375,7 +11483,8 @@ print.gjam <- function(x, ...){
         css  <- .cov2Cor(sg[notOther,notOther])
         muss <- x%*%alpha
         ypred <- yPredict
-        ypred[,notOther]   <- .rMVN(n,muss[,notOther],css)
+ #       ypred[,notOther]   <- .rMVN(n,muss[,notOther],css)
+        ypred[,notOther]   <- rmvnormRcpp(n,rep(0,length(notOther)),css) + muss[,notOther]
         yPredict[,corCols] <- ypred[,corCols]
       } 
       
@@ -11551,7 +11660,9 @@ print.gjam <- function(x, ...){
       muB   <- t(omega%*%crossprod((1/sig)*X, Y))
       
       if(!BPRIOR){
-        B   <- .rMVN( SS, rep(0,length(SS)), omega) + muB
+ #       B   <- .rMVN( SS, 0, omega) + muB
+ 
+        B   <- rmvnormRcpp( SS, rep(0,nrow(omega)), omega) + muB
         
         ws <- which(abs(B) > betaLim, arr.ind=T)
         

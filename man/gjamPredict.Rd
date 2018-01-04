@@ -48,6 +48,7 @@ See examples below.
  
 }
 \examples{
+\dontrun{
 S   <- 5
 f   <- gjamSimData(n = 200, S = S, Q = 3, typeNames = 'CC') 
 ml  <- list(ng = 50, burnin = 5, typeNames = f$typeNames, holdoutN = 10)
@@ -91,7 +92,7 @@ plot(out$inputs$y[,4],p0$sdList$yMu[,4], cex=.4,col='orange'); abline(0,1,lty=2)
 points(out$inputs$y[,4],p1$sdList$yMu[,4], cex=.4,col='blue')
 title('Cond. on 1st Sp')
 }
-
+}
 
 \author{
 James S Clark, \email{jimclark@duke.edu}

@@ -77,6 +77,7 @@ Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Gen
 \code{\link{gjam}}
 }
 \examples{
+\dontrun{
 ## ordinal data, show true parameter values
 sim <- gjamSimData(S = 5, typeNames = 'OC')  
 sim$ydata[1:5,]                              # example data
@@ -118,4 +119,5 @@ sim   <- gjamSimData(S = length(types), typeNames = types)
 sim$typeNames                           
 head(sim$ydata)
 sim$trueValues$cuts
+}
 }

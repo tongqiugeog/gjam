@@ -12,7 +12,7 @@
 
 <meta name="author" content="James S. Clark" />
 
-<meta name="date" content="2018-01-04" />
+<meta name="date" content="2018-02-27" />
 
 <title>Generalized joint attribute modeling - gjam</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Generalized joint attribute modeling - gjam</h1>
 <h4 class="author"><em><a href="http://sites.nicholas.duke.edu/clarklab/">James S. Clark</a></em></h4>
-<h4 class="date"><em>2018-01-04</em></h4>
+<h4 class="date"><em>2018-02-27</em></h4>
 
 
 <div id="TOC">
@@ -860,22 +860,22 @@ keep &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="k
 <h2><span style="color:teal">categorical data</span></h2>
 <p>Categorical data have levels within groups. The levels are unordered. The columns in <code>ydata</code> that hold categorical responses are declared as <code>typeNames = &quot;CAT&quot;</code>. In observation vector <span class="math inline">\(\mathbf{y}_{i}\)</span> there are elements for one less than the number of factor levels. Suppose that observations are obtained on attributes of individual plants, each plant being an observation. The group <code>leaf</code> type might have four levels broadleaf decidious <code>bd</code>, needleleaf decidious <code>nd</code>, broadleaf evergreen <code>be</code>, and needleaf evergreen <code>ne</code>. A second group <code>xylem</code> anatomy might have three levels diffuse porous <code>dp</code>, ring porous <code>rp</code>, and tracheid <code>tr</code>. In both cases I assign the last class to be a reference class, <code>other</code>. Ten rows of the response matrix data might look like this:</p>
 <pre><code>##    leaf xylem
-## 1    be other
-## 2    bd    rp
-## 3    nd other
-## 4 other other
-## 5    bd    dp
-## 6    be    dp
-## 7    be    rp</code></pre>
+## 1    nd    rp
+## 2    bd    dp
+## 3 other    dp
+## 4    bd    rp
+## 5    be    rp
+## 6    be other
+## 7    nd    rp</code></pre>
 <p>This <code>data.frame ydata</code> becomes this response matrix <code>y</code>:</p>
 <pre><code>##      leaf_bd leaf_nd leaf_be leaf_other xylem_dp xylem_rp xylem_other
-## [1,]       0       0       1          0        0        0           1
-## [2,]       1       0       0          0        0        1           0
-## [3,]       0       1       0          0        0        0           1
-## [4,]       0       0       0          1        0        0           1
-## [5,]       1       0       0          0        1        0           0
-## [6,]       0       0       1          0        1        0           0
-## [7,]       0       0       1          0        0        1           0</code></pre>
+## [1,]       0       1       0          0        0        1           0
+## [2,]       1       0       0          0        1        0           0
+## [3,]       0       0       0          1        1        0           0
+## [4,]       1       0       0          0        0        1           0
+## [5,]       0       0       1          0        0        1           0
+## [6,]       0       0       1          0        0        0           1
+## [7,]       0       1       0          0        0        1           0</code></pre>
 <p><code>gjam</code> expands the two groups into four and three columns in <code>y</code>, respectively. As for composition data there is one redundant column for each group. Here is an example with simulated data, having two categorical groups:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'CAT'</span>,<span class="st">'CAT'</span>)
 f     &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n=</span><span class="dv">2000</span>, <span class="dt">S =</span> <span class="kw">length</span>(types), <span class="dt">typeNames =</span> types)

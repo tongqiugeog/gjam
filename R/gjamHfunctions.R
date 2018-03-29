@@ -3599,7 +3599,7 @@
   N <- r <- NULL
   
   if( 'REDUCT' %in% names(modelList)){
-      if(!REDUCT)return( list(N = NULL, r = NULL, REDUCT = F ) )
+      if(!modelList$REDUCT)return( list(N = NULL, r = NULL, REDUCT = F ) )
   }
   
   npar  <- S*(S + 1)/2 
@@ -4064,14 +4064,6 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   if(length(typeNames) != S) 
     stop('typeNames must be one value or no. columns in y')
   
-  
-  
-  
- # colnames(xdata) <- .cleanNames(colnames(xdata))
-  
-  
-  
-  
   ############### factors in y
   
   tmp <- .checkYfactor(ydata, typeNames)
@@ -4114,6 +4106,9 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   
   S <- ncol(y)
   n <- nrow(y)
+  
+  cat("\nObservations and responses:\n")
+  print(c(n, S))
   
   tmp    <- .buildEffort(y, effort, typeNames)
   effort <- tmp
@@ -4598,12 +4593,12 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   richness <- richFull <- NULL
   RICHNESS <- F
   
-  notRichness <- which(!typeNames %in% c('CON','CAT','OC'))
-  notRichness <- notRichness[!notRichness %in% other]
-  if(length(notRichness) > 0)RICHNESS  <- T
+  inRichness <- which(!typeNames %in% c('CON','CAT','OC'))
+  inRichness <- inRichness[!inRichness %in% other]
+  if(length(inRichness) > 2)RICHNESS  <- T
   
   wrich <- y*0 
-  wrich[,notRichness] <- 1
+  wrich[,inRichness] <- 1
   wrich[ymiss] <- 0
   
   presence <- w*0
@@ -4707,6 +4702,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   }
   if(RICHNESS){
     ypredPres <- ypredPres2 <- ypredPresN <- y*0
+    shannon   <- rep(0,n)
   }
     
   for(g in 1:ng){ ########################################################
@@ -5097,8 +5093,8 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         yy <- yp
         
         if('PA' %in% typeNames){
-          wpa <- which(typeNames[notRichness] == 'PA')
-          yy[,notRichness[wpa]] <- round(yy[,notRichness[wpa]])
+          wpa <- which(typeNames[inRichness] == 'PA')
+          yy[,inRichness[wpa]] <- round(yy[,inRichness[wpa]])
         }
         
         if(length(notPA) > 0){
@@ -5108,15 +5104,20 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
           yy[,notPA][w1] <- 1
         }
         
+        shan <- sweep(yy[,inRichness], 1, rowSums(yy[,inRichness]), '/')
+        shan[shan == 0] <- NA
+        shan <- -rowSums(shan[,inRichness]*log(shan[,inRichness]),na.rm=T)
+        shannon <- shannon + shan
+        
         wpp <- which(yy > 0)
         ypredPres[wpp]  <- ypredPres[wpp] + yp[wpp]
         ypredPres2[wpp] <- ypredPres2[wpp] + yp[wpp]^2
         ypredPresN[wpp] <- ypredPresN[wpp] + 1
         
         
-        presence[,notRichness] <- presence[,notRichness] + yy[,notRichness]
-        ones <- round(rowSums(yy[,notRichness]))
-        more <- round(rowSums(yy[,notRichness]*wrich[,notRichness,drop=F]))
+        presence[,inRichness] <- presence[,inRichness] + yy[,inRichness]
+        ones <- round(rowSums(yy[,inRichness]))
+        more <- round(rowSums(yy[,inRichness]*wrich[,inRichness,drop=F]))
         richFull <- .add2matrix(ones,richFull)
         richness <- .add2matrix(more,richness)  # only for non-missing
       }
@@ -5185,7 +5186,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   if(RICHNESS){
     missRows <- sort(unique(ymiss[,1]))
     richNonMiss <- richness/ntot            #only non-missing plots
-    yr  <- as.matrix(ydata[,notRichness]) 
+    yr  <- as.matrix(ydata[,inRichness]) 
     yr[yr > 0] <- 1
     yr <- rowSums(yr,na.rm=T)
     vv  <- matrix(as.numeric(colnames(richNonMiss)),n,
@@ -5198,8 +5199,14 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     rfull <- rowSums( vv * richFull )/rowSums(richFull)
     rfull[missRows] <- NA
     rmu <- rowSums(presence)
-    richness <- cbind(yr, rmu, rsd, rfull )
-    colnames(richness) <- c('obs','predMu','predSd','predNotMissing')
+    
+    shan <- sweep(y[,inRichness], 1, rowSums(y[,inRichness]), '/')
+    shan[shan == 0] <- NA
+    shanObs <- -rowSums(shan[,inRichness]*log(shan[,inRichness]),na.rm=T)
+    
+    richness <- cbind(yr, rmu, rsd, rfull, shanObs, shannon/ntot )
+    colnames(richness) <- c('obs','predMu','predSd','predNotMissing',
+                            'H_obs', 'H_pred')
     if(TIME)richness[timeZero,] <- NA
     
     ypredPresMu  <- ypredPres/ypredPresN   #predictive mean and se given presence
@@ -5808,11 +5815,179 @@ print.gjam <- function(x, ...){
   return( c(6,6) )
 }
 
+
+sqrtSeq <- function(maxval){ #labels for sqrt scale
+  
+  # maxval on sqrt scale
+  
+  by <- 2
+  if(maxval >= 5)   by <- 10 
+  if(maxval >= 10)  by <- 20 
+  if(maxval >= 20)  by <- 100 
+  if(maxval >= 30)  by <- 200 
+  if(maxval >= 50)  by <- 500
+  if(maxval >= 70)  by <- 1000
+  if(maxval >= 100) by <- 2000
+  if(maxval >= 200) by <- 10000
+  if(maxval >= 500) by <- 50000
+  if(maxval >= 700) by <- 100000
+  if(maxval >= 1000)by <- 200000
+  if(maxval >= 1500)by <- 400000
+  
+  labs <- seq(0, maxval^2, by = by)
+  at   <- sqrt(labs)
+  
+  list(at = at, labs = labs)
+  
+}
+
+
+.plotObsPred <- function(obs, yMean, ySE=NULL, opt = NULL){
+  
+  nbin <- nPerBin <- xlimit <- ylimit <- NULL
+  add <- log <- SQRT <- F
+  xlabel <- 'Observed'
+  ylabel <- 'Predicted'
+  trans <- .4
+  col <- 'black'
+  bins <- NULL
+  atx <- aty <- labx <- laby <- NULL
+  
+  for(k in 1:length(opt))assign( names(opt)[k], opt[[k]] )
+  
+  if(!is.null(bins))nbin <- length(bins)
+  
+  if(log & SQRT)stop('cannot have both log and SQRT scale')
+  
+  yMean <- as.matrix(yMean)
+  obs   <- as.matrix(obs)
+  
+  if(SQRT){
+    xlim <- sqrt(xlimit)
+    ylim <- sqrt(ylimit)
+    obs   <- as.vector(sqrt(obs))
+    yMean <- as.vector(sqrt(yMean))
+    xlimit <- sqrt(range(obs,na.rm=T))
+    xlimit[2] <- xlimit[2]*2
+    ylimit <- sqrt(range(yMean,na.rm=T))
+    ylimit[2] <- 2*ylimit[2]
+    
+    maxy <- max(yMean,na.rm=T)
+    maxx   <- max(obs,na.rm=T)
+    maxval <- max( c(maxx, maxy) )
+    
+    tt   <- sqrtSeq(1.2*maxx)
+    if(is.null(atx))atx   <- tt$at
+    if(is.null(labx))labx <- tt$labs
+    
+    tt   <- sqrtSeq(1.2*maxy)
+    if(is.null(aty))aty   <- tt$at
+    if(is.null(laby))laby <- tt$labs
+    
+    if(ylimit[2] < xlimit[2]) ylimit[2] <- xlimit[2]
+    if(xlimit[2] < xlim[2])   xlimit[2] <- xlim[2]
+    if(ylimit[2] < ylim[2])   ylimit[2] <- ylim[2]
+  }
+  
+  if(is.null(xlimit))xlimit <- range(obs)
+  if(is.null(ylimit) & !add){                      # can only happen if !SQRT
+    if(!log){
+      plot(obs,yMean,col=.getColor('black',.2),cex=.3, xlim=xlimit,
+           xlab=xlabel,ylab=ylabel)
+      if(log) suppressWarnings( plot(obs,yMean,col=.getColor('black',.2),cex=.3,
+                                     xlim=xlimit,xlab=xlabel,ylab=ylabel,log='xy') )
+    }
+  }
+  
+  if(!is.null(ylimit)){
+    if(!log & !add){
+      if(!SQRT){
+        plot(obs,yMean,col=.getColor('black',trans),cex=.3,
+             xlim=xlimit,xlab=xlabel,ylab=ylabel,ylim=ylimit)
+      }else{
+        plot(obs,yMean,col=.getColor('black',trans),cex=.3,
+             xlim=xlimit,xlab=xlabel,ylab=ylabel,ylim=ylimit,
+             xaxt='n',yaxt='n')
+        
+        axis(1, at = atx, labels = labx)
+        axis(2, at = aty, labels = laby, las=2)
+      }
+    }
+    if(log & !add) plot(obs,yMean,col=.getColor('black',trans),cex=.3,
+                        xlim=xlimit,xlab=xlabel,ylab=ylabel,log='xy',ylim=ylimit)
+  }
+  if(!is.null(ySE)){
+    ylo <- yMean - 1.96*ySE
+    yhi <- yMean + 1.96*ySE
+    for(i in 1:length(obs))lines(c(obs[i],obs[i]),c(ylo[i],yhi[i]),
+                                 col='grey',lwd=2)
+  }
+  
+  if( !is.null(nbin) | !is.null(nPerBin) ){
+    
+    if(is.null(bins)){
+      nbin <- 20
+      bins <- seq(min(obs,na.rm=T),max(obs,na.rm=T),length=nbin)
+    }else{
+      nbin <- length(bins)
+    }
+    
+    if(!is.null(nPerBin)){
+      nbb <- nPerBin/length(obs)
+      nbb <- seq(0,1,by=nbb)
+      if(max(nbb) < 1)nbb <- c(nbb,1)
+      bins <- quantile(obs,nbb,na.rm=T)
+      bins <- bins[!duplicated(bins)]
+      nbin <- length(bins)
+    }
+    
+    yk <- findInterval(obs,bins)
+    yk[yk == nbin] <- nbin - 1
+    yk[yk == 1] <- 2
+    
+    wide <- diff(bins)/2
+    db   <- 1
+    for(k in 2:(nbin-1)){
+      
+      qk <- which(is.finite(yMean) & yk == k)
+      q  <- quantile(yMean[qk],c(.5,.025,.158,.841,.975),na.rm=T)
+      
+      if(!is.finite(q[1]))next
+      if(q[1] == q[2])next
+      
+      ym <- mean(yMean[qk])
+      xx <- mean(bins[k:(k+1)])
+      rwide <- wide[k]
+      if(k == 2 & nbin < 5){
+        xx <- mean(bins[1:2]) 
+        rwide <- wide[1]
+      }
+      
+      if(k > 1)db <- bins[k] - bins[k-1]
+      
+      if( xx > (bins[k] + db) ){
+        xx <- bins[k] + db
+        rwide <- wide[ max(c(1,k-1)) ]
+      }
+      
+      suppressWarnings(
+        arrows(xx, q[2], xx, q[5], lwd=2, angle=90, code=3, col=.getColor(col,.8),
+               length=.05)
+      )
+      lines(c(xx-.5*rwide,xx+.5*rwide),q[c(1,1)],lwd=2, 
+            col=.getColor(col,.8))
+      rect(xx-.4*rwide,q[3],xx+.4*rwide,q[4], col=.getColor(col,.5))
+    }
+  }
+  invisible( list(atx = atx, labx = labx, aty = aty, laby = laby) )
+}
+
+
 .gjamPlot <- function(output, plotPars){
   
   PLOTALLY <- TRAITS <- GRIDPLOTS <- SAVEPLOTS <- 
-    REDUCT <- TV <- SPECLABS <- F
-  PREDICTX <- BETAGRID <- PLOTY <- PLOTX <- SMALLPLOTS <- 
+    REDUCT <- TV <- SPECLABS <- SMALLPLOTS <- F
+  PREDICTX <- BETAGRID <- PLOTY <- PLOTX <- 
     CORLINES <- SIGONLY <- CHAINS <- T
   omitSpec   <- trueValues  <- censor <- otherpar <- NULL
   traitList  <- specByTrait <- typeNames <- classBySpec <- 
@@ -5884,12 +6059,12 @@ print.gjam <- function(x, ...){
   if(length(xpredMu) == 0)PREDICTX <- F
   if(!PREDICTX)PLOTX <- F
   
-  if(!SMALLPLOTS){
+  #if(!SMALLPLOTS){
     oma <- c(0,0,0,0)
     mar <- c(4,4,2,1)
     tcl <- -0.5
     mgp <- c(3,1,0)
-  }
+  #}
   if(SAVEPLOTS){
     ff <- file.exists(outFolder)
     if(!ff)dir.create(outFolder)
@@ -5947,52 +6122,74 @@ print.gjam <- function(x, ...){
     
     w1 <- which(richness[,1] > 0)        # these are missing data
     if(HOLD)w1 <- w1[!w1 %in% holdoutIndex]
-      
+    
     xlimit <- range(richness[w1,1])
     
     if(diff(xlimit) > 0){
       
       if(SAVEPLOTS)pdf( file=.outFile(outFolder,'richness.pdf') )
       
-      par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
+      par(mfrow=c(1,2), bty='n', omi=c(.3,.3,0,0), mar=c(3,2,2,1), 
+          tcl= tcl, mgp=mgp)
       
-      ylimit <- range(richness[,2])
+      xc <- c('obs','H_obs')
+      yc <- c('predMu','H_pred')
       
-      rr   <- range(richness[,1],na.rm=T)
-      bins <- seq(rr[1] - .5, rr[2] + .5, by=1)
-      nbin <- length(bins)
-     
-      rh <- hist(richness[w1,1],bins,plot=F)
-      xy <- rbind(c(bins[1],bins,bins[nbin]),c(0,rh$density,0,0))
+      for(k in 1:2){
         
-      xy     <- .gjamBaselineHist(richness[w1,1],bins=bins)
-      xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
-      
-      
-      plot(xy[1,],xy[2,],col='tan',type='s',lwd=2, xaxt='n', ylim=ylimit,
-           xlab=' ',ylab='Predicted')
-      axis(1,at=rr[1]:rr[2])
-      
-      polygon(xy[1,],xy[2,],border='brown',col='tan')
-      
-      fill <- .getColor('blue',.2)
-      
-      if(HOLD)points(richness[holdoutIndex,1],richness[holdoutIndex,2], 
-                     col='brown', cex=.3)
-      
-      opt <- list(breaks=bins, wide=.6, MEDIAN = F, fill=fill, 
-                  box.col='darkblue', xlabel='Observed',ylabel='Predicted',
-                  POINTS=F,add=T)
-      .plotObsPred(obs=richness[w1,1],yMean=richness[w1,'predMu'],
-                   opt = opt)
-
-      
-      abline(0,1,lty=2)
-      abline(h=median(richness[w1,1]),lty=2)
-      .plotLabel(' Richness (no. present)',cex=1.2,above=T)
+        kx <- richness[w1,xc[k]]
+        ky <- richness[w1,yc[k]]
+        if(k == 2){
+          kx <- exp(kx)
+          ky <- exp(ky)
+        }
+        
+        ylimit <- range(ky)
+        
+        rr   <- range(kx,na.rm=T)
+        bins <- seq(rr[1] - .5, ceiling(rr[2] + .5), by=1)
+        nbin <- length(bins)
+        
+        rh <- hist(kx,bins,plot=F)
+        xy <- rbind(c(bins[1],bins,bins[nbin]),c(0,rh$density,0,0))
+        
+        xy     <- .gjamBaselineHist(kx,bins=bins)
+        xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
+        
+        
+        plot(xy[1,],xy[2,],col='tan',type='s',lwd=2, ylim=ylimit,
+             xlab=' ',ylab='')
+   #     axis(1,at=rr[1]:rr[2])
+        
+        polygon(xy[1,],xy[2,],border='brown',col='tan')
+        
+        if(HOLD){
+          xhold <- richness[holdoutIndex,xc[k]]
+          yhold <- richness[holdoutIndex,yc[k]]
+          if(k == 2){
+            xhold <- exp(xhold)
+            yhold <- exp(yhold)
+          }
+          points(xhold,yhold, col='brown', cex=.3)
+        }
+        
+        opt <- list(log=F, bins = bins,
+                    nbin=nbin, xlabel='', ylabel='', col='darkblue', 
+                    add=T)
+        tmp <- .plotObsPred(kx, ky, opt = opt)
+        abline(0,1,lty=2, lwd=2, col='grey')
+        
+        if(k == 1){
+          .plotLabel('a) Richness (no. present)',cex=1.2,above=T)
+        }else{
+          .plotLabel('b) Diversity (H)',cex=1.2,above=T)
+        }
+      }
+      mtext(side=1, 'Observed', outer=T, line=0)
+      mtext(side=2, 'Predicted', outer=T, line=0)
       
       if(!SAVEPLOTS){
-        readline('no. species may not vary much -- return to continue ')
+        readline('no. species, effective species -- return to continue ')
       } else {
         dev.off( )
       }
@@ -6055,6 +6252,7 @@ print.gjam <- function(x, ...){
     cols    <- colF(ntypes)
     
     if('beta' %in% names(trueValues)){
+      beta <- trueValues$beta
       cols <- colF(ntypes)
       if(length(beta) < 100){
         .gjamTrueVest(chains$bgibbs[,keepBC],true=beta[keepBC],
@@ -6081,10 +6279,13 @@ print.gjam <- function(x, ...){
       
       cindex <- which(lower.tri(corSpec,diag=T))            #location on matrix
       pindex <- which(lower.tri(corSpec,diag=T),arr.ind=T)
+      if(!is.matrix(pindex)){
+        pindex <- matrix(pindex,1)
+      }
 
       rindex <- which(is.finite(corTrue[cindex]))     #location in sgibbs
       cindex <- cindex[rindex]
-      pindex <- pindex[rindex,]   
+      pindex <- pindex[drop=F,rindex,]   
       
       cols <- colF(ntypes + ntypes*(ntypes-1)/2)
       
@@ -6195,7 +6396,6 @@ print.gjam <- function(x, ...){
         }
       }
       legend('topleft',combNames,text.col=cols,bty='n',ncol=3,cex=.7)
-      
     }
     
     if('OC' %in% allTypes & 'cuts' %in% names(trueValues)){
@@ -6294,7 +6494,8 @@ print.gjam <- function(x, ...){
   rmspeAll <- sqrt( mean( (y[,notOther] - ypredMu[,notOther])^2,na.rm=T ) )
   
   eBySpec <- sqrt( colMeans( (y[,notOther]/rowSums(y[,notOther]) - 
-                                ypredMu[,notOther]/rowSums(ypredMu[,notOther],na.rm=T))^2 ) )
+                                ypredMu[,notOther]/rowSums(ypredMu[,notOther],
+                                                           na.rm=T))^2 ) )
   ordFit  <- order(eBySpec)
   
   score <- mean(yscore)
@@ -6333,7 +6534,8 @@ print.gjam <- function(x, ...){
     }  
     
     mfrow <- .getPlotLayout(npp)
-    par( mfrow=mfrow, bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp )
+    par( mfrow=mfrow, bty='n', omi=c(.3,.3,0,0), mar=c(3,2,2,1), 
+         tcl= tcl, mgp=mgp )
     
     ylab <- ' '
     mk   <- 0
@@ -6391,15 +6593,8 @@ print.gjam <- function(x, ...){
         breaks <- tmp$breaks; wide <- tmp$wide; LOG <- tmp$LOG; POINTS <- F
         MEDIAN <- tmp$MEDIAN
         
-        log <- ''
-        if(LOG)log <- 'xy'
-        
-        if(LOG){
-          wn <- which(y1 > 0 & yp > 0)
-          y1 <- y1[wn]
-          yp <- yp[wn]
-          nPerBin <- nPerBin/2
-        }
+        SQRT <- F
+        if(LOG)SQRT <- T
         
         if(typeNames[wk[1]] == 'CA')nPerBin <- NULL
         
@@ -6413,6 +6608,12 @@ print.gjam <- function(x, ...){
           nPerBin <- NULL
         }
         
+        xy <- NULL
+        if(typeNames[wk[1]] == 'PA'){
+          atx <- labx <- c(0,1)
+          aty <- laby <- c(0,1)
+        }
+        
         if( !typeNames[wk[1]] %in% c('PA','CAT') ){
           ncc <- max( c(100,max(y1, na.rm=T)/20) )
           if(min(y1, na.rm=T) < bins[1])bins[1] <- min(y1, na.rm=T)
@@ -6421,21 +6622,60 @@ print.gjam <- function(x, ...){
           xy[1,xy[1,] < xlimit[1]] <- xlimit[1]
           xy[2,xy[2,] < ylimit[1]] <- ylimit[1]
           
-          plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
-               xlab='Observed',ylab='Predicted', log=log)
-          polygon(xy[1,],xy[2,],border='tan',col='wheat')
+          if(SQRT){
+            y1     <- sqrt(y1)
+            yp     <- sqrt(yp)
+            ylimit <- 1.1*sqrt(ylimit)
+            xlimit <- 1.1*sqrt(xlimit)
+            xy     <- sqrt(xy)
+            ss     <- sqrtSeq(ylimit[2])
+            aty    <- ss$at
+            laby   <- ss$labs
+            ss     <- sqrtSeq(xlimit[2])
+            atx    <- ss$at
+            labx   <- ss$labs
+            plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
+                 xlab='',ylab='', xaxt='n',yaxt='n')
+            axis(1, at = atx, labels = labx)
+            axis(2, at = aty, labels = laby)
+          }else{
+            if(is.null(xy)){
+              plot(NULL,xlim=xlimit,ylim=ylimit,
+                   xlab='',ylab='')
+              
+            }else{
+              plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
+                   xlab='',ylab='')
+              polygon(xy[1,],xy[2,],border='tan',col='wheat')
+            }
+          }
           
         } else {
           y11 <- mean(y1,na.rm=T)
           y00 <- 1 - y11
           x11 <- c(-.07,-.07,.07,.07,.93,.93,1.07,1.07,-.07)
           y11 <- c(0,y00,y00,0,0,y11,y11,0,0)
-          plot(x11,y11,col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
-               xlab=' ',ylab=ylab)
+          
+          if(SQRT){
+            y1     <- sqrt(y1)
+            yp     <- sqrt(yp)
+            ylimit <- 1.1*sqrt(ylimit)
+            xlimit <- 1.1*sqrt(xlimit)
+            xy     <- sqrt(xy)
+            ss     <- sqrtSeq(ylimit[2])
+            aty    <- ss$at
+            laby   <- ss$labs
+            ss     <- sqrtSeq(xlimit[2])
+            atx    <- ss$at
+            labx   <- ss$labs
+          }
+          plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
+               xlab='Observed',ylab='Predicted', xaxt='n',yaxt='n')
+          axis(1, at = atx, labels = labx)
+          axis(2, at = aty, labels = laby)
           polygon(x11,y11,border='tan',col='wheat')
         }
-        abline(0,1,lty=2,lwd=3,col='tan')
-        abline(h = mean(y1,na.rm=T),lty=2,lwd=3,col='tan')
+        abline(0,1,lty=2,lwd=3,col='grey')
         
         add <- T
         
@@ -6446,16 +6686,12 @@ print.gjam <- function(x, ...){
                  pch=21, bg='green',cex=.3)
         } 
         
-        fill <- .getColor('blue',.3)
-        
         if(xlimit[2] < max(bins, na.rm=T))xlimit[2] <- max(bins, na.rm=T) + 1
         
-        opt <- list(xlabel='Observed',ylabel=ylab,nbin=nbin, 
-                    nPerBin=NULL, xlimit=xlimit,ylimit=ylimit,
-                    breaks=bins, wide=wide, LOG=LOG, fill=fill, 
-                    box.col='darkblue', POINTS=F, MEDIAN=MEDIAN, add=add)
-        
-        tmp <- .plotObsPred(y1,yp,opt = opt)
+        opt <- list(log=F, xlabel='Observed', bins = bins,
+                    nbin=nbin, ylabel='Predicted', col='blue', 
+                    ylimit=ylimit, xlimit = xlimit, SQRT=F, add=T)
+        tmp <- .plotObsPred(y1, yp, opt = opt)
         
         if(length(vlines) > 0)abline(v=vlines,lty=2)
         
@@ -6463,9 +6699,11 @@ print.gjam <- function(x, ...){
         tf <- paste(letters[mk],tf, sep=') ')
         
         .plotLabel(tf,'topleft',above=AA)
-        
       }
     }
+    mtext('Observed', side=1, outer=T)
+    mtext('Predicted', side=2, outer=T)
+    
     
     if(!SAVEPLOTS){
       readline('obs y vs predicted y -- return to continue ')
@@ -6473,42 +6711,6 @@ print.gjam <- function(x, ...){
       dev.off()
     }  
   }##########################
-  
-  PLOTEFFORT <- F
-  
-  if('CC' %in% typeNames & PLOTEFFORT){
-    
-    if(SAVEPLOTS)pdf( file=.outFile(outFolder,'effort.pdf') )
-    
-    par(mfrow=c(1,1),bty='n')
-    ypredMu <- output$modelSummary$ypredMu
-    ySd <- output$modelSummary$ypredSd
-    
-    n <- nrow(y)
-    effort <- matrix(rowSums(y),n,S)
-    cvv <- ySd/ypredMu
-    www <- which(is.finite(effort) & is.finite(cvv) & cvv > 0)
-    
-    yl <- log10(quantile(cvv[www],c(.05,.999)))
-    yl[1] <- floor(yl[1])
-    yl[2] <- ceiling(yl[2])
-    xl <- log10(range(effort[www]))
-    xl[1] <- floor(xl[1])
-    xl[2] <- ceiling(xl[2])
-    
-    opt <- list(xlabel='Effort',ylabel='cv(Y)',
-                xlimit = 10^xl, ylimit = 10^yl,
-                breaks=10^seq(xl[1],xl[2],length=15), fill='lightblue', 
-                LOG=T,box.col='darkblue',POINTS=F, add=F)
-    .plotObsPred(effort[www],cvv[www],opt = opt)
-    
-    if(!SAVEPLOTS){
-      readline('mean/var in CC data -- return to continue ')
-    } else {
-      dev.off()
-    }
-    
-  }  #################
   
   nfact <- factorBeta$nfact
   factorList <- factorBeta$factorList
@@ -6633,10 +6835,11 @@ print.gjam <- function(x, ...){
       
       if(SAVEPLOTS)pdf( file=.outFile(outFolder,'xPred.pdf') )
       
-      ylab <- 'Predicted'
-      xlab <- ' '
+      ylab <- ''
+      xlab <- ''
       mfrow <- .getPlotLayout( length(vnames) )
-      par( mfrow=mfrow, bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp )
+      par( mfrow=mfrow, bty='n', omi=c(.3,.3,0,0), mar=c(3,2,2,1),
+           tcl= tcl, mgp=mgp )
       
       missX <- missingIndex
       xmaxX <- apply(x,2,max,na.rm=T)
@@ -6647,15 +6850,10 @@ print.gjam <- function(x, ...){
       for(j in 2:Q){
         
         if(!xnames[j] %in% vnames)next
-        xlab <- 'Observed'
         
         k <- k + 1
         b <- b + 1
-        if(k > mfrow[1])ylab <- ' '
-        if(b == mfrow[2]){
-          b <- 0
-          xlab <- 'Observed'
-        }
+        if(b == mfrow[2])b <- 0
         
         x1 <- x[iy,j]
         x2 <- xpredMu[iy,j]
@@ -6686,12 +6884,9 @@ print.gjam <- function(x, ...){
         log <- ''
         if(LOG)log <- 'xy'
         
-        if(LOG){
-          wn <- which(y1 > 0 & yp > 0)
-          y1 <- y1[wn]
-          yp <- yp[wn]
-        }
-        
+        SQRT <- F
+        if(LOG)SQRT <- T
+    
         
         tmp <- .bins4data(y1,nPerBin=nPerBin,breaks=breaks,LOG=LOG, POS=F)
         breaks <- tmp$breaks
@@ -6704,32 +6899,31 @@ print.gjam <- function(x, ...){
         }
         
         if(nbin > 2){
-        ncc   <- max( c(100,max(y1)/20) )
-        xy <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
-        xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
-        plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
-             xlab=' ',ylab=ylab)
-        polygon(xy[1,],xy[2,],border='tan',col='wheat')
-        
-        
-        abline(0,1,lty=2,lwd=3,col='brown')
-        abline(h = mean(y1),lty=2,lwd=3,col='tan')
-        
-        add <- T
-        
-        if(nhold > 0){
-          points(x[holdoutIndex,j],xpredMu[holdoutIndex,j],col='brown',
-                 pch=21, bg='blue',cex=.4)
-        } 
+          ncc   <- max( c(100,max(y1)/20) )
+          xy <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
+          xy[2,] <- ylimit[1] + .3*xy[2,]*diff(ylimit)/max(xy[2,])
+          plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
+               xlab=' ',ylab=ylab)
+          polygon(xy[1,],xy[2,],border='tan',col='wheat')
+          
+          
+          abline(0,1,lty=2,lwd=3,col='grey')
+ 
+          add <- T
+          
+          if(nhold > 0){
+            points(x[holdoutIndex,j],xpredMu[holdoutIndex,j],col='brown',
+                   pch=21, bg='blue',cex=.4)
+          } 
         }
         
-        fill <- .getColor('blue',.3)
         
-        opt <- list(xlabel='Observed',ylabel=ylab,nbin=nbin, 
-                    nPerBin=nPerBin, xlimit=xlimit,ylimit=ylimit,
-                    breaks=breaks, wide=wide, LOG=LOG, fill=fill, 
-                    box.col='darkblue',POINTS=F, MEDIAN=MEDIAN, add=add)
-        tmp <- .plotObsPred(y1,yp,opt = opt)
+        opt <- list(log=F, xlabel='Observed', bins = bins,
+                    nbin=nbin, ylabel='Predicted', col='darkblue', 
+                    ylimit=ylimit, xlimit = xlimit, SQRT=F, add=T)
+        tmp <- .plotObsPred(y1, yp, opt = opt)
+        
+        
         
         if(nhold > 0)points(x[holdoutIndex,j],xpredMu[holdoutIndex,j],
                             col='brown',cex=.3)
@@ -6745,6 +6939,8 @@ print.gjam <- function(x, ...){
         
         .plotLabel(paste(letters[j-1],xnames[j],sep=') '), above=AA)
       }
+      mtext('Observed',side=1, outer=T)
+      mtext('Predicted',side=2,outer=T)
       
       if(!SAVEPLOTS){
         readline('x inverse prediction, covariates -- return to continue ')
@@ -6779,7 +6975,8 @@ print.gjam <- function(x, ...){
       
       if(SAVEPLOTS)pdf( file=.outFile(outFolder,file) )
       
-      par(mfrow=mfrow, bty='n', oma=oma, mar=c(1,2,3,1), tcl= tcl, mgp=mgp)
+      par(mfrow=mfrow, bty='n', omi=c(.3,.3,0,0), mar=c(3,2,2,1), 
+          tcl= tcl, mgp=mgp)
       
       for(j in o){
         
@@ -6801,16 +6998,8 @@ print.gjam <- function(x, ...){
         breaks <- tmp$breaks; wide <- tmp$wide; LOG <- tmp$LOG; POINTS <- F
         MEDIAN <- tmp$MEDIAN
         
-        log <- ''
-        if(LOG)log <- 'xy'
-        
-        if(LOG){
-          wn <- which(y1 > 0 & yp > 0)
-          y1 <- y1[wn]
-          yp <- yp[wn]
-        }
-        
-    #    LOG <- F
+        SQRT <- F
+        if(LOG)SQRT <- T
         
         tmp <- .bins4data(y1,nPerBin=nPerBin,breaks=breaks,LOG=LOG)
         breaks <- tmp$breaks
@@ -6828,8 +7017,24 @@ print.gjam <- function(x, ...){
           if(max(bins) > max(y1))bins[length(bins)] <- max(y1)
           xy <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
           xy[2,] <- ylimit[1] + .8*xy[2,]*diff(ylimit)/max(xy[2,])
+          
+          if(SQRT){
+            y1     <- sqrt(y1)
+            yp     <- sqrt(yp)
+            ylimit <- 1.1*sqrt(ylimit)
+            xlimit <- 1.1*sqrt(xlimit)
+            xy     <- sqrt(xy)
+            ss     <- sqrtSeq(ylimit[2])
+            aty    <- ss$at
+            laby   <- ss$labs
+            ss     <- sqrtSeq(xlimit[2])
+            atx    <- ss$at
+            labx   <- ss$labs
+          }
           plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
-               xlab=' ',ylab=ylab)
+               xlab='Observed',ylab='Predicted', xaxt='n',yaxt='n')
+          axis(1, at = atx, labels = labx)
+          axis(2, at = aty, labels = laby)
           polygon(xy[1,],xy[2,],border='tan',col='wheat')
           
         } else {
@@ -6841,9 +7046,7 @@ print.gjam <- function(x, ...){
                xlab=' ',ylab=ylab)
           polygon(x11,y11,border='tan',col='wheat')
         }
-        abline(0,1,lty=2,lwd=3,col='brown')
-        abline(h = mean(y1),lty=2,lwd=3,col='tan')
-        
+        abline(0,1,lty=2,lwd=3,col='grey')
         add <- T
         
         if(nhold > 0){
@@ -6854,10 +7057,10 @@ print.gjam <- function(x, ...){
         fill <- .getColor('blue',.3)
         
         
-        opt <- list(xlabel='Observed',ylabel=ylab,nbin=nbin, 
-                    nPerBin=nPerBin, xlimit=xlimit,ylimit=ylimit,
-                    breaks=breaks, wide=wide, LOG=LOG, fill=fill, 
-                    box.col='darkblue',POINTS=F, MEDIAN=MEDIAN, add=add)
+        opt <- list(log=F, xlabel='Observed', bins = bins,
+                    nbin=nbin, ylabel='Predicted', col='darkblue', 
+                    add=T)
+        
         tmp <- .plotObsPred(y1,yp,opt = opt)
         
         if(length(vlines) > 0)abline(v=vlines,lty=2)
@@ -6872,6 +7075,9 @@ print.gjam <- function(x, ...){
         abline(0,1,lty=2)
         abline(h = mean(y2),lty=2)
       }
+      mtext('Observed', 1, outer=T)
+      mtext('Predicted', 2, outer=T)
+
       
       if(!SAVEPLOTS){
         readline('y prediction -- return to continue ')
@@ -6999,7 +7205,7 @@ print.gjam <- function(x, ...){
   if(TIME)par(mfrow=c(1,2),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
   
   ord  <- order( colMeans(xx) )
-  ylim <- c(min(xx),4*quantile(xx,.95))
+  ylim <- c(min(xx),1.5*quantile(xx,.95))
   tmp <- .boxplotQuant( xx[,ord, drop=F], xaxt='n',outline=F, 
                         border=tcol[ord],whiskcol=tcol[ord],
                         boxfill=.getColor(tcol[ord],.4), 
@@ -7122,67 +7328,67 @@ print.gjam <- function(x, ...){
   xnam <- unique(tmp$xnam[tmp$xnam != 'intercept'])
   
   if(SAVEPLOTS)pdf( file=.outFile(outFolder,'betaChains.pdf') ) # start plot
-
+  
   if(CHAINS){
-  cseq <- 1:nrow(bgibbs)
-  if(length(cseq) > 1000)cseq <- seq(1,length(cseq),length=1000)
-  
-  
-  mfrow <- .getPlotLayout(length(xnam))
-  par(mfrow=mfrow, bty='n', oma=oma, mar=c(2,2,1,1), tcl= tcl, mgp=mgp)
-  
-  flist <- factorBeta$factorList
-  if(length(flist) > 0){
-    flist <- sort(unique(unlist(flist)))
-  }
-  
-  for(k in 1:length(xnam)){
+    cseq <- 1:nrow(bgibbs)
+    if(length(cseq) > 1000)cseq <- seq(1,length(cseq),length=1000)
     
-    tname <- xnam[k]
     
-    tmp <- .chains2density(bgibbs[cseq,],varName=tname, cut=3)
+    mfrow <- .getPlotLayout(length(xnam))
+    par(mfrow=mfrow, bty='n', oma=oma, mar=c(2,2,1,1), tcl= tcl, mgp=mgp)
     
-    xt  <- tmp$x
-    yt  <- tmp$y
-    chainMat <- tmp$chainMat
-    
-    if(ncol(chainMat) > 20)chainMat <- chainMat[,sample(ncol(chainMat),20)]
-    
-    colF <- colorRampPalette(c('darkblue','orange'))
-    cols <- colF(nrow(xt))
-    
-    snamek <- .splitNames(colnames(chainMat),colnames(y))$vnam
-    
-    nn <- nrow(chainMat)
-    
-    jk <- 1:ncol(chainMat)
-    if(length(jk) > 20)jk <- sample(jk,20)
-    plot(0,0,xlim=c(0,(1.4*nn)),ylim=range(chainMat[,jk]),
-         xlab=' ',ylab=' ',cex=.01)
-    
-    for(j in jk){
-      lines(chainMat[,j],col=cols[j])
-      if(ncol(chainMat) < 15)text(nn,chainMat[nn,j],snamek[j],col=cols[j],pos=4)
-      abline(v=burn,lty=2)
-      
-      if(k == 1 & j == 1).plotLabel( paste(burnin,":",ng),
-                                     location='topright' )
+    flist <- factorBeta$factorList
+    if(length(flist) > 0){
+      flist <- sort(unique(unlist(flist)))
     }
-    .plotLabel(label=paste(letters[k],') ',tname,sep=''),location='topleft',above=T)
     
-    abline(h=0,lwd=4,col='white')
-    abline(h=0,lty=2)
+    for(k in 1:length(xnam)){
+      
+      tname <- xnam[k]
+      tmp   <- .chains2density(bgibbs[cseq,],varName=tname, cut=3)
+      
+      xt  <- tmp$x
+      yt  <- tmp$y
+      chainMat <- tmp$chainMat
+      
+      if(ncol(chainMat) > 20)chainMat <- chainMat[,sample(ncol(chainMat),20)]
+      
+      colF <- colorRampPalette(c('darkblue','orange'))
+      cols <- colF(nrow(xt))
+      
+      snamek <- .splitNames(colnames(chainMat),colnames(y))$vnam
+      
+      nn <- nrow(chainMat)
+      
+      jk <- 1:ncol(chainMat)
+      if(length(jk) > 20)jk <- sample(jk,20)
+      plot(0,0,xlim=c(0,(1.4*nn)),ylim=range(chainMat[,jk]),
+           xlab=' ',ylab=' ',cex=.01)
+      
+      for(j in jk){
+        lines(chainMat[,j],col=cols[j])
+        if(ncol(chainMat) < 15)text(nn,chainMat[nn,j],snamek[j],col=cols[j],pos=4)
+        abline(v=burn,lty=2)
+        
+        if(k == 1 & j == 1).plotLabel( paste(burnin,":",ng),
+                                       location='topright' )
+      }
+      .plotLabel(label=paste(letters[k],') ',tname,sep=''),
+                 location='topleft',above=T)
+      
+      abline(h=0,lwd=4,col='white')
+      abline(h=0,lty=2)
+      
+      if(ncol(chainMat) >= 15) text(nn,mean(par('usr')[3:4]),
+                                    paste(ncol(chainMat),'spp'),pos=4)
+    }
     
-    if(ncol(chainMat) >= 15) text(nn,mean(par('usr')[3:4]),
-                                  paste(ncol(chainMat),'spp'),pos=4)
+    if(!SAVEPLOTS){
+      readline('beta coefficient thinned chains -- return to continue ')
+    } else {
+      dev.off()
+    }
   }
-  
-  if(!SAVEPLOTS){
-    readline('beta coefficient thinned chains -- return to continue ')
-  } else {
-    dev.off()
-  }
-}
   ######################### correlation chains, species at random
   
   if(CHAINS){
@@ -7403,6 +7609,7 @@ print.gjam <- function(x, ...){
         
         .myBoxPlot( mat = bfSig[,wc], tnam = vnam[ wc ], snames = snames,
                     specColor, label=fnames[j], LEG=T)
+        mtext(side=2,'Coefficient', line=2)
         
         
         if(!SAVEPLOTS){
@@ -7421,7 +7628,8 @@ print.gjam <- function(x, ...){
         npp <- length(which(table(match(xnam,fnames)) > 1))
         
         mfrow <- .getPlotLayout(npp)
-        par( mfrow=mfrow, bty='n', oma=oma, mar=c(1,1,1,1), tcl= tcl, mgp=mgp )
+        par( mfrow=mfrow, bty='n', omi=c(.3,.5,0,0), 
+             mar=c(1,1,1,1), tcl= tcl )
         
         k <- 0
         for(j in 1:length(fnames)){
@@ -7435,6 +7643,7 @@ print.gjam <- function(x, ...){
                       specColor, label=' ', LEG=F)
           .plotLabel(fnames[j],'bottomleft')
         }
+        mtext(side=2,'Coefficient value',outer=T, line=1)
         
         if(!SAVEPLOTS){
           readline('95% posterior -- return to continue ')
@@ -7895,7 +8104,7 @@ print.gjam <- function(x, ...){
     mat1 <- fMat
     mat2 <- fBetaMu
     expand <- ncol(mat1)/ncol(mat2)
-    expand <- max(c(2,expand))
+    expand <- max(c(1.5,expand))
     
     opt <- list(mainLeft=main1, main1=main1, main2 = main2,
                 leftClus=T, topClus2=T, rightLab=F, topLab1=T, 
@@ -7921,9 +8130,6 @@ print.gjam <- function(x, ...){
               colCode1 = specColor[notOther], rowCode = specColor[notOther],
               topLab1=T,ncluster = ncluster,
               lower1 = T, diag1 = F,horiz1=clusterIndex[,'E'])
-  
-  
-  
   
   .clusterWithGrid(mat1, mat2=NULL, expand=1, opt)
   
@@ -7987,7 +8193,7 @@ print.gjam <- function(x, ...){
   }
   
   #################### beta grid
-  if(BETAGRID & nrow(parameters$fBetaMu) > 4){
+  if(BETAGRID & nrow(parameters$fBetaMu) > 2){
     
     graphics.off()
     
@@ -8002,16 +8208,13 @@ print.gjam <- function(x, ...){
     
     ee <- ncol(mat1)/ncol(mat2)
     ee <- max(c(ee,.8))
-    ee <- min(c(ee, 1.1))
+    ee <- min(c(ee, 1.2))
     opt <- list(mainLeft=main1, main1=main1, main2 = main2,
                 topClus1=T, topClus2=T, topLab1 = topLab1, topLab2=T,
                 leftLab=T,lower1 = T, diag1 = F, ncluster = ncluster,
                 colCode1 = specColor[notOther],
                 vert1=clusterIndex[,'E'], horiz2=clusterIndex[,'E'])
     .clusterWithGrid(mat1, mat2, expand=ee, opt)
-    
-    
-    
     
     if(!SAVEPLOTS){
       readline('beta ordered by response to X -- return to continue ')
@@ -8356,7 +8559,7 @@ print.gjam <- function(x, ...){
     
     
     tmp <- .gjamSetup(typeNames, x, yp, breakList=NULL, holdoutN=NULL, 
-                      holdoutIndex=NULL,censor=NULL, effort=effort) 
+                      holdoutIndex=NULL, censor=NULL, effort=effort) 
     w <- tmp$w; z <- tmp$z; yp <- tmp$y; other <- tmp$other
     plo <- tmp$plo; phi <- tmp$phi
     ordCols  <- tmp$ordCols; disCols <- tmp$disCols; compCols <- tmp$compCols 
@@ -8392,11 +8595,12 @@ print.gjam <- function(x, ...){
       ydataCond <- ydataCond[,condNames]
     }
     
-    n <- nrow(x)
+    n  <- nrow(x)
+    yp <- y
     
     condCols <- match(condNames, colnames(yp))
     
-    yp[,condCols] <- ydataCond
+    yp[,condCols] <- as.matrix( ydataCond )
     
     tmp <- .gjamSetup(typeNames, x, yp, breakList=NULL, holdoutN=NULL, 
                       holdoutIndex=NULL,censor=NULL, effort=effort) 
@@ -8404,6 +8608,7 @@ print.gjam <- function(x, ...){
     plo      <- tmp$plo; phi <- tmp$phi
     ordCols  <- tmp$ordCols; disCols <- tmp$disCols; compCols <- tmp$compCols 
     minOrd   <- tmp$minOrd;   maxOrd <- tmp$maxOrd;  censorCA <- tmp$censorCA
+    cuts     <- tmp$cuts
     censorDA <- tmp$censorDA;   censorCON <- tmp$censorCON; ncut <- ncol(cuts)
     corCols <- tmp$corCols
     if(length(corCols) > 0)notCorCols <- notCorCols[-corCols]
@@ -8537,7 +8742,6 @@ print.gjam <- function(x, ...){
     muw <- x%*%bg
 
     if(REDUCT){
-      
       Z  <- matrix(output$chains$sgibbs[g,],N,r)
       sigmaerror <- output$chains$sigErrGibbs[g]
       K    <- output$chains$kgibbs[g,]
@@ -8566,7 +8770,7 @@ print.gjam <- function(x, ...){
     egg         <- lCont%*%bgg          #standardized for x, not cor for y
 
     if( 'OC' %in% typeCode ){
-      cutg[,3:(ncut-1)] <- matrix( output$chains$cgibbs[g,], S)
+      cutg[,3:(ncut-1)] <- matrix( output$chains$cgibbs[g,], length(ordCols))
       tmp   <- .gjamGetCuts(yg + 1,ordCols)
       cutLo <- tmp$cutLo
       cutHi <- tmp$cutHi
@@ -8584,6 +8788,7 @@ print.gjam <- function(x, ...){
       yg  <- tmp$yp   
 
     }else{
+      
       tmp <- .conditionalMVN(w, muw, sg, cdex = ddex, S)  
       muc    <- tmp$mu
       sgp    <- tmp$vr
@@ -8611,10 +8816,10 @@ print.gjam <- function(x, ...){
         }
       } 
       yg[,-condCols] <- (w*effMat)[,-condCols]
-      if(length(ccols) > 0){
-        mmm <- yg[,ccols]
+      if(length(notPA) > 0){
+        mmm <- yg[,notPA]
         mmm[mmm < 0] <- 0
-        yg[,ccols]   <- mmm
+        yg[,notPA]   <- mmm
       } 
 
     for(k in allTypes){    # predicting from w (not from yg)
@@ -8667,7 +8872,8 @@ print.gjam <- function(x, ...){
         yg[,wk] <- .censorValues(censor,yg,yg)[,wk]
       }
     }
-  
+      
+      yg[,condCols] <- as.matrix( ydataCond )
     }
     ####################
     
@@ -8677,7 +8883,7 @@ print.gjam <- function(x, ...){
       muw[,ccols] <- mmm
     }
     
-    yg[,condCols] <- ydataCond
+ 
     
     yy <- yg
     
@@ -9937,6 +10143,11 @@ print.gjam <- function(x, ...){
 
 .bins4data <- function(obs, nPerBin=NULL, breaks=NULL, nbin=NULL, LOG=F, POS=T){
   
+  if(!is.null(nPerBin)){
+    mb <- 20
+    if(length(obs)/nPerBin > mb)nperBin <- length(obs)/mb
+  }
+      
   if( is.null(breaks) ){
     
     if( is.null(nbin) )nbin <- 20
@@ -9957,6 +10168,7 @@ print.gjam <- function(x, ...){
     
     if( !is.null(nPerBin) ){
       nbb <- nPerBin/length(obs)
+      if(nbb < .05)nbb <- .05
       nbb <- seq(0,1,by=nbb)
       if(max(nbb) < 1)nbb <- c(nbb,1)
       oo   <- obs
@@ -9981,7 +10193,7 @@ print.gjam <- function(x, ...){
   list(breaks = breaks, bins = bins, nbin = nbin)
 }
 
-.plotObsPred <- function(obs,yMean,ySE=NULL, add=F, box.col='black', opt=NULL){
+.plotObsPredOld <- function(obs,yMean,ySE=NULL, add=F, box.col='black', opt=NULL){
   
   boxPerc <- .6826895; whiskerPerc <- .95
   nbin <- nPerBin <- breaks <- xlimit <- ylimit <- ptcol <-
@@ -12266,3 +12478,40 @@ print.gjam <- function(x, ...){
   
   list(eVecs = eVecs, eValues = eValues)
 } 
+
+
+columnSplit <- function(vec, sep='_', ASFACTOR = F, ASNUMERIC=F,
+                        LASTONLY=F){
+  
+  vec <- as.character(vec)
+  nc  <- length( strsplit(vec[1], sep)[[1]] )
+  mat <- matrix( unlist( strsplit(vec, sep) ), ncol=nc, byrow=T )
+  if(LASTONLY & ncol(mat) > 2){
+    rnn <- mat[,1]
+    for(k in 2:(ncol(mat)-1)){
+      rnn <- columnPaste(rnn,mat[,k])
+    }
+    mat <- cbind(rnn,mat[,ncol(mat)])
+  }
+  if(ASNUMERIC){
+    mat <- matrix( as.numeric(mat), ncol=nc )
+  }
+  if(ASFACTOR){
+    mat <- data.frame(mat)
+  }
+  mat
+}
+
+columnPaste <- function(c1, c2, sep='-'){
+  
+  FACT <- T
+  if(!is.factor(c1))FACT <- F
+  c1    <- as.character(c1)
+  c2    <- as.character(c2)
+  #  c1    <- .fixNames(c1)
+  #  c2    <- .fixNames(c2)
+  c12   <- apply( cbind(c1, c2) , 1, paste0, collapse=sep)
+  c12   <- .replaceString(c12, ' ', '')
+  if(FACT) c12 <- as.factor(c12)
+  c12
+}

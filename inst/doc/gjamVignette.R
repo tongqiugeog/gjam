@@ -145,7 +145,7 @@ bigskip <- function(){
 #  f   <- gjamSimData(n = 500, S = 10, typeNames = 'CA')
 #  ml  <- list(ng = 1000, burnin = 200, typeNames = f$typeNames)
 #  out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
-#  pl  <- list(trueValues = f$trueValues, GRIDPLOTS = T, SMALLPLOTS = F)
+#  pl  <- list(trueValues = f$trueValues, GRIDPLOTS = T)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----example output, fig.show = "hold", fig.width = 6.5, eval = F--------
@@ -200,7 +200,7 @@ formula <- as.formula( ~ temp*deficit + I(temp^2) + I(deficit^2) )
 ## ----design9, echo = F---------------------------------------------------
 tmp <- model.frame(formula,data=xx,na.action=NULL)
 x   <- model.matrix(formula, data=tmp)
-  x[1:5,]
+x[1:5,]
 
 ## ----get trees, eval = F-------------------------------------------------
 #  y  <- gjamReZero(forestTraits$treesDeZero)  # extract y
@@ -225,7 +225,7 @@ x   <- model.matrix(formula, data=tmp)
 ## ----gsens, eval = F-----------------------------------------------------
 #  types <- c('DA','DA','OC','OC','OC','OC','CC','CC','CC','CC','CC','CA','CA','PA','PA')
 #  f    <- gjamSimData(S = length(types), typeNames = types)
-#  ml   <- list(ng = 50, burnin = 5, typeNames = f$typeNames)
+#  ml   <- list(ng = 500, burnin = 50, typeNames = f$typeNames)
 #  out  <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 #  
 #  ynames <- colnames(f$y)
@@ -233,11 +233,12 @@ x   <- model.matrix(formula, data=tmp)
 #  
 #  full <- gjamSensitivity(out)
 #  cc   <- gjamSensitivity(out, group)
+#  ylim <- range( c(full, cc) )
 #  
 #  nt <- ncol(full)
 #  
 #  boxplot( full, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
-#           xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
+#           ylim = ylim, xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
 #  boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
 #           xaxt = 'n')
 #  axis(1,at=1:nt,labels=colnames(full))
@@ -261,7 +262,7 @@ x   <- model.matrix(formula, data=tmp)
 #         text.col=c('blue','forestgreen'))
 
 ## ----plot save, eval = F-------------------------------------------------
-#  plotPars <- list(SMALLPLOTS = F, GRIDPLOTS=T, SAVEPLOTS = T, outfolder = 'plots')
+#  plotPars <- list(GRIDPLOTS=T, SAVEPLOTS = T, outfolder = 'plots')
 
 ## ----effort simulation, eval = F-----------------------------------------
 #  S  <- 5
@@ -291,15 +292,14 @@ x   <- model.matrix(formula, data=tmp)
 #  upper <- 100
 #  intv  <- matrix(c(upper,Inf),2)
 #  rownames(intv) <- c('lower','upper')
-#  tmp <- gjamCensorY(values = upper, intervals = intv, y = ydata, type='DA')
+#  tmp <- gjamCensorY(values = upper, intervals = intv, y = f$ydata, type='DA')
 
 ## ----lowerLim, eval=F----------------------------------------------------
-#  # assumes there is a data matrix ydata
-#  miny   <- apply(ydata, 2, min, na.rm=T)     #minimum value by column
+#  miny   <- apply(f$ydata, 2, min, na.rm=T)     #minimum value by column
 #  censor <-  numeric(0)
 #  p      <- matrix(0, 3, dimnames=list(c("values","lower","upper"), NULL))
 #  
-#  for(j in 1:ncol(ydata)){
+#  for(j in 1:ncol(f$ydata)){
 #    p[1:3] <- c(miny[j], -Inf, miny[j])
 #    jlist  <- list("columns" = j, "partition" = p)
 #    censor <- c(censor, list(jlist))
@@ -364,7 +364,7 @@ x   <- model.matrix(formula, data=tmp)
 #  plot(f$trueValues$cuts[,keep],out$parameters$cutMu)
 
 ## ----ordPlots, eval = FALSE----------------------------------------------
-#  pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F)
+#  pl  <- list(trueValues = f$trueValues)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----cat, eval = T, echo = F---------------------------------------------

@@ -12,7 +12,7 @@
 
 <meta name="author" content="James S. Clark" />
 
-<meta name="date" content="2018-03-26" />
+<meta name="date" content="2018-03-29" />
 
 <title>Generalized joint attribute modeling - gjam</title>
 
@@ -70,12 +70,12 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Generalized joint attribute modeling - gjam</h1>
 <h4 class="author"><em><a href="http://sites.nicholas.duke.edu/clarklab/">James S. Clark</a></em></h4>
-<h4 class="date"><em>2018-03-26</em></h4>
+<h4 class="date"><em>2018-03-29</em></h4>
 
 
 <div id="TOC">
 <ul>
-<li><a href="#version-2.1.8">version 2.1.8</a></li>
+<li><a href="#version-2.2.1">version 2.2.1</a></li>
 <li><a href="#overview"><span style="color:darkgreen">overview</span></a><ul>
 <li><a href="#model-summary"><span style="color:teal">model summary</span></a></li>
 <li><a href="#data-types"><span style="color:teal">data types</span></a></li>
@@ -131,8 +131,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </ul>
 </div>
 
-<div id="version-2.1.8" class="section level2">
-<h2>version 2.1.8</h2>
+<div id="version-2.2.1" class="section level2">
+<h2>version 2.2.1</h2>
 <div id="citation" class="section level4">
 <h4>citation:</h4>
 <p><em>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, 87, 34–56.</em></p>
@@ -477,7 +477,7 @@ out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdat
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n =</span> <span class="dv">500</span>, <span class="dt">S =</span> <span class="dv">10</span>, <span class="dt">typeNames =</span> <span class="st">'CA'</span>)
 ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">200</span>, <span class="dt">typeNames =</span> f$typeNames)
 out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
-pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">GRIDPLOTS =</span> T, <span class="dt">SMALLPLOTS =</span> F)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">GRIDPLOTS =</span> T)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 <p><code>gjamPlot</code> creates a number of plots comparing true and estimated parameters (for simulated data).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">bty =</span> <span class="st">'n'</span>, <span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="dt">family=</span><span class="st">''</span>)
@@ -544,7 +544,7 @@ xdata &lt;-<span class="st"> </span>forestTraits$xdata[,<span class="kw">c</span
 treeYdata  &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(y,<span class="dv">10</span>)$y             <span class="co"># at least 10 plots</span>
 <span class="kw">dim</span>(treeYdata)
 treeYdata[<span class="dv">1</span>:<span class="dv">5</span>,<span class="dv">1</span>:<span class="dv">6</span>]</code></pre></div>
-<p>In code that follows I treat responses as discrete counts, <code>typeNames = 'DA'</code>. Because of the large number of columns (98) I speed things up calling for dimension reduction, passed as <span class="math inline">\(N \times r = 20 \times 8\)</span>:</p>
+<p>In code that follows I treat responses as discrete counts, <code>typeNames = 'DA'</code>. Because of the large number of columns (98) I speed things up by calling for dimension reduction, passed as <span class="math inline">\(N \times r = 20 \times 8\)</span>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rl   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">r =</span> <span class="dv">8</span>, <span class="dt">N =</span> <span class="dv">20</span>)
 ml   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2500</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> <span class="st">'DA'</span>, <span class="dt">reductList =</span> rl)
 form &lt;-<span class="st"> </span><span class="kw">as.formula</span>( ~<span class="st"> </span>temp*deficit +<span class="st"> </span><span class="kw">I</span>(temp^<span class="dv">2</span>) +<span class="st"> </span><span class="kw">I</span>(deficit^<span class="dv">2</span>) )
@@ -574,7 +574,7 @@ pl   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt"
 <p>In the help page for the function <code>gjamSensitivity</code> is this example comparing sensitivity for a simulated data set with multiple data types against a group that includes only the composition count (<code>'CC'</code>) data. Note that the latter is supplied identified by <code>group</code>, which is a <code>character string</code> of column names in <code>ydata</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'DA'</span>,<span class="st">'DA'</span>,<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CA'</span>,<span class="st">'CA'</span>,<span class="st">'PA'</span>,<span class="st">'PA'</span>)         
 f    &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">S =</span> <span class="kw">length</span>(types), <span class="dt">typeNames =</span> types)
-ml   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">50</span>, <span class="dt">burnin =</span> <span class="dv">5</span>, <span class="dt">typeNames =</span> f$typeNames)
+ml   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">500</span>, <span class="dt">burnin =</span> <span class="dv">50</span>, <span class="dt">typeNames =</span> f$typeNames)
 out  &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
 
 ynames &lt;-<span class="st"> </span><span class="kw">colnames</span>(f$y)
@@ -582,11 +582,12 @@ group  &lt;-<span class="st"> </span>ynames[types ==<span class="st"> 'CC'</span
 
 full &lt;-<span class="st"> </span><span class="kw">gjamSensitivity</span>(out)
 cc   &lt;-<span class="st"> </span><span class="kw">gjamSensitivity</span>(out, group)
+ylim &lt;-<span class="st"> </span><span class="kw">range</span>( <span class="kw">c</span>(full, cc) )
 
 nt &lt;-<span class="st"> </span><span class="kw">ncol</span>(full)
 
 <span class="kw">boxplot</span>( full, <span class="dt">boxwex =</span> <span class="fl">0.25</span>,  <span class="dt">at =</span> <span class="dv">1</span>:nt -<span class="st"> </span>.<span class="dv">21</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
-         <span class="dt">xaxt =</span> <span class="st">'n'</span>, <span class="dt">xlab =</span> <span class="st">'Predictors'</span>, <span class="dt">ylab=</span><span class="st">'Sensitivity'</span>)
+         <span class="dt">ylim =</span> ylim, <span class="dt">xaxt =</span> <span class="st">'n'</span>, <span class="dt">xlab =</span> <span class="st">'Predictors'</span>, <span class="dt">ylab=</span><span class="st">'Sensitivity'</span>)
 <span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.25</span>, <span class="dt">at =</span> <span class="dv">1</span>:nt +<span class="st"> </span>.<span class="dv">2</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
          <span class="dt">xaxt =</span> <span class="st">'n'</span>)
 <span class="kw">axis</span>(<span class="dv">1</span>,<span class="dt">at=</span><span class="dv">1</span>:nt,<span class="dt">labels=</span><span class="kw">colnames</span>(full))
@@ -613,7 +614,7 @@ nt &lt;-<span class="st"> </span><span class="kw">ncol</span>(full)
 <h1><span style="color:darkgreen">plotting output</span></h1>
 <p>In the foregoing example arguments passed to <code>gjamPlot</code> in the <code>list plotPars</code> included <code>SMALLPLOTS = F</code> (do not compress margins and axes), <code>GRIDPLOTS = T</code> (draw grid diagrams as heat maps for parameter values and predictions). In this section I summarize plots generated by <code>gjamPlot</code>.</p>
 <p>By default, plots are rendered to the screen. I enter ‘return’ to render the next plot. Faster execution obtains if I write plots directly to pdf files, with <code>SAVEPLOTS = T</code>. I can specify a folder this way:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">plotPars &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">SMALLPLOTS =</span> F, <span class="dt">GRIDPLOTS=</span>T, <span class="dt">SAVEPLOTS =</span> T, <span class="dt">outfolder =</span> <span class="st">'plots'</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">plotPars &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">GRIDPLOTS=</span>T, <span class="dt">SAVEPLOTS =</span> T, <span class="dt">outfolder =</span> <span class="st">'plots'</span>)</code></pre></div>
 <p>In all plots, posterior distributions and predictions are shown as <span class="math inline">\(68\%\)</span> (boxes) and <span class="math inline">\(95\%\)</span> (whiskers) intervals, respectively. Here are the plots in alphabetical order by file name:</p>
 <table>
 <colgroup>
@@ -768,15 +769,14 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
 upper &lt;-<span class="st"> </span><span class="dv">100</span>
 intv  &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(upper,<span class="ot">Inf</span>),<span class="dv">2</span>)
 <span class="kw">rownames</span>(intv) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'lower'</span>,<span class="st">'upper'</span>)
-tmp &lt;-<span class="st"> </span><span class="kw">gjamCensorY</span>(<span class="dt">values =</span> upper, <span class="dt">intervals =</span> intv, <span class="dt">y =</span> ydata, <span class="dt">type=</span><span class="st">'DA'</span>)</code></pre></div>
+tmp &lt;-<span class="st"> </span><span class="kw">gjamCensorY</span>(<span class="dt">values =</span> upper, <span class="dt">intervals =</span> intv, <span class="dt">y =</span> f$ydata, <span class="dt">type=</span><span class="st">'DA'</span>)</code></pre></div>
 <p>There are two objects returned by <code>gjamCensor</code>. The <code>list $censor</code> holds two lists, the <code>$columns</code>, indicating which columns in <code>$y</code> are censored, and the <code>$partition</code>, giving the values and bounds for the partition. Because I did not specify <code>whichcol</code> in my call to <code>gjamCensorY</code>, censoring defaults to all columns in <code>ydata</code>. The object <code>$y</code> matches the mode and dimensions of the input <code>y</code> (a <code>matrix</code> or <code>data.frame</code>). This new version of the response matrix replaces any values in <code>ydata</code> that fall within a censored interval with the censored <code>value</code>. This feature is useful when observers are inconsistent on the assignment of intervals or where an analyst distrusts the precision reported in data. For example, if counts range to thousands, but it is known that counts beyond 100 are inaccurate, then all counts above 100 are censored and, thus, uncertain.</p>
 <p>Censoring can be applied differently to each response variable. For example, chemical constitents reported as concentrations in a sample, sometimes reach non-zero minimum values, taken as detection limits for that instrument and that constituent (detection limits can differ for each constituent). In this case, there is a <code>list</code> for each column in <code>ydata</code>. I can generate this <code>list</code> with a loop, where the censored interval for each column <code>j</code> spans from <code>-Inf</code> to <code>min(ydata[,j])</code>,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># assumes there is a data matrix ydata</span>
-miny   &lt;-<span class="st"> </span><span class="kw">apply</span>(ydata, <span class="dv">2</span>, min, <span class="dt">na.rm=</span>T)     <span class="co">#minimum value by column</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">miny   &lt;-<span class="st"> </span><span class="kw">apply</span>(f$ydata, <span class="dv">2</span>, min, <span class="dt">na.rm=</span>T)     <span class="co">#minimum value by column</span>
 censor &lt;-<span class="st">  </span><span class="kw">numeric</span>(<span class="dv">0</span>)     
 p      &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="dv">0</span>, <span class="dv">3</span>, <span class="dt">dimnames=</span><span class="kw">list</span>(<span class="kw">c</span>(<span class="st">&quot;values&quot;</span>,<span class="st">&quot;lower&quot;</span>,<span class="st">&quot;upper&quot;</span>), <span class="ot">NULL</span>))
 
-for(j in <span class="dv">1</span>:<span class="kw">ncol</span>(ydata)){
+for(j in <span class="dv">1</span>:<span class="kw">ncol</span>(f$ydata)){
   p[<span class="dv">1</span>:<span class="dv">3</span>] &lt;-<span class="st"> </span><span class="kw">c</span>(miny[j], -<span class="ot">Inf</span>, miny[j])
   jlist  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;columns&quot;</span> =<span class="st"> </span>j, <span class="st">&quot;partition&quot;</span> =<span class="st"> </span>p)
   censor &lt;-<span class="st"> </span><span class="kw">c</span>(censor, <span class="kw">list</span>(jlist))
@@ -853,28 +853,28 @@ out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdat
 keep &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">as.numeric</span>(<span class="kw">unlist</span>(keep)), <span class="dt">ncol =</span> <span class="dv">2</span>, <span class="dt">byrow =</span> T)[,<span class="dv">2</span>]
 <span class="kw">plot</span>(f$trueValues$cuts[,keep],out$parameters$cutMu)</code></pre></div>
 <p>Here are plots:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">SMALLPLOTS =</span> F)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 </div>
 <div id="categorical-data" class="section level2">
 <h2><span style="color:teal">categorical data</span></h2>
 <p>Categorical data have levels within groups. The levels are unordered. The columns in <code>ydata</code> that hold categorical responses are declared as <code>typeNames = &quot;CAT&quot;</code>. In observation vector <span class="math inline">\(\mathbf{y}_{i}\)</span> there are elements for one less than the number of factor levels. Suppose that observations are obtained on attributes of individual plants, each plant being an observation. The group <code>leaf</code> type might have four levels broadleaf decidious <code>bd</code>, needleleaf decidious <code>nd</code>, broadleaf evergreen <code>be</code>, and needleaf evergreen <code>ne</code>. A second group <code>xylem</code> anatomy might have three levels diffuse porous <code>dp</code>, ring porous <code>rp</code>, and tracheid <code>tr</code>. In both cases I assign the last class to be a reference class, <code>other</code>. Ten rows of the response matrix data might look like this:</p>
 <pre><code>##    leaf xylem
-## 1    bd other
+## 1    nd    rp
 ## 2 other    dp
-## 3 other    dp
+## 3    nd    dp
 ## 4 other    rp
-## 5    nd other
-## 6    bd    dp
+## 5    nd    dp
+## 6    bd other
 ## 7    bd    rp</code></pre>
 <p>This <code>data.frame ydata</code> becomes this response matrix <code>y</code>:</p>
 <pre><code>##      leaf_bd leaf_nd leaf_be leaf_other xylem_dp xylem_rp xylem_other
-## [1,]       1       0       0          0        0        0           1
+## [1,]       0       1       0          0        0        1           0
 ## [2,]       0       0       0          1        1        0           0
-## [3,]       0       0       0          1        1        0           0
+## [3,]       0       1       0          0        1        0           0
 ## [4,]       0       0       0          1        0        1           0
-## [5,]       0       1       0          0        0        0           1
-## [6,]       1       0       0          0        1        0           0
+## [5,]       0       1       0          0        1        0           0
+## [6,]       1       0       0          0        0        0           1
 ## [7,]       1       0       0          0        0        1           0</code></pre>
 <p><code>gjam</code> expands the two groups into four and three columns in <code>y</code>, respectively. As for composition data there is one redundant column for each group. Here is an example with simulated data, having two categorical groups:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'CAT'</span>,<span class="st">'CAT'</span>)

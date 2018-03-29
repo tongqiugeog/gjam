@@ -12,7 +12,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-##version 2.1.8
+##version 2.2.1
 
 
 ```{r outform, echo=F}
@@ -345,7 +345,7 @@ The output can be viewed with the function `gjamPlot`:
 f   <- gjamSimData(n = 500, S = 10, typeNames = 'CA')
 ml  <- list(ng = 1000, burnin = 200, typeNames = f$typeNames)
 out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
-pl  <- list(trueValues = f$trueValues, GRIDPLOTS = T, SMALLPLOTS = F)
+pl  <- list(trueValues = f$trueValues, GRIDPLOTS = T)
 gjamPlot(output = out, plotPars = pl)
 ```
 
@@ -355,7 +355,7 @@ gjamPlot(output = out, plotPars = pl)
 
 `r insertPlot("CA_pars.JPEG", "Parameter estimates plotted against true values." )`
 
-`r insertPlot("CA_predy.JPEG", "Species richness across all observations.  The distribution of data is shown as a histogram." )`
+`r insertPlot("CA_predy.JPEG", "Predictions of responses in Y against true values." )`
 
 `r insertPlot("CA_predx.JPEG", "Inverse predicted versus true covariates in x. Variable names are at top right for each plot." )`
 
@@ -451,7 +451,7 @@ Here is the design matrix with all combinations:
 ```{r design9, echo = F}
 tmp <- model.frame(formula,data=xx,na.action=NULL)
 x   <- model.matrix(formula, data=tmp)
-  x[1:5,]
+x[1:5,]
 ```
   
 These are examples of the `formula` options available in `gjam`.  Using them will allow for proper inverse prediction of `x`.  To optimize MCMC, gjam does not predict `x` for higher order polynomials--they are rarely used, being both hard to interpret and a cause of unstable predictions.  To accelerate MCMC I can set `PREDICTX = F` in the `modelList`.
@@ -466,7 +466,7 @@ treeYdata[1:5,1:6]
 ```
 
 
-In code that follows I treat responses as discrete counts, `typeNames = 'DA'`.  Because of the large number of columns (98) I speed things up calling for dimension reduction, passed as $N \times r = 20 \times 8$:
+In code that follows I treat responses as discrete counts, `typeNames = 'DA'`.  Because of the large number of columns (98) I speed things up by calling for dimension reduction, passed as $N \times r = 20 \times 8$:
 
 ```{r fit trees, eval = F}
 rl   <- list(r = 8, N = 20)
@@ -510,7 +510,7 @@ In the help page for the function `gjamSensitivity` is this example comparing se
 ```{r gsens, eval = F}
 types <- c('DA','DA','OC','OC','OC','OC','CC','CC','CC','CC','CC','CA','CA','PA','PA')         
 f    <- gjamSimData(S = length(types), typeNames = types)
-ml   <- list(ng = 50, burnin = 5, typeNames = f$typeNames)
+ml   <- list(ng = 500, burnin = 50, typeNames = f$typeNames)
 out  <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
 
 ynames <- colnames(f$y)
@@ -518,11 +518,12 @@ group  <- ynames[types == 'CC']
 
 full <- gjamSensitivity(out)
 cc   <- gjamSensitivity(out, group)
+ylim <- range( c(full, cc) )
 
 nt <- ncol(full)
 
 boxplot( full, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
-         xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
+         ylim = ylim, xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
 boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
          xaxt = 'n')
 axis(1,at=1:nt,labels=colnames(full))
@@ -558,7 +559,7 @@ In the foregoing example arguments passed to `gjamPlot` in the `list plotPars` i
 By default, plots are rendered to the screen.  I enter 'return' to render the next plot.  Faster execution obtains if I write plots directly to pdf files, with `SAVEPLOTS = T`.  I can specify a folder this way:
 
 ```{r plot save, eval = F}
-plotPars <- list(SMALLPLOTS = F, GRIDPLOTS=T, SAVEPLOTS = T, outfolder = 'plots')
+plotPars <- list(GRIDPLOTS=T, SAVEPLOTS = T, outfolder = 'plots')
 ```
 
 In all plots, posterior distributions and predictions are shown as $68\%$ (boxes) and $95\%$ (whiskers) intervals, respectively.  Here are the plots in alphabetical order by file name:
@@ -655,7 +656,7 @@ To analyze data that are censored at specific intervals, I specify the censored 
 upper <- 100
 intv  <- matrix(c(upper,Inf),2)
 rownames(intv) <- c('lower','upper')
-tmp <- gjamCensorY(values = upper, intervals = intv, y = ydata, type='DA')
+tmp <- gjamCensorY(values = upper, intervals = intv, y = f$ydata, type='DA')
 ```
 
 There are two objects returned by `gjamCensor`.  The `list $censor` holds two lists, the `$columns`, indicating which columns in `$y` are censored, and the `$partition`, giving the values and bounds for the partition.  Because I did not specify `whichcol` in my call to `gjamCensorY`, censoring defaults to all columns in `ydata`. The object `$y` matches the mode and dimensions of the input `y` (a `matrix` or `data.frame`).  This new version of the response matrix replaces any values in `ydata` that fall within a censored interval with the censored `value`.  This feature is useful when observers are inconsistent on the assignment of intervals or where an analyst distrusts the precision reported in data.  For example, if counts range to thousands, but it is known that counts beyond 100 are inaccurate, then all counts above 100 are censored and, thus, uncertain.
@@ -663,12 +664,11 @@ There are two objects returned by `gjamCensor`.  The `list $censor` holds two li
 Censoring can be applied differently to each response variable.  For example, chemical constitents reported as concentrations in a sample, sometimes reach non-zero minimum values, taken as detection limits for that instrument and that constituent (detection limits can differ for each constituent).  In this case, there is a `list` for each column in `ydata`.  I can generate this `list` with a loop, where the censored interval for each column `j` spans from `-Inf` to `min(ydata[,j])`,
 
 ```{r lowerLim, eval=F}
-# assumes there is a data matrix ydata
-miny   <- apply(ydata, 2, min, na.rm=T)     #minimum value by column
+miny   <- apply(f$ydata, 2, min, na.rm=T)     #minimum value by column
 censor <-  numeric(0)     
 p      <- matrix(0, 3, dimnames=list(c("values","lower","upper"), NULL))
 
-for(j in 1:ncol(ydata)){
+for(j in 1:ncol(f$ydata)){
   p[1:3] <- c(miny[j], -Inf, miny[j])
   jlist  <- list("columns" = j, "partition" = p)
   censor <- c(censor, list(jlist))
@@ -778,7 +778,7 @@ plot(f$trueValues$cuts[,keep],out$parameters$cutMu)
 Here are plots:
 
 ```{r ordPlots, eval = FALSE}
-pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F)
+pl  <- list(trueValues = f$trueValues)
 gjamPlot(output = out, plotPars = pl)
 ```
 

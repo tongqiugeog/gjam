@@ -139,21 +139,30 @@ arma::mat trMVNmatrixRcpp(arma::mat avec, arma::mat muvec,
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 arma::mat rmvnormRcpp(int n, arma::vec mu, arma::mat sigma) {
+  
   int ncols = sigma.n_cols;
   bool success = false;
   arma::mat S = sigma;
+  int i = 1;
   
   arma::mat Y = randn(n, ncols);
   
-  success = chol(S, sigma);
-  if(success == false){
-    sigma += 1 + eye(ncols,ncols) * 1e-5;
+  while(success == false && i < 5){
+    
+    success = chol(S, sigma);
+    
+    if(success == false){
+      sigma += eye(ncols,ncols) * 1e-5;
+    }
+    
+    i = i + 1;
   }
-  success = chol(S, sigma);
+  
   if(success == false){
     //    throw std::range_error("sigma not positive definite");
     return arma::repmat(mu*0, 1, n).t();
   }
+  
   return arma::repmat(mu, 1, n).t() + Y * chol(sigma);
 }
 
@@ -313,3 +322,20 @@ arma::vec dmvnormRcpp(arma::mat x,
   return(out);
 }
 
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+arma::mat randEffRcpp(arma::mat v, arma::vec ngvec, 
+                      arma::mat sinv, arma::mat CImat){
+  
+  int nv = ngvec.n_elem;
+  int s = v.n_rows;
+  arma::mat Z(s,nv); Z.fill(0);
+  
+  for(int k = 0; k < nv; k++){
+    arma::mat VI = as_scalar(ngvec(k))*sinv + CImat;
+    arma::mat V = arma::inv_sympd(VI);
+    arma::vec mu =  V * v.col(k);
+    Z.col(k) = trans( rmvnormRcpp(1, mu, V) );
+  }
+  return(Z);
+}

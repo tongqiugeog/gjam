@@ -18,6 +18,7 @@
 \concept{zero inflation}
 \concept{sampling effort}
 \concept{sensitivity}
+\concept{random effects}
 \title{
   Generalized Joint Attribute Modeling
 }
@@ -29,8 +30,8 @@
   \tabular{ll}{
   Package: \tab gjam\cr
   Type: \tab Package\cr
-  Version: \tab 2.2.1\cr
-  Date: \tab 2018-3-27\cr
+  Version: \tab 2.2.2\cr
+  Date: \tab 2018-5-22\cr
   License: \tab GPL (>= 2)\cr
   URL: \tab http://sites.nicholas.duke.edu/clarklab/code/\cr
   }

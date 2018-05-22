@@ -406,6 +406,9 @@ cbind(ml,mx)
 #  pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F, GRIDPLOTS = T)
 #  gjamPlot(output = out, plotPars = pl)
 
+## ----random group, eval = FALSE------------------------------------------
+#  modelList$random <- 'columnNameInXdata'
+
 ## ----simulate missing data, eval = FALSE---------------------------------
 #  f <- gjamSimData(typeNames = 'OC', nmiss = 20)
 #  which(is.na(f$xdata), arr.ind = T)

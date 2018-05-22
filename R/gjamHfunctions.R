@@ -448,7 +448,7 @@
   
   allTimes   <- sort(unique(xdat[,times]))
   
-  allTimes   <- min(allTimes):max(allTimes)
+  allTimes   <- min(xdat[,times], na.rm=T):max(xdat[,times], na.rm=T)
   
   timeIndex  <- match(xdat[,times],allTimes)
   if(!fillTimes){
@@ -4000,6 +4000,8 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   PREDICTX <- T
   lambdaPrior <- betaPrior <- NULL
   
+  RANDOM <- F              # random group intercepts
+  
   TIME <- F
   timeList <- timeZero <- timeLast <- timeIndex <- groupIndex <- 
     rowInserts <- Lmat <- Amat <- beta <- NULL
@@ -4487,7 +4489,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   }
   
   if(!TIME){
-    .updateW <- .wWrapper(REDUCT, S, effMat, corCols, notCorCols, typeNames, 
+    .updateW <- .wWrapper(REDUCT, RANDOM, S, effMat, corCols, notCorCols, typeNames, 
                           typeFull, typeCols, 
                           allTypes, holdoutN, holdoutIndex, censor, 
                           censorCA, censorDA, censorCON, notOther, sampleW, 
@@ -4495,9 +4497,8 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
                           indexW, ploHold, phiHold, sampleWhold, inSamp)
   }else{
     
-    .updateW <- .wWrapperTime(sampleW,y,timeZero,i1,i2,tindex,gindex,
-                              uindex,notOther,n,S,
-                              REDUCT)
+    .updateW <- .wWrapperTime(sampleW, y, timeZero, i1, i2, tindex, gindex,
+                              uindex, notOther, n, S, REDUCT, RANDOM)
     Y <- w - mua -  mug - rndEff
   }
   
@@ -4517,6 +4518,50 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   priorX[abs(priorX) < 1e-10] <- 0
   
   linFactor <- NULL
+  
+  ################## random groups
+  
+  if('random' %in% names(modelList)){
+    
+    RANDOM <- T
+    rname  <- modelList$random
+    randGroupTab <- table( as.character(xdata[,rname]) )
+    
+    wss <- names(randGroupTab[randGroupTab <= 2])
+    if(length(wss) > 0){
+      xdata[,rname] <- .combineFacLevels(xdata[,rname], fname=wss, 
+                        aname = 'rareGroups', vminF=1)
+      randGroupTab <- table( as.character(xdata[,rname]) )
+    }
+    
+    randGroups <- names( randGroupTab )
+    G <- length(randGroups)
+    
+    groupIndex  <- match(as.character(xdata[,rname]),randGroups)
+    rmm <- matrix(groupIndex,length(groupIndex), S)
+    smm <- matrix(1:S, length(groupIndex), S, byrow=T)
+    
+    randGroupIndex <- cbind( as.vector(smm), as.vector(rmm) )
+    colnames(randGroupIndex) <- c('species','group')
+    xdata[,rname] <- as.factor(xdata[,rname])
+    alphaRandGroup <- matrix(0, S, G)
+    rownames(alphaRandGroup) <- snames
+    colnames(alphaRandGroup) <- randGroups
+    Cmat <- var(w[,notOther]/2)
+    Cmat <- Cmat + diag(.1*diag(Cmat))
+    Cprior <- Cmat
+    CImat <- solve(Cprior)
+    Ckeep <- diag(S)
+    
+    alphaRanSums <- alphaRandGroup*0
+    groupRandEff <- w*0
+    
+    Kindex <- which(as.vector(lower.tri(diag(S),diag=T)))
+    nK     <- length(Kindex)
+    alphaVarGibbs <- matrix(0,ng,nK)
+    colnames(alphaVarGibbs) <- .multivarChainNames(snames,snames)[Kindex] # half matrix
+  }
+    
   
   ################################## XL prediction: variables in both
   
@@ -4633,6 +4678,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   
   covE <- cov( x%*%factorBeta$dCont )  # note that x is standardized
 
+
   
   if(TIME){
     
@@ -4712,7 +4758,8 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
    #   if(g > burnin)CLUST <- F
       
       Y <- w[,notOther]
-      if(TIME) Y <- Y - mua[,notOther] - mug[,notOther] 
+      if(RANDOM)Y <- Y - groupRandEff[,notOther] 
+      if(TIME)  Y <- Y - mua[,notOther] - mug[,notOther] 
       
       tmp <- .param.fn(CLUST, x, beta = bg[,notOther], Y = Y, otherpar)
       sg[notOther,notOther] <- tmp$sg
@@ -4729,9 +4776,9 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       sdg  <- sqrt(sigmaerror)
       
       if(!TIME){
-        
-        bg[,notOther] <- updateBeta(X = x[inSamp,], Y = w[inSamp,notOther] -
-                                      rndEff[inSamp,notOther], 
+        Y <- w[inSamp,notOther] - rndEff[inSamp,notOther]
+        if(RANDOM)Y <- Y - groupRandEff[inSamp,notOther]
+        bg[,notOther] <- updateBeta(X = x[inSamp,], Y, 
                                     sig = sigmaerror, beta = bg[,notOther],
                                     lo=loB[,notOther], hi=hiB[,notOther])
         muw[inSamp,] <- x[inSamp,]%*%bg
@@ -4742,12 +4789,14 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         mug  <- Vmat%*%Lmat
         
         Y <- w[,notOther] - mua[,notOther] - mug[,notOther] - rndEff[,notOther]
+        if(RANDOM)Y <- Y - groupRandEff[,notOther]
         bg[,notOther] <- updateBeta(X = x[tindex[,2],], Y = Y[tindex[,2],], 
                                     sig = sigmaerror, beta = bg[,notOther],
                                     rows = Brows, pattern = Bpattern,
                                     lo=loB[,notOther], hi=hiB[,notOther])
         mub <- x%*%bg
         Y   <- w - mub - mua - rndEff
+        if(RANDOM)Y <- Y - groupRandEff
         
         Lmat[,notOther] <- updateBeta(X = Vmat[tindex[,2],], 
                                       Y = Y[tindex[,2],notOther], sig=sigmaerror, 
@@ -4762,6 +4811,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
    #                           sig=sigmaerror,sp=spL)
         mug  <- Vmat%*%Lmat
         Y    <- w - mub - mug - rndEff
+        if(RANDOM)Y <- Y - groupRandEff
         Amat <- updateBeta(X = Umat[tindex[,2],], Y[tindex[,2],], sig=sigmaerror, 
                                       rows = Arows, pattern = Apattern, 
                                       beta = Amat,
@@ -4783,8 +4833,9 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       }
       
     } else {
-      
-      bg[,notOther] <- updateBeta(X = x[inSamp,], Y = w[inSamp,notOther], 
+      Y <- w[inSamp,notOther]
+      if(RANDOM)Y <- Y - groupRandEff[inSamp,notOther]
+      bg[,notOther] <- updateBeta(X = x[inSamp,], Y, 
                                   sig = sg[notOther,notOther], 
                                   beta = bg[,notOther], 
                                   lo=loB, hi=hiB)
@@ -4799,7 +4850,9 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       sgibbs[g,] <- sg[Kindex]
     }
     
-    alpha <- .sqrtRootMatrix(bg,sg,DIVIDE=T)
+    # muw does not include rndEff or groupRandEff
+    
+    alphaB <- .sqrtRootMatrix(bg,sg,DIVIDE=T)
     
     if( 'OC' %in% typeCode ){
       tg <- .updateTheta(w,tg,cutLo,cutHi,ordCols,
@@ -4812,10 +4865,50 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       phi[,ordCols] <- cutg[cutHi]
     }
     
+    if(RANDOM){
+      
+      cw <- w - muw
+      if(REDUCT){
+        cw <- cw - rndEff
+        v  <- 1/sigmaerror*.byGJAM(as.vector(cw), randGroupIndex[,1], 
+                                   randGroupIndex[,2], alphaRandGroup*0, 
+                                   fun='sum')[notOther,]
+        sinv <- diag(1/sigmaerror, SO)
+      }else{
+        v <- .byGJAM(as.vector(cw), randGroupIndex[,1], 
+                     randGroupIndex[,2], alphaRandGroup*0, fun='sum')[notOther,]
+        v <- sinv%*%v
+      }
+      
+      alphaRandGroup[notOther,] <- randEffRcpp(v, randGroupTab, 
+                                               sinv, CImat)
+      if(length(other) > 0)alphaRandGroup[other,] <- 0
+      if(g < 100){
+        alphaRandGroup[notOther,] <- 
+          sweep( alphaRandGroup[notOther,], 2, 
+                 colMeans(alphaRandGroup[notOther,]), '-')
+      }
+     SS  <- crossprod(t(alphaRandGroup[notOther,]))
+     SS  <- S*SS + Cmat
+     
+     testv <- try( chol(SS) ,T)
+     if( inherits(testv,'try-error') ){
+       tiny  <- .1*diag(SS)
+       SS  <- SS + diag(diag(SS + tiny))
+     }
+     
+      Ckeep[notOther,notOther] <- .riwish( df = S*G + 1, SS )
+      CImat <- solveRcpp(Ckeep[notOther,notOther])
+      
+      alphaVarGibbs[g,] <- Ckeep[Kindex]
+      groupRandEff <- t(alphaRandGroup)[groupIndex,]
+    }
+      
     if(TIME){
       
-      tmp <- .updateW(w,plo,phi,wpropTime,xl,yp,Lmat,Amat,mub,rndEff,sdg,muw,
-                      Umat,Vmat,sinv)
+  #    muw does not include groupRandEff
+      tmp <- .updateW(w,plo,phi,wpropTime,xl,yp,Lmat,Amat,mub,rndEff, groupRandEff,
+                      sdg,muw,Umat,Vmat,sinv)
       w <- tmp$w; muw <- tmp$muw; yp <- tmp$yp; Umat <- tmp$Umat; Vmat <- tmp$Vmat
       
       groups <- NULL
@@ -4911,11 +5004,12 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         mug[za,]  <- mugNew[za,]
       }
       
-      if(nlmiss > 0)xl[xmiss] <- xpred[xlmiss,xlnames]
+      if(nlmiss > 0)xl[xlmiss] <- xpred[xmiss]
+      
       if(nmiss > 0){
         
-        x[xmiss] <- xpred[xmiss,xnames]
-        
+        x[xmiss] <- xpred[xmiss]
+    
         tmp    <- .getUnstandX(x, standRows, standMu[,1],
                                standMat[,1], intMat)            
         S2U    <- tmp$S2U
@@ -4928,10 +5022,9 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       
     } else{ #############not TIME
       
-      
-      tmp   <- .updateW( rows=1:n, x, w, y, bg, sg, alpha=alpha, 
-                         cutg, plo, phi, 
-                         rndEff, sigmaerror, wHold )
+      tmp   <- .updateW( rows=1:n, x, w, y, bg, sg, alpha=alphaB, 
+                         cutg, plo, phi, rndEff, groupRandEff, 
+                         sigmaerror, wHold )
       w     <- tmp$w
       yp    <- tmp$yp
       plo   <- tmp$plo
@@ -4941,7 +5034,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       
       Y <- w[,notOther]
       if(holdoutN > 0) Y[holdoutIndex,] <- wHold[,notOther]  # if w not held out
-      
+      if(RANDOM)Y <- Y - groupRandEff[,notOther]
       
       if(nmiss > 0){
         
@@ -5010,7 +5103,6 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         }
         xpred[,1] <- 1
       }
-      
     }
     
     setTxtProgressBar(pbar,g)
@@ -5020,10 +5112,10 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       if(TIME){
         bgs <- S2U%*%mub
         lambda[ gindex[,c('rowG','colW')]] <- Lmat[wL]
-        lambdas <- S2UL%*%mug # unstandardized lambda
+        lambdas <- S2UL%*%mug      # unstandardized lambda
         lgibbs[g,] <- lambdas
       }else{
-         bgs <- S2U%*%muw
+         bgs <- S2U%*%x%*%bg
       }
     }
     
@@ -5060,7 +5152,9 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       leg   <- tmp$eg
       lsens <- tmp$sens
       
-      gsensGibbs[g,] <- sqrt(diag(lsens))
+      lss <- sqrt(diag(lsens))
+      
+      gsensGibbs[g,names(lss)] <- lss
       
       alpha[ aindex[,c('toW','fromW')] ] <- Amat[wA]
       asens <- Amat[,notOther]%*%sinv%*%t(Amat[,notOther])
@@ -5076,7 +5170,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       ypred  <- ypred + yp
       ypred2 <- ypred2 + yp^2
       
-      tmp <- .dMVN(w[,notOther],muw[,notOther], sg[notOther,notOther], log=T)
+      tmp <- .dMVN(w[,notOther], muw[,notOther], sg[notOther,notOther], log=T)
 
       sumDev <- sumDev - 2*sum(tmp) 
       yerror <- yerror + (yp - y)^2
@@ -5106,7 +5200,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         
         shan <- sweep(yy[,inRichness], 1, rowSums(yy[,inRichness]), '/')
         shan[shan == 0] <- NA
-        shan <- -rowSums(shan[,inRichness]*log(shan[,inRichness]),na.rm=T)
+        shan <- -rowSums(shan*log(shan),na.rm=T)
         shannon <- shannon + shan
         
         wpp <- which(yy > 0)
@@ -5114,12 +5208,15 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         ypredPres2[wpp] <- ypredPres2[wpp] + yp[wpp]^2
         ypredPresN[wpp] <- ypredPresN[wpp] + 1
         
-        
         presence[,inRichness] <- presence[,inRichness] + yy[,inRichness]
         ones <- round(rowSums(yy[,inRichness]))
         more <- round(rowSums(yy[,inRichness]*wrich[,inRichness,drop=F]))
         richFull <- .add2matrix(ones,richFull)
         richness <- .add2matrix(more,richness)  # only for non-missing
+      }
+      
+      if(RANDOM){
+        alphaRanSums <- alphaRanSums + alphaRandGroup
       }
       
       if(mmiss > 0){
@@ -5202,7 +5299,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     
     shan <- sweep(y[,inRichness], 1, rowSums(y[,inRichness]), '/')
     shan[shan == 0] <- NA
-    shanObs <- -rowSums(shan[,inRichness]*log(shan[,inRichness]),na.rm=T)
+    shanObs <- -rowSums(shan*log(shan),na.rm=T)
     
     richness <- cbind(yr, rmu, rsd, rfull, shanObs, shannon/ntot )
     colnames(richness) <- c('obs','predMu','predSd','predNotMissing',
@@ -5332,6 +5429,17 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
                                    ySd[,notOther]^2),na.rm=T )  # gaussian w
   xscore <- xpredMu <- xpredSd <- NULL
   standX <- xmissMu <- xmissSe <- NULL
+  
+  if(RANDOM){
+    ns <- 500
+    simIndex <- sample(burnin:ng,ns,replace=T)
+    tmp <- .expandSigmaChains(snames, alphaVarGibbs, otherpar, simIndex=simIndex,
+                              sigErrGibbs, kgibbs, REDUCT=F)
+    alphaRandGroupVarMu <- tmp$sMu
+    alphaRandGroupVarSe <- tmp$sSe
+    alphaRandByGroup <- alphaRanSums/ntot
+    
+  }
   
   if(PREDICTX){
     xpredMu <- predx/ntot
@@ -5507,6 +5615,12 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
               xscore = xscore, rmspeAll = rmspeAll,
               rmspeBySpec = rmspeBySpec)
   if(FULL)chains <- append(chains, list(ygibbs = ygibbs))
+  if(RANDOM){
+    parameters <- append(parameters,
+                         list( randGroupVarMu = alphaRandGroupVarMu,
+                               randGroupVarSe = alphaRandGroupVarSe,
+                               randByGroup = alphaRandByGroup) )
+  }
   if(RICHNESS){
     prediction <- append(prediction, 
                          list(yPresentMu = ypredPresMu, yPresentSe = ypredPresSe))
@@ -5972,7 +6086,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       
       suppressWarnings(
         arrows(xx, q[2], xx, q[5], lwd=2, angle=90, code=3, col=.getColor(col,.8),
-               length=.05)
+               length=.02)
       )
       lines(c(xx-.5*rwide,xx+.5*rwide),q[c(1,1)],lwd=2, 
             col=.getColor(col,.8))
@@ -5988,17 +6102,19 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   PLOTALLY <- TRAITS <- GRIDPLOTS <- SAVEPLOTS <- 
     REDUCT <- TV <- SPECLABS <- SMALLPLOTS <- F
   PREDICTX <- BETAGRID <- PLOTY <- PLOTX <- 
-    CORLINES <- SIGONLY <- CHAINS <- T
+    CORLINES <- SIGONLY <- CHAINS <- RANDOM <- T
   omitSpec   <- trueValues  <- censor <- otherpar <- NULL
   traitList  <- specByTrait <- typeNames <- classBySpec <- 
     x <- y   <- burnin      <- richness <- betaTraitMu <-  
     corSpec  <- cutMu       <- ypredMu <- DIC <- yscore <- missingIndex <- 
     xpredMu  <- plotByTrait <- tMu <- tMuOrd <- traitTypes <- 
-    isFactor <- betaMu <- betaMuUn <- corMu <- modelSummary <- NULL
+    isFactor <- betaMu <- betaMuUn <- corMu <- modelSummary <-
+    randByGroup <- randGroupVarMu <- NULL
   unstandardX  <- NULL 
   ematAlpha     <- .5  
   ematrix      <- NULL
   ymiss <- eCont <- modelList <- timeList <- timeZero <- NULL
+  random <- NULL
   kgibbs <- NULL
   chains <- inputs <- parameters <- prediction <- reductList  <- 
     bgibbs <- sgibbs <- sigErrGibbs <- factorBeta <- gsens <- 
@@ -6035,8 +6151,10 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   for(k in 1:length(modelList))assign( names(modelList)[k], modelList[[k]] )
   for(k in 1:length(parameters))assign( names(parameters)[k], parameters[[k]] )
   for(k in 1:length(prediction))assign( names(prediction)[k], prediction[[k]] )
-  for(k in 1:length(plotPars))assign( names(plotPars)[k], plotPars[[k]] )
+  
   for(k in 1:length(reductList))assign( names(reductList)[k], reductList[[k]] )
+  
+  if(!is.null(plotPars))for(k in 1:length(plotPars))assign( names(plotPars)[k], plotPars[[k]] )
   
   if( !is.null(traitList) ){
     TRAITS <- T
@@ -6059,12 +6177,15 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   if(length(xpredMu) == 0)PREDICTX <- F
   if(!PREDICTX)PLOTX <- F
   
-  #if(!SMALLPLOTS){
+  if(!is.null(random)){
+    RANDOM <- T
+  }
+  
     oma <- c(0,0,0,0)
     mar <- c(4,4,2,1)
     tcl <- -0.5
     mgp <- c(3,1,0)
-  #}
+  
   if(SAVEPLOTS){
     ff <- file.exists(outFolder)
     if(!ff)dir.create(outFolder)
@@ -6644,8 +6765,8 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
                    xlab='',ylab='')
               
             }else{
-              plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,ylim=ylimit,
-                   xlab='',ylab='')
+              plot(xy[1,],xy[2,],col='tan',type='s',lwd=2,xlim=xlimit,
+                   ylim=ylimit, xlab='',ylab='')
               polygon(xy[1,],xy[2,],border='tan',col='wheat')
             }
           }
@@ -7265,7 +7386,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   
   if(TIME){
     
-    if(SAVEPLOTS)pdf( file=.outFile(outFolder,'sensitivityAlpha.pdf') ) # start plot
+    if(SAVEPLOTS)pdf( file=.outFile(outFolder,'sensitivityAlpha.pdf') ) 
     par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
     
     tiny <- 1e-6
@@ -8221,6 +8342,41 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     } else {
       dev.off()
     }
+    
+    ################## random groups
+    
+    if(RANDOM){
+      
+      graphics.off()
+      if(SAVEPLOTS)pdf( file=.outFile(outFolder,'randGroups.pdf') ) # start plot
+      G <- ncol(randByGroup)
+      
+      mat1 <- randGroupVarMu[notOther,notOther]
+      mat1 <- .cov2Cor(mat1)
+      diag(mat1) <- 0
+      mat2 <- randByGroup[notOther,] # + matrix(betaMu[1,notOther],length(notOther),G, byrow=T)
+      main1 <- expression(paste('Species '))
+      main2 <- expression('Group')
+      topLab1 <- F
+      if(S < 30)topLab1 <- T
+      
+      ee <- ncol(mat1)/ncol(mat2)
+      ee <- max(c(ee,1))
+      ee <- min(c(ee, 1.2))
+      opt <- list(mainLeft=main1, main1=main1, main2 = main2,leftClus=T, 
+                  topClus1=F, topClus2=T, topLab1 = topLab1, topLab2=T,
+                  leftLab=T, lower1 = T, diag1 = F, 
+                  colCode1 = specColor[notOther])
+      .clusterWithGrid(mat1, mat2, expand=ee, opt)
+      
+      if(!SAVEPLOTS){
+        readline('random groups correlation, coeffs -- return to continue ')
+      } else {
+        dev.off()
+      }
+    }
+      
+      
     ###################### Time grid
     if(TIME){
       
@@ -8334,7 +8490,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   all <- all[ order(names(all)) ]
   invisible(all)
 }
-   
+    
 .gjamPrediction <- function(output, newdata, y2plot, PLOT, ylim, FULL){
   
   xnew <- ydataCond <- interBeta <- NULL
@@ -9450,7 +9606,6 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   
   llist <- for(k in 1:length(llist))assign( names(llist)[k], llist[[k]] )
   
-  
   n <- nrow(lo)
   tiny <- .00001
   
@@ -10158,7 +10313,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       yy <- obs[obs > 0]
       oo <- min( yy,na.rm=T )
       
-      ybin <- seq(log10(oo),log10(max(yy)),length=20)
+      ybin <- seq(log10(oo),log10(max(yy, na.rm=T)),length=20)
       bins <- 10^c(log10(.1*oo),ybin)
       bins <- unique(bins)
       nbin <- length(bins)
@@ -11387,11 +11542,13 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
 } 
 
 
-.wWrapperTime <- function(sampleW,y,timeZero,i1,i2,tindex,gindex,uindex,notOther,n,S,
-                          REDUCT){
+.wWrapperTime <- function(sampleW, y, timeZero, i1, i2, tindex, gindex, uindex,
+                          notOther, n, S, REDUCT, RANDOM){
   
-  function(w,plo,phi,wpropTime,xl,yp,Lmat,Amat,mub,rndEff,sdg,muw,
+  function(w,plo,phi,wpropTime,xl,yp,Lmat,Amat,mub,rndEff, groupRandEff,sdg,muw,
            Umat,Vmat,sinv){
+    
+    if(RANDOM)muw <- muw + groupRandEff
     
     W <- matrix(.tnorm(n*S,plo,phi,w,wpropTime),n,S)
     W[sampleW == 0] <- y[sampleW == 0]
@@ -11418,9 +11575,9 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       
       if(REDUCT){
         pnow <- dnorm(w[i00,notOther],muw[i00,notOther],sdg,log=T) +
-          dnorm(w[i11,notOther],muw[i11,notOther],sdg,log=T)
+                dnorm(w[i11,notOther],muw[i11,notOther],sdg,log=T)
         pnew <- dnorm(ww[,notOther],muw[i00,notOther],sdg,log=T) + 
-          dnorm(w[i11,notOther],muStar[,notOther],sdg,log=T)
+                dnorm(w[i11,notOther],muStar[,notOther],sdg,log=T)
         za <- which( runif(length(pnow),0,1) < exp(pnew - pnow) )
         if(length(za) > 0){
           w[i00,][za] <- W[i00,][za]
@@ -11437,13 +11594,13 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         #        .dMVN(w[i11,notOther],muStar[,notOther],sinv=sinv,log=T)
         
         pnow <- .dMVN(w[i00,notOther],muw[i00,notOther],sinv=sinv,log=T) + 
-          .dMVN(w[i11,notOther],muw[i11,notOther],sinv=sinv,log=T)
+                .dMVN(w[i11,notOther],muw[i11,notOther],sinv=sinv,log=T)
         pnew <- .dMVN(ww[,notOther],muw[i00,notOther],sinv=sinv,log=T) + 
-          .dMVN(w[i11,notOther],muStar[,notOther],sinv=sinv,log=T)
+                .dMVN(w[i11,notOther],muStar[,notOther],sinv=sinv,log=T)
         
         za <- which( runif(length(pnow),0,1) < exp(pnew - pnow) )
         if(length(za) > 0){
-          w[i00[za],]   <- W[i00[za],]
+          w[i00[za],] <- W[i00[za],]
           ww          <- w[i00,]
           ww[ww < 0]  <- 0
           muw[i11[za],] <- muStar[za,]
@@ -11466,6 +11623,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     mugStar <- (ww[,gindex[,'colW']]*xl[timeZero+1,gindex[,'rowG']])%*%Lmat
     muaStar <- (ww[,uindex[,1]]*ww[,uindex[,2]] )%*%Amat
     muStar  <- mub[timeZero+1,] + mugStar + muaStar + rndEff[timeZero+1,]
+    if(RANDOM)muStar <- muStar + groupRandEff[timeZero+1,] ###################
     
     if(REDUCT){
       pnow <- dnorm(w[timeZero+1,notOther],muw[timeZero+1,notOther],sdg,log=T)
@@ -11477,7 +11635,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         ww[ww < 0]  <- 0
         muw[timeZero+1,][za] <- muStar[za]
         Umat[timeZero+1,]    <- ww[,uindex[,1]]*ww[,uindex[,2]]
-        Vmat[timeZero+1,]  <- ww[,gindex[,'colW']]*xl[timeZero+1,gindex[,'colX']]
+        Vmat[timeZero+1,]    <- ww[,gindex[,'colW']]*xl[timeZero+1,gindex[,'colX']]
       }
     }else{
       pnow <- .dMVN(w[timeZero+1,notOther],muw[timeZero+1,notOther],
@@ -11500,7 +11658,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   }
 }
 
-.wWrapper <- function(REDUCT, S, effMat, corCols, notCorCols, typeNames, 
+.wWrapper <- function(REDUCT, RANDOM, S, effMat, corCols, notCorCols, typeNames, 
                       typeFull, typeCols, 
                       allTypes, holdoutN, holdoutIndex, censor, 
                       censorCA, censorDA, censorCON, notOther, sampleW, 
@@ -11509,7 +11667,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   if(REDUCT){
     
     function(rows=1:nrow(x), x, w, y, bg, sg, alpha, cutg, plo, phi, 
-             rndEff, sigmaerror, wHold){
+             rndEff, groupRandEff, sigmaerror, wHold){
       
       n    <- nrow(y)
       w0   <- which(sampleW == 1)
@@ -11526,7 +11684,9 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       
       if(length(notCorCols) > 0){ ###### covariance scale
         mue    <- x%*%bg
+        if(RANDOM)mue <- mue + groupRandEff
         muf    <- mue + rndEff
+
         w[w0]  <- .tnorm(length(w0), plo[w0], phi[w0], muf[w0], sqrt(sigmaerror))
         w[-w0] <- y[-w0]          
         
@@ -11538,11 +11698,11 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
           
           # in-sample with RE
           if(holdoutN < n){
-            wHold[,notCorCols] <- matrix( .tnorm(holdoutN*SN, 
-                                                 as.vector(ploHold[,notCorCols]), 
-                                                 as.vector(phiHold[,notCorCols]),
-                                                 as.vector(muf[drop=F,holdoutIndex,notCorCols] ),
-                                                 sqrt(sigmaerror)),holdoutN,SN) 
+            wHold[,notCorCols] <- 
+              matrix( .tnorm(holdoutN*SN, as.vector(ploHold[,notCorCols]), 
+                             as.vector(phiHold[,notCorCols]),
+                             as.vector(muf[drop=F,holdoutIndex,notCorCols] ),
+                             sqrt(sigmaerror)),holdoutN,SN) 
           }
           # marginalized RE out-of-sample
           w[holdoutIndex,notOther] <- yPredict[holdoutIndex,notOther] <-
@@ -11557,6 +11717,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         css[notOther,notOther]  <- .cov2Cor(sg[notOther,notOther])
         
         muo <- x%*%alpha
+        if(RANDOM)muo <- muo + groupRandEff
         
         if(holdoutN < n){
           mur <- muo + .sqrtRootMatrix(rndEff,sg,DIVIDE=T)
@@ -11575,14 +11736,13 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
                                               as.vector(ploHold[,corCols]), 
                                               as.vector(phiHold[,corCols]),
                                               as.vector(t(mur[holdoutIndex,corCols])),
-                                              1),
-                                       holdoutN,SC) 
+                                              1),holdoutN,SC) 
         }
   #      w[holdoutIndex,corCols] <- yPredict[holdoutIndex,corCols]  <- 
   #                                  .rMVN(holdoutN,muo,css[corCols,corCols])
           w[holdoutIndex,corCols] <- yPredict[holdoutIndex,corCols]  <- 
-                                              rmvnormRcpp(holdoutN,rep(0,length(corCols)),
-                                                          css[corCols,corCols]) + muo
+                                    rmvnormRcpp(holdoutN,rep(0,length(corCols)),
+                                                css[corCols,corCols]) + muo
       }
     }
       
@@ -11623,7 +11783,8 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
           if(holdoutN > 0){
             ws <- w[, wk, drop=F]
             ws[holdoutIndex,] <- wHold[, wk, drop=F]
-            if(holdoutN < n)wHold[,wo] <- .gjamWcatLoop2(y, ws, mus = muf, sgs = sigvec, 
+            if(holdoutN < n)wHold[,wo] <- .gjamWcatLoop2(y, ws, mus = muf, 
+                                                         sgs = sigvec, 
                                          notOther = notOther, ploHold, phiHold, 
                                          groups = CATgroups, REDUCT=T) 
           }
@@ -11668,7 +11829,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   } else {
     
     function(rows=1:nrow(x), x, w, y, bg, sg, alpha, cutg, plo, phi, 
-             rndEff  = NULL, sigmaerror = NULL, wHold){
+             rndEff  = NULL, groupRandEff, sigmaerror = NULL, wHold){
       
       # for holdouts: wHold - w in-sample for sampling x out-out-sample
       #               w[holdoutIndex,] - predict out-of-sample
@@ -11684,19 +11845,21 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       yPredict <- w*0
       if(length(notCorCols) > 0){
         muw <- x%*%bg
+        if(RANDOM)muw <- muw + groupRandEff
   #      yPredict[,notOther] <- .rMVN(n,muw[,notOther],sg[notOther,notOther])
-        yPredict[,notOther] <- rmvnormRcpp(n,rep(0,length(notOther)),sg[notOther,notOther]) + 
+        yPredict[,notOther] <- rmvnormRcpp(n,rep(0,length(notOther)),
+                                           sg[notOther,notOther]) + 
                                   muw[,notOther]
-          
       }
       
       if( length(corCols) > 0 ){    #expanded w on this scale
         wss  <- w*0
         css  <- .cov2Cor(sg[notOther,notOther])
         muss <- x%*%alpha
+        if(RANDOM)muss <- muss + groupRandEff
         ypred <- yPredict
- #       ypred[,notOther]   <- .rMVN(n,muss[,notOther],css)
-        ypred[,notOther]   <- rmvnormRcpp(n,rep(0,length(notOther)),css) + muss[,notOther]
+        ypred[,notOther]   <- rmvnormRcpp(n,rep(0,length(notOther)),css) + 
+                                 muss[,notOther]
         yPredict[,corCols] <- ypred[,corCols]
       } 
       

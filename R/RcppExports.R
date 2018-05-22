@@ -41,3 +41,7 @@ dmvnormRcpp <- function(x, mean, sigma, logd = FALSE) {
     .Call(`_gjam_dmvnormRcpp`, x, mean, sigma, logd)
 }
 
+randEffRcpp <- function(v, ngvec, sinv, CImat) {
+    .Call(`_gjam_randEffRcpp`, v, ngvec, sinv, CImat)
+}
+

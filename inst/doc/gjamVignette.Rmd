@@ -12,7 +12,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-##version 2.2.1
+##version 2.2.2
 
 
 ```{r outform, echo=F}
@@ -847,6 +847,20 @@ pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F, GRIDPLOTS = T)
 gjamPlot(output = out, plotPars = pl)
 ```
 
+
+##<span style="color:teal">random effects</span>
+
+In addition to random effects on species used in dimension reduction, `gjam` allows for random groups.  Examples could be observer effects for bird point counts or plot effects, where there are multiple observations per plot.  Just like fixed effects, random effects should have replication.  In other words, if I want to estimate an observer effect, I should have multiple observations for each observer.  For plot effects, I want replication within plots.
+
+To specify random groups, I provide the name of the column in `xdata` that holds the group indicator.  This can be entered as an integer, a factor level, or a character variable.
+
+```{r random group, eval = FALSE}
+modelList$random <- 'columnNameInXdata'
+```
+
+This column will be the basis for the random groups.  Any rare groups (less than a few observations) will be aggregated into a single `rareGroups` category, again, to insure replication.
+
+
 ##<span style="color:teal">missing data, out-of-sample prediction</span>
 
 gjam identifies missing values in `xdata` and `ydata` and models them as part of the posterior distribution.  These are located at `$missing$xmiss` and `$missing$ymiss`.  The estimates for missing $\mathbf{X}$ are `$missing$xmissMu` and `$missing$xmissSe`.  The estimates for missing $\mathbf{Y}$ are `$missing$ymissMu` and `$missing$ymissSe`.  
@@ -1654,6 +1668,7 @@ Additional quantities can be predicted from the output using the MCMC output in 
 
 ###<span style="color:brown">trouble shooting in PTM</span>
 
+
 When using `gjam` in predictive trait mode remember the following:
 
 1. `typeNames` for `ydata` data should be composition, either `CC` or `FC`
@@ -1665,6 +1680,8 @@ When using `gjam` in predictive trait mode remember the following:
 4. `ncol(plotByTrait)` must equal `length(traitTypes)`
 
 5. `rownames(specByTrait)` must match `colnames(ydata)`
+
+
     
     
 `r bigskip()`
@@ -1718,7 +1735,15 @@ For discrete counts (`"DA"`) consider changing the units for effort, e.g., m$^{2
 
 Unlike experiments, where attention is paid to balanced design, observational data often involve **factors**, for which only some species occur in all factor combinations.  This inadequate distribution of data is compounded when those factors are included in interaction terms.  Consider ways to eliminate factor levels/combinations that cannot be estimated from the data. 
 
-If a simulation fails due to a cholesky error ($\boldsymbol{\Sigma}$ is not positive definite), consider either reducing the number of columns in `ydata` or implementing dimension reduction (see the gjam vignette on this subject).
+If a simulation fails due to a cholesky error, then there is a problem inverting $\boldsymbol{\Sigma}$.   Any of these error messages might arise, even when using dimension reduction:
+
+`error: chol(): decomposition failed`
+
+`error: inv_sympd(): matrix is singular or not positive definite`
+
+`Error in invWbyRcpp(sigmaerror, otherpar$Z[otherpar$K, ]) : inv_sympd(): matrix is singular or not positive definite`
+  
+Consider either reducing the number of columns in `ydata` using `gjamTrimY`. 
 
 `r bigskip()`
 

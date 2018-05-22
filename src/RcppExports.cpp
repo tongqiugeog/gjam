@@ -153,6 +153,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// randEffRcpp
+arma::mat randEffRcpp(arma::mat v, arma::vec ngvec, arma::mat sinv, arma::mat CImat);
+RcppExport SEXP _gjam_randEffRcpp(SEXP vSEXP, SEXP ngvecSEXP, SEXP sinvSEXP, SEXP CImatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type v(vSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type ngvec(ngvecSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type sinv(sinvSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type CImat(CImatSEXP);
+    rcpp_result_gen = Rcpp::wrap(randEffRcpp(v, ngvec, sinv, CImat));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_gjam_byRcpp", (DL_FUNC) &_gjam_byRcpp, 6},
@@ -165,6 +179,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gjam_fnZRcpp", (DL_FUNC) &_gjam_fnZRcpp, 8},
     {"_gjam_invWbyRcpp", (DL_FUNC) &_gjam_invWbyRcpp, 2},
     {"_gjam_dmvnormRcpp", (DL_FUNC) &_gjam_dmvnormRcpp, 4},
+    {"_gjam_randEffRcpp", (DL_FUNC) &_gjam_randEffRcpp, 4},
     {NULL, NULL, 0}
 };
 

@@ -1,8 +1,8 @@
 Package: gjam
 Type: Package
 Title: Generalized Joint Attribute Modeling
-Version: 2.2.2
-Date: 2018-5-22
+Version: 2.2.3
+Date: 2018-5-30
 Author: James S. Clark, Daniel Taylor-Rodriquez
 Maintainer: James S. Clark <jimclark@duke.edu>
 Description: Analyzes joint attribute data (e.g., species abundance) that are combinations of continuous and discrete data with Gibbs sampling.  Full model and computation details are described in Clark et al. (2018) <doi.org/10.1002/ecm.1241>.
@@ -14,6 +14,6 @@ LazyData: true
 Suggests: knitr
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2018-05-22 13:53:16 UTC; jimclark
+Packaged: 2018-05-30 14:46:04 UTC; jimclark
 Repository: CRAN
-Date/Publication: 2018-05-22 14:16:59 UTC
+Date/Publication: 2018-05-30 16:05:21 UTC

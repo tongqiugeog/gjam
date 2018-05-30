@@ -2595,7 +2595,7 @@
   wlo  <- which(fobs < .01)
   if(length(wlo) > 0){
     flo <- paste0(names(fobs)[wlo],collapse=', ')
-    warning( paste(' present in < 1% of obs:',flo) )
+    cat(paste('\nPresent in < 1% of obs:',flo,'\n') )
   }
   
   # missing values in y
@@ -4362,7 +4362,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   wmax <- wmax/effMat
   
   if(REDUCT){
-    print( paste('Dimension reduced from',S,'X',S,'->',N,'X',r,'responses') )
+    cat( paste('\nDimension reduced from',S,'X',S,'->',N,'X',r,'responses\n') )
     otherpar$N <- N; otherpar$r <- r; otherpar$sigmaerror <- 0.1
     otherpar$Z <- rmvnormRcpp(N,rep(0,r),1/S*diag(r))
     otherpar$D <- .riwish(df = (2 + r + N), 
@@ -4678,8 +4678,6 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   
   covE <- cov( x%*%factorBeta$dCont )  # note that x is standardized
 
-
-  
   if(TIME){
     
     yy <- y*0
@@ -5188,7 +5186,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         
         if('PA' %in% typeNames){
           wpa <- which(typeNames[inRichness] == 'PA')
-          yy[,inRichness[wpa]] <- round(yy[,inRichness[wpa]])
+          yy[,inRichness[wpa]] <- yp[,inRichness[wpa]] #######
         }
         
         if(length(notPA) > 0){
@@ -5594,10 +5592,10 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   
   inputs <- list(xdata = xdata, x = xunstand, standX = standX,
                  standMat = standMat, standRows = standRows, y = y, 
-                 notOther = notOther,
-                 other = other, breakMat = breakMat, designTable = designTable,
-                 classBySpec = classBySpec, factorBeta = factorBeta,
-                 interBeta = interBeta,linFactor = linFactor, intMat = intMat)
+                 notOther = notOther, other = other, breakMat = breakMat, 
+                 designTable = designTable, classBySpec = classBySpec, 
+                 factorBeta = factorBeta, interBeta = interBeta,
+                 linFactor = linFactor, intMat = intMat, RANDOM = RANDOM)
   missing <- list(xmiss = xmiss, xmissMu = xmissMu, xmissSe = xmissSe, 
                   ymiss = ymiss, ymissMu = ymissPred, ymissSe = ymissPred2)
   parameters <- list(fMu = fMu, fSe = fSe, betaMu = betaMu, betaSe = betaSe, 
@@ -6103,7 +6101,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     REDUCT <- TV <- SPECLABS <- SMALLPLOTS <- F
   PREDICTX <- BETAGRID <- PLOTY <- PLOTX <- 
     CORLINES <- SIGONLY <- CHAINS <- RANDOM <- T
-  omitSpec   <- trueValues  <- censor <- otherpar <- NULL
+  omitSpec   <- trueValues  <- censor <- otherpar <- ng <- NULL
   traitList  <- specByTrait <- typeNames <- classBySpec <- 
     x <- y   <- burnin      <- richness <- betaTraitMu <-  
     corSpec  <- cutMu       <- ypredMu <- DIC <- yscore <- missingIndex <- 
@@ -6204,7 +6202,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   n       <- nrow(y)
   snames  <- colnames(y)
   xnames  <- colnames(x)
-  ng      <- nrow(chains$bgibbs)
+ # ng      <- nrow(chains$bgibbs)
   gindex  <- burnin:ng
   
   if(S < 20)SPECLABS <- T
@@ -8493,10 +8491,10 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     
 .gjamPrediction <- function(output, newdata, y2plot, PLOT, ylim, FULL){
   
-  xnew <- ydataCond <- interBeta <- NULL
+  xnew <- ydataCond <- interBeta <- groupRandEff <- NULL
   tiny  <- 1e-10
   wHold <- phiHold <- ploHold <- sampleWhold <- NULL
-  COND <- F
+  COND <- RANDOM <- F
   
   ng     <- output$modelList$ng
   burnin <- output$modelList$burnin
@@ -8566,6 +8564,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   inSamp <- 1:n
   
   REDUCT <- output$modelList$REDUCT
+  sigmaerror <- NULL
   if(REDUCT){
     otherpar <- output$modelList$reductList$otherpar
     N  <- otherpar$N
@@ -8712,8 +8711,6 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     }
     
     
-    
-    
     tmp <- .gjamSetup(typeNames, x, yp, breakList=NULL, holdoutN=NULL, 
                       holdoutIndex=NULL, censor=NULL, effort=effort) 
     w <- tmp$w; z <- tmp$z; yp <- tmp$y; other <- tmp$other
@@ -8830,14 +8827,13 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     phi <- ptmp
   }
     
-  .updateW <- .wWrapper(REDUCT, S, effMat, corCols, notCorCols, typeNames, 
-                        typeFull, typeCols, 
-                        allTypes, holdoutN, holdoutIndex, censor, 
-                        censorCA, censorDA, censorCON, notOther, sampleW, 
-                        byRow, byCol,
-                        indexW, ploHold, phiHold, sampleWhold, inSamp)
+  .updateW <- .wWrapper(REDUCT, RANDOM, S, effMat, corCols, notCorCols, typeNames, 
+                            typeFull, typeCols, 
+                            allTypes, holdoutN, holdoutIndex, censor, 
+                            censorCA, censorDA, censorCON, notOther, sampleW, 
+                            byRow, byCol,
+                            indexW, ploHold, phiHold, sampleWhold, inSamp)
 
-  
   ypred  <- matrix(0,n,S)
   colnames(ypred) <- ynames
   ypred2 <- wcred <- wcred2 <- ypred
@@ -8936,7 +8932,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     }
     
     tmp <- .updateW( rows=1:n, x, w, yg, bg, sg, alpha, cutg, plo, phi, 
-                     rndEff=rndEff, sigmaerror, wHold )
+                     rndEff=rndEff, groupRandEff, sigmaerror, wHold )
     w   <- tmp$w
     
     if(!COND){
@@ -9039,13 +9035,11 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       muw[,ccols] <- mmm
     }
     
- 
-    
     yy <- yg
     
     if('PA' %in% typeNames){
       wpa <- which(typeNames == 'PA')
-      yy[,wpa] <- round(yy[,wpa])
+      yy[,wpa] <- round(yg[,wpa])
     }
     
     if(length(notPA) > 0){
@@ -9376,7 +9370,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   #returns [[1]] in-sample w for x prediction, and 
   #        [[2]] out-of-sample y prediction
   
-  if( type == 'continuous'){
+  if( type == 'continuous' ){
     yy[sampW == 1] <- wq[sampW == 1]
     return( list(yy,yq) )   # w = y
   }
@@ -11798,7 +11792,8 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
                       sampW = sampleW[,wk])
         
         if(holdoutN < n){
-          tmp <- .gjamWLoopTypes( glist )
+          
+          tmp <- .gjamWLoopTypes( glist )  # if PA, yPredict on probit scale
           w[,wk]        <- tmp[[1]]
           yPredict[inSamp,wk] <- tmp[[2]][inSamp,]  # not holdouts
         }

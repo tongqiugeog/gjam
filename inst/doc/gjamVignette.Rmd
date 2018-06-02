@@ -12,7 +12,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-##version 2.2.3
+##version 2.2.4
 
 
 ```{r outform, echo=F}
@@ -1046,9 +1046,9 @@ If effort is unknown, I can model the data as composition data, `'CC'`.  Again, 
 
 
 
-Microbiome, genetic, and hyperspectral satelitte data are examples of observations characterized by a large number of response variables $S$ (e.g., species); we refer to such data sets as *'big-S'*.  Covariance $\boldsymbol{\Sigma}$ has dimension $S \times S$, with $S(S + 1)/2$ unique elements, the *S* diagonal elements plus $1/2$ of the non-diagonal elements.  For example, a data set with $S = 100$ has 5050 unique elements in $\boldsymbol{\Sigma}$.  It must be inverted, an order$(S^{3})$ operation.  Even in cases where $\Sigma$ can be inverted the number of observations may not be sufficient to accurately estimate the large number of parameters in the model.  In gjam, *big-S* is handled by generating a low-order approximation of  $\boldsymbol{\Sigma}$.  The rank of $\boldsymbol{\Sigma}$ is reduced by finding structure, essentially groups of responses that respond similarly. (Taylor-Rodriguez et al. 2017).
+Microbiome, genetic, and hyperspectral satelitte data are examples of observations characterized by a large number of response variables $S$ (e.g., species); we refer to such data sets as *'big-S'*.  Covariance $\boldsymbol{\Sigma}$ has dimension $S \times S$, with $S(S + 1)/2$ unique elements, the *S* diagonal elements plus $1/2$ of the off-diagonal elements.  For example, a data set with $S = 100$ has 5050 unique elements in $\boldsymbol{\Sigma}$.  It must be inverted, an order$(S^{3})$ operation.  Even in cases where $\Sigma$ can be inverted the number of observations may not be sufficient to accurately estimate the large number of parameters in the model.  In gjam, *big-S* is handled by generating a low-order approximation of  $\boldsymbol{\Sigma}$.  The rank of $\boldsymbol{\Sigma}$ is reduced by finding structure, essentially groups of responses that respond similarly. (Taylor-Rodriguez et al. 2017).
 
-The interpretation of a reduced model warrants a few words.  If we replace $\boldsymbol{\Sigma}$ with a much smaller number of estimates, we cannot insist that we can know the covariance between every species.  If $\boldsymbol{\Sigma}$ does not contain structure that can be adequately summarized with fewer estimates, then we have at best a version of the model that soaks up some of the dependence structure that is important for estimating $\mathbf{B}$.  On the other hand $\boldsymbol{\Sigma}$ may contain substantial structure that can be captured by a small number of estimates. We first we point out that an analysis of *big-S* data sets need not include every species that might be recorded in a data set and how gjam functions can be used to trim large data sets.  We then describe dimension reduction in gjam.
+The interpretation of a reduced model warrants a few words.  If we replace $\boldsymbol{\Sigma}$ with a much smaller number of estimates, we cannot insist that we can know the covariance between every species.  If $\boldsymbol{\Sigma}$ does not contain structure that can be adequately summarized with fewer estimates, then we have at best a version of the model that soaks up some of the dependence structure that is important for estimating $\mathbf{B}$.  On the other hand $\boldsymbol{\Sigma}$ may contain substantial structure that can be captured by a small number of estimates. We first point out that an analysis of *big-S* data sets need not include every species that might be recorded in a data set and how gjam functions can be used to trim large data sets.  We then describe dimension reduction in gjam.
 
 
 A species *s* that bears no relationship to any of the predictors in $\mathbf{X}$ (all $\mathbf{B}_{s}$ small) or to other species *s'* (all $\boldsymbol{\Sigma}_{s',s}$ small) will not be 'explained' by the model.  Such species will contribute little to the model fit, while degrading performance.  Consider either of two options for reducing the number of species in the model, *trimming* and *aggregation*.  
@@ -1744,6 +1744,8 @@ If a simulation fails due to a cholesky error, then there is a problem inverting
 `Error in invWbyRcpp(sigmaerror, otherpar$Z[otherpar$K, ]) : inv_sympd(): matrix is singular or not positive definite`
   
 Consider either reducing the number of columns in `ydata` using `gjamTrimY`. 
+
+If execution is stopped with the message `overfitted covariance`, then try reducing `N` and `r` in `reductList`.
 
 `r bigskip()`
 

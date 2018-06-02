@@ -12,7 +12,7 @@
 
 <meta name="author" content="James S. Clark" />
 
-<meta name="date" content="2018-05-30" />
+<meta name="date" content="2018-06-02" />
 
 <title>Generalized joint attribute modeling - gjam</title>
 
@@ -70,12 +70,12 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Generalized joint attribute modeling - gjam</h1>
 <h4 class="author"><em><a href="http://sites.nicholas.duke.edu/clarklab/">James S. Clark</a></em></h4>
-<h4 class="date"><em>2018-05-30</em></h4>
+<h4 class="date"><em>2018-06-02</em></h4>
 
 
 <div id="TOC">
 <ul>
-<li><a href="#version-2.2.3">version 2.2.3</a></li>
+<li><a href="#version-2.2.4">version 2.2.4</a></li>
 <li><a href="#overview"><span style="color:darkgreen">overview</span></a><ul>
 <li><a href="#model-summary"><span style="color:teal">model summary</span></a></li>
 <li><a href="#data-types"><span style="color:teal">data types</span></a></li>
@@ -132,8 +132,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </ul>
 </div>
 
-<div id="version-2.2.3" class="section level2">
-<h2>version 2.2.3</h2>
+<div id="version-2.2.4" class="section level2">
+<h2>version 2.2.4</h2>
 <div id="citation" class="section level4">
 <h4>citation:</h4>
 <p><em>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, 87, 34–56.</em></p>
@@ -861,22 +861,22 @@ keep &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="k
 <h2><span style="color:teal">categorical data</span></h2>
 <p>Categorical data have levels within groups. The levels are unordered. The columns in <code>ydata</code> that hold categorical responses are declared as <code>typeNames = &quot;CAT&quot;</code>. In observation vector <span class="math inline">\(\mathbf{y}_{i}\)</span> there are elements for one less than the number of factor levels. Suppose that observations are obtained on attributes of individual plants, each plant being an observation. The group <code>leaf</code> type might have four levels broadleaf decidious <code>bd</code>, needleleaf decidious <code>nd</code>, broadleaf evergreen <code>be</code>, and needleaf evergreen <code>ne</code>. A second group <code>xylem</code> anatomy might have three levels diffuse porous <code>dp</code>, ring porous <code>rp</code>, and tracheid <code>tr</code>. In both cases I assign the last class to be a reference class, <code>other</code>. Ten rows of the response matrix data might look like this:</p>
 <pre><code>##    leaf xylem
-## 1 other    rp
-## 2    be    rp
-## 3    be other
+## 1 other    dp
+## 2    nd other
+## 3 other    dp
 ## 4    be    rp
-## 5    nd    rp
-## 6    nd    dp
-## 7    nd    rp</code></pre>
+## 5    bd    rp
+## 6 other    dp
+## 7 other    rp</code></pre>
 <p>This <code>data.frame ydata</code> becomes this response matrix <code>y</code>:</p>
 <pre><code>##      leaf_bd leaf_nd leaf_be leaf_other xylem_dp xylem_rp xylem_other
-## [1,]       0       0       0          1        0        1           0
-## [2,]       0       0       1          0        0        1           0
-## [3,]       0       0       1          0        0        0           1
+## [1,]       0       0       0          1        1        0           0
+## [2,]       0       1       0          0        0        0           1
+## [3,]       0       0       0          1        1        0           0
 ## [4,]       0       0       1          0        0        1           0
-## [5,]       0       1       0          0        0        1           0
-## [6,]       0       1       0          0        1        0           0
-## [7,]       0       1       0          0        0        1           0</code></pre>
+## [5,]       1       0       0          0        0        1           0
+## [6,]       0       0       0          1        1        0           0
+## [7,]       0       0       0          1        0        1           0</code></pre>
 <p><code>gjam</code> expands the two groups into four and three columns in <code>y</code>, respectively. As for composition data there is one redundant column for each group. Here is an example with simulated data, having two categorical groups:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'CAT'</span>,<span class="st">'CAT'</span>)
 f     &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n=</span><span class="dv">2000</span>, <span class="dt">S =</span> <span class="kw">length</span>(types), <span class="dt">typeNames =</span> types)
@@ -1039,8 +1039,8 @@ rmspe</code></pre></div>
 </div>
 <div id="dimension-reduction" class="section level1">
 <h1><span style="color:darkgreen">dimension reduction</span></h1>
-<p>Microbiome, genetic, and hyperspectral satelitte data are examples of observations characterized by a large number of response variables <span class="math inline">\(S\)</span> (e.g., species); we refer to such data sets as <em>‘big-S’</em>. Covariance <span class="math inline">\(\boldsymbol{\Sigma}\)</span> has dimension <span class="math inline">\(S \times S\)</span>, with <span class="math inline">\(S(S + 1)/2\)</span> unique elements, the <em>S</em> diagonal elements plus <span class="math inline">\(1/2\)</span> of the non-diagonal elements. For example, a data set with <span class="math inline">\(S = 100\)</span> has 5050 unique elements in <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. It must be inverted, an order<span class="math inline">\((S^{3})\)</span> operation. Even in cases where <span class="math inline">\(\Sigma\)</span> can be inverted the number of observations may not be sufficient to accurately estimate the large number of parameters in the model. In gjam, <em>big-S</em> is handled by generating a low-order approximation of <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. The rank of <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is reduced by finding structure, essentially groups of responses that respond similarly. (Taylor-Rodriguez et al. 2017).</p>
-<p>The interpretation of a reduced model warrants a few words. If we replace <span class="math inline">\(\boldsymbol{\Sigma}\)</span> with a much smaller number of estimates, we cannot insist that we can know the covariance between every species. If <span class="math inline">\(\boldsymbol{\Sigma}\)</span> does not contain structure that can be adequately summarized with fewer estimates, then we have at best a version of the model that soaks up some of the dependence structure that is important for estimating <span class="math inline">\(\mathbf{B}\)</span>. On the other hand <span class="math inline">\(\boldsymbol{\Sigma}\)</span> may contain substantial structure that can be captured by a small number of estimates. We first we point out that an analysis of <em>big-S</em> data sets need not include every species that might be recorded in a data set and how gjam functions can be used to trim large data sets. We then describe dimension reduction in gjam.</p>
+<p>Microbiome, genetic, and hyperspectral satelitte data are examples of observations characterized by a large number of response variables <span class="math inline">\(S\)</span> (e.g., species); we refer to such data sets as <em>‘big-S’</em>. Covariance <span class="math inline">\(\boldsymbol{\Sigma}\)</span> has dimension <span class="math inline">\(S \times S\)</span>, with <span class="math inline">\(S(S + 1)/2\)</span> unique elements, the <em>S</em> diagonal elements plus <span class="math inline">\(1/2\)</span> of the off-diagonal elements. For example, a data set with <span class="math inline">\(S = 100\)</span> has 5050 unique elements in <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. It must be inverted, an order<span class="math inline">\((S^{3})\)</span> operation. Even in cases where <span class="math inline">\(\Sigma\)</span> can be inverted the number of observations may not be sufficient to accurately estimate the large number of parameters in the model. In gjam, <em>big-S</em> is handled by generating a low-order approximation of <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. The rank of <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is reduced by finding structure, essentially groups of responses that respond similarly. (Taylor-Rodriguez et al. 2017).</p>
+<p>The interpretation of a reduced model warrants a few words. If we replace <span class="math inline">\(\boldsymbol{\Sigma}\)</span> with a much smaller number of estimates, we cannot insist that we can know the covariance between every species. If <span class="math inline">\(\boldsymbol{\Sigma}\)</span> does not contain structure that can be adequately summarized with fewer estimates, then we have at best a version of the model that soaks up some of the dependence structure that is important for estimating <span class="math inline">\(\mathbf{B}\)</span>. On the other hand <span class="math inline">\(\boldsymbol{\Sigma}\)</span> may contain substantial structure that can be captured by a small number of estimates. We first point out that an analysis of <em>big-S</em> data sets need not include every species that might be recorded in a data set and how gjam functions can be used to trim large data sets. We then describe dimension reduction in gjam.</p>
 <p>A species <em>s</em> that bears no relationship to any of the predictors in <span class="math inline">\(\mathbf{X}\)</span> (all <span class="math inline">\(\mathbf{B}_{s}\)</span> small) or to other species <em>s’</em> (all <span class="math inline">\(\boldsymbol{\Sigma}_{s',s}\)</span> small) will not be ‘explained’ by the model. Such species will contribute little to the model fit, while degrading performance. Consider either of two options for reducing the number of species in the model, <em>trimming</em> and <em>aggregation</em>.</p>
 <p><strong>Trim</strong> species that are not of interest, that will not affect the fit, or both.</p>
 <p><strong>Aggregation</strong> can be based on a number of criteria, such as phylogenetic similarity (e.g., members of the same genus), by functional similarity (e.g., a feeding guild, C<sub>3</sub> vs C<sub>4</sub> plants), and so forth. Rare species can be aggregated into a single group. For example, Clark et al. (2014) include 96 tree species that occur on a minimum of 50 forest inventory plots in eastern North America. The remaining species can be gathered into a single class. When this option is used the name <em>‘other’</em> is assigned to this class in the plots-by-species matrix <code>ydata</code>. Including this class is important where species compete, such as forest trees. It can also be used as a reference category for composition data, summarized below</p>
@@ -1560,6 +1560,7 @@ out$parameters$tSd[<span class="dv">1</span>:<span class="dv">5</span>,]     <sp
 <p><code>error: inv_sympd(): matrix is singular or not positive definite</code></p>
 <p><code>Error in invWbyRcpp(sigmaerror, otherpar$Z[otherpar$K, ]) : inv_sympd(): matrix is singular or not positive definite</code></p>
 <p>Consider either reducing the number of columns in <code>ydata</code> using <code>gjamTrimY</code>.</p>
+<p>If execution is stopped with the message <code>overfitted covariance</code>, then try reducing <code>N</code> and <code>r</code> in <code>reductList</code>.</p>
 <p><br></p>
 </div>
 <div id="reference-notes" class="section level1">

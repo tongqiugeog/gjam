@@ -35,7 +35,7 @@
 
 Note that \code{formula} begins with \code{~}, not \code{y ~}.  The response \code{matrix} is passed in the form of a \code{n} by \code{S} matrix or \code{data.frame} \code{ydata}.  
   
-Both predictors in \code{xdata} and responses \code{ydata} can include missing values as \code{NA}. Factors in \code{xdata} should be declared using \code{factor}.   For computational stability variables that are not factors are standardized by mean and variance, then transformed back to original scales in \code{output}.  To retain a variable in its original scale during computation include it in the character string \code{notStandard} as part of the \code{list modelList}. (example shown in the \code{vignette} on traits).  
+Both predictors in \code{xdata} and responses in \code{ydata} can include missing values as \code{NA}. Factors in \code{xdata} should be declared using \code{factor}.   For computational stability variables that are not factors are standardized by mean and variance, then transformed back to original scales in \code{output}.  To retain a variable in its original scale during computation include it in the character string \code{notStandard} as part of the \code{list modelList}. (example shown in the \code{vignette} on traits).  
   
   
 \code{modelList} has these defaults and provides these options:
@@ -62,6 +62,8 @@ Both predictors in \code{xdata} and responses \code{ydata} can include missing v
   \code{notStandard = NULL}, \code{character vector} of column names in \code{xdata} that should not be standardized.
   
   \code{reductList = list(N = 20, r = 3)}, \code{list} of dimension reduction parameters, invoked when \code{reductList} is included in \code{modelList} or automatically when \code{ydata} has too many columns.  See \code{vignette} on Dimension Reduction.
+  
+  \code{random}, \code{character} string giving the name of a column in \code{xdata} that will be used to specify random effects.  The random group column should be declared as a \code{factor}.  There should be replication, i.e., each group level occurs multiple times.
   
   \code{REDUCT = F} in \code{modelList} overrides automatic dimension reduction. 
   

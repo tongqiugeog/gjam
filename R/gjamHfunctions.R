@@ -3593,44 +3593,44 @@
   list(pl = pl, ph = ph)
 }
 
-.setupReduct <- function(modelList, S, n){
+.setupReduct <- function(modelList, S, Q, n){
   
   REDUCT <- F
   N <- r <- NULL
   
-  if( 'REDUCT' %in% names(modelList)){
-      if(!modelList$REDUCT)return( list(N = NULL, r = NULL, REDUCT = F ) )
+  rl <- NULL
+  
+  if( 'REDUCT' %in% names(modelList) ){
+    rl <- list(N = NULL, r = NULL )
+    if(!modelList$REDUCT)return( rl )
   }
   
-  npar  <- S*(S + 1)/2 
-  nobs  <- S*n
-  ratio <- 1/3
-  Smax  <- floor( 2*n*ratio - 1 )
-  Nmax  <- min( floor( c(S*n*ratio/3 , n/2)) )    # r  = 3
-  if(Nmax > 50)Nmax <- 30
+  npar <- (S+1)/2 + Q
+  
+  ratio <- 1/5
+  if(npar/n > ratio){
+    N <- ceiling( ( ratio*n - Q )/5 )
+    if(N > 25)N <- 25
+    if(N < 2)N  <- 2
+    r <- ceiling( N/2 )
+  }
   
   if( 'reductList' %in% names(modelList) ){
     REDUCT <- T
-    reductList <- modelList$reductList
-    N <- reductList$N
-    r <- reductList$r
+    rl <- modelList$reductList
+    N <- rl$N
+    r <- rl$r
     if(N >= S){
       N <- S - 1
       warning(' dimension reduction requires reductList$N < no. responses ')
     }
   }
   
-  if( !'reductList' %in% names(modelList) & S > min(Smax,100)){
-    
-    N <- Nmax
-    r <- max(c(3,Nmax/2))
-    r <- floor(r)
-    if(r > 10)r <- 10
-    reductList <- list(r = r, N = Nmax, alpha.DP = S)
-    for(k in 1:length(reductList))assign( names(reductList)[k], reductList[[k]] )
+  if( !'reductList' %in% names(modelList) & npar/n > ratio ){
+    rl <- list(r = r, N = N, alpha.DP = S)
     REDUCT <- T
   }
-  list(N = N, r = r, REDUCT = REDUCT)
+  rl
 }
 
 .getTimeIndex <- function(timeList, other, notOther, xdata, x, xl, y, w ){
@@ -4184,8 +4184,9 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     xl <- tmp$x
   }
 
-  tmp <- .setupReduct(modelList, S, n)
-  N <- tmp$N; r <- tmp$r; REDUCT <- tmp$REDUCT
+  reductList <- .setupReduct(modelList, S, Q, n) ##########
+  N <- reductList$N; r <- reductList$r
+  if(!is.null(reductList$N))REDUCT <- T
   
   tmp <- .gjamHoldoutSetup(holdoutIndex, holdoutN, n)
   holdoutIndex <- tmp$holdoutIndex; holdoutN <- tmp$holdoutN
@@ -4389,7 +4390,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     colnames(sgibbs) <- .multivarChainNames(snames,snames)[Kindex] # half matrix
   }
   
-  out <- .param.fn(CLUST, x, beta = bg[,notOther], Y = w[,notOther], otherpar)  
+  out <- .param.fn(CLUST=T, x, beta = bg[,notOther], Y = w[,notOther], otherpar)  
   sg[notOther,notOther]    <- out$sg
   otherpar      <- out$otherpar
   
@@ -4759,7 +4760,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       if(RANDOM)Y <- Y - groupRandEff[,notOther] 
       if(TIME)  Y <- Y - mua[,notOther] - mug[,notOther] 
       
-      tmp <- .param.fn(CLUST, x, beta = bg[,notOther], Y = Y, otherpar)
+      tmp <- .param.fn(CLUST=T, x, beta = bg[,notOther], Y = Y, otherpar)
       sg[notOther,notOther] <- tmp$sg
       otherpar            <- tmp$otherpar
       rndEff[,notOther]   <- tmp$rndEff
@@ -4767,7 +4768,16 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       kgibbs[g,notOther]  <- otherpar$K
       sgibbs[g,]          <- as.vector(otherpar$Z)
       sigErrGibbs[g]      <- sigmaerror
-
+      
+      if(!is.null(corCols)){
+        if(max(diag(sg)[corCols]) > 5){  #overfitting covariance
+          stop(
+            paste('\noverfitted covariance, reductList$N = ',N, 
+                  'reductList$r = ',r, '\nreduce N, r\n')
+          )
+        }
+      }
+        
       sg[sgOther]         <- .1*sigmaerror
       
       sinv <- .invertSigma(sg[notOther,notOther],sigmaerror,otherpar,REDUCT)
@@ -5186,7 +5196,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         
         if('PA' %in% typeNames){
           wpa <- which(typeNames[inRichness] == 'PA')
-          yy[,inRichness[wpa]] <- yp[,inRichness[wpa]] #######
+          yy[,inRichness[wpa]] <- round(yp[,inRichness[wpa]]) #######
         }
         
         if(length(notPA) > 0){
@@ -9211,7 +9221,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   if(FULL)bk <- append( bk, list(ychains = ygibbs) )
   bk
 }
- 
+  
 .updateBetaTime <- function(X, Y, sig, rows, pattern, lo=NULL, hi=NULL){
   
   SS <- ncol(Y)

@@ -3936,9 +3936,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   }
   
   jj <- sample(burnin:ng,nsim,replace=T)
-  
-  fmat <- matrix(0,nsim,(Q-1))
-  i <- 1
+  i  <- 1
   
   for(j in jj){
     
@@ -3962,6 +3960,10 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
                           sinv = si[notOther,notOther],
                           stand = standMat, factorObject=factorBeta,
                           conditional = group)
+    if(i == 1){
+      fmat <- matrix(0,nsim,ncol(tmp$sens))
+    }
+      
     fmat[i,] <- diag(tmp$sens)
     i <- i + 1
   }
@@ -4769,7 +4771,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       sgibbs[g,]          <- as.vector(otherpar$Z)
       sigErrGibbs[g]      <- sigmaerror
       
-      if(!is.null(corCols)){
+      if(length(corCols) > 0){
         if(max(diag(sg)[corCols]) > 5){  #overfitting covariance
           stop(
             paste('\noverfitted covariance, reductList$N = ',N, 
@@ -7336,7 +7338,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   ord  <- order( colMeans(xx) )
   ylim <- c(min(xx),1.5*quantile(xx,.95))
   tmp <- .boxplotQuant( xx[,ord, drop=F], xaxt='n',outline=F, 
-                        border=tcol[ord],whiskcol=tcol[ord],
+                        border=tcol[ord], whiskcol=tcol[ord],
                         boxfill=.getColor(tcol[ord],.4), 
                         pars = list(boxwex = 0.5, ylim=ylim), lty=1, log='y')
   mtext('Predictors in X',side=1,line=1)

@@ -12,7 +12,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-##version 2.2.4
+##version 2.2.5
 
 
 ```{r outform, echo=F}

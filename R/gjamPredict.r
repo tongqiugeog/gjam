@@ -1,6 +1,6 @@
 
 
-gjamPredict <- function(output, newdata = NULL, y2plot = NULL, ylim=NULL,
+gjamPredict <- function(output, newdata = NULL, y2plot = NULL, ylim = NULL,
                         FULL = FALSE){
   
   # output   - gjamGibbs object

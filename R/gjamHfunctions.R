@@ -3611,7 +3611,7 @@
   if(npar/n > ratio){
     N <- ceiling( ( ratio*n - Q )/5 )
     if(N > 25)N <- 25
-    if(N < 2)N  <- 2
+    if(N < 4)N  <- 4
     r <- ceiling( N/2 )
   }
   
@@ -4437,26 +4437,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   rownames(sg)  <- colnames(sg) <- colnames(bg) <- snames
   colnames(x)   <- xnames
   
-  ############  traits
-  if(length(specByTrait) > 0){
-    specTrait <- specByTrait[colnames(y),]
-    tnames    <- colnames(specTrait)
-    M         <- ncol(specTrait)
-    specTrait <- t(specTrait)
-    
-    missTrait <- which(is.na(specTrait),arr.ind=T)
-    if(length(missTrait) > 0){
-      traitMeans <- rowMeans(specTrait,na.rm=T)
-      specTrait[missTrait] <- traitMeans[missTrait[,2]]
-      warning( paste('no. missing trait values:',nrow(missTrait)) )
-    }
-      
-    agibbs <- matrix(0,ng,M*Q)
-    mgibbs <- matrix(0,ng,M*M)
-    tpred  <- tpred2 <- matrix(0,n,M)
-    colnames(agibbs) <- .multivarChainNames(xnames,tnames)
-    colnames(mgibbs) <- .multivarChainNames(tnames,tnames)
-  }
+ 
   
   ############ ordinal data
   
@@ -4669,17 +4650,43 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   ############ gibbs chains
   
   q2 <- length(fnames)
-  fgibbs <- matrix(0,ng,q2)
-  colnames(fgibbs) <- fnames
+  fSensGibbs <- matrix(0,ng,q2)
+  colnames(fSensGibbs) <- fnames
   
-  fbgibbs <- matrix(0,ng,q2*SO)
-  colnames(fbgibbs) <- .multivarChainNames(fnames,snames[notOther])
+  bFacGibbs <- matrix(0,ng,q2*SO)
+  colnames(bFacGibbs) <- .multivarChainNames(fnames,snames[notOther])
   
   bgibbs <- matrix(0,ng,S*Q)
   colnames(bgibbs) <- .multivarChainNames(xnames,snames)
   bgibbsUn <- bgibbs                   # unstandardized
   
   covE <- cov( x%*%factorBeta$dCont )  # note that x is standardized
+  
+  if(TRAITS){
+    
+    specTrait <- specByTrait[colnames(y),]
+    tnames    <- colnames(specTrait)
+    M         <- ncol(specTrait)
+    specTrait <- t(specTrait)
+    
+    tpred  <- tpred2 <- matrix(0,n,M)
+    
+    missTrait <- which(is.na(specTrait),arr.ind=T)
+    if(length(missTrait) > 0){
+      traitMeans <- rowMeans(specTrait,na.rm=T)
+      specTrait[missTrait] <- traitMeans[missTrait[,2]]
+      warning( paste('no. missing trait values:',nrow(missTrait)) )
+    }
+    
+    bTraitGibbs <- matrix(0,ng,M*Q)
+    colnames(bTraitGibbs) <- .multivarChainNames(xnames,tnames)
+    
+    bTraitFacGibbs <- matrix(0,ng,q2*M)
+    colnames(bTraitFacGibbs) <- .multivarChainNames(fnames,tnames)
+    
+    mgibbs <- matrix(0,ng,M*M)
+    colnames(mgibbs) <- .multivarChainNames(tnames,tnames)
+  }
 
   if(TIME){
     
@@ -5117,29 +5124,23 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     
     setTxtProgressBar(pbar,g)
     
-    bgs <- bg                    # unstandardize beta
+    bgu <- bg                    # unstandardize beta
     if(length(standRows) > 0){
       if(TIME){
-        bgs <- S2U%*%mub
+        bgu <- S2U%*%mub
         lambda[ gindex[,c('rowG','colW')]] <- Lmat[wL]
         lambdas <- S2UL%*%mug      # unstandardized lambda
         lgibbs[g,] <- lambdas
       }else{
-         bgs <- S2U%*%x%*%bg
+         bgu <- S2U%*%x%*%bg
       }
     }
     
-    bgibbsUn[g,]   <- bgs        # unstandardized
-    bgibbs[g,] <- bg             # standardized
- 
-    if(TRAITS){
-      Atrait <- bgs%*%t(specTrait[,colnames(yp)])
-      Strait <- specTrait[,colnames(yp)]%*%sg%*%t(specTrait[,colnames(yp)])
-      agibbs[g,] <- Atrait
-      mgibbs[g,] <- Strait
-    }
+    bgibbsUn[g,] <- bgu          # unstandardized
+    bgibbs[g,]   <- bg           # standardized
     
-    # Fmatrix, bg is standardized by x, bgs is unstandardized
+    # Fmatrix centered for factors, 
+    # bg is standardized by x, bgu is unstandardized
     
     tmp <- .contrastCoeff(beta=bg[,notOther], 
                           notStand = notStandard[notStandard %in% xnames], 
@@ -5149,8 +5150,24 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     beg   <- tmp$eg
     fsens <- tmp$sens
     
-    fgibbs[g,]  <- sqrt(diag(fsens))
-    fbgibbs[g,] <- agg
+    fSensGibbs[g,]  <- sqrt(diag(fsens))
+    bFacGibbs[g,] <- agg       # stand for X and W, centered for factors
+    
+    if(TRAITS){
+      Atrait <- bg%*%t(specTrait[,colnames(yp)])  # standardized
+      Strait <- specTrait[,colnames(yp)]%*%sg%*%t(specTrait[,colnames(yp)])
+      bTraitGibbs[g,] <- Atrait
+      mgibbs[g,] <- Strait
+      
+      minv <- ginv(Strait)
+      
+      tmp <- .contrastCoeff(beta=Atrait, 
+                            notStand = notStandard[notStandard %in% xnames], 
+                            sigma = Strait, sinv = minv,
+                            stand = standMat, factorObject=factorBeta )
+      tagg   <- tmp$ag
+      bTraitFacGibbs[g,] <- tagg # stand for X and W, centered for factors
+    }
     
     if(TIME){
       
@@ -5385,30 +5402,20 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     asensSd <- apply(asensGibbs[burnin:ng,],2,sd)
   }
   
-  betaMu <- colMeans(bgibbs[burnin:ng,])    #standardized
-  betaSe <- apply(bgibbs[burnin:ng,],2,sd)
-  betaMu <- matrix(betaMu,Q,S)
-  betaSe <- matrix(betaSe,Q,S)
-  colnames(betaMu) <- colnames(betaSe) <- snames
-  rownames(betaMu) <- rownames(betaSe) <- xnames
+  tmp <- .chain2tab(bgibbs[burnin:ng,], snames, xnames)
+  betaStandXmu <- tmp$mu
+  betaStandXTable <- tmp$tab
   
-  betaMuUn <- colMeans(bgibbsUn[burnin:ng,])    #unstandardized
-  betaSeUn <- apply(bgibbsUn[burnin:ng,],2,sd)
-  betaMuUn <- matrix(betaMuUn,Q,S)
-  betaSeUn <- matrix(betaSeUn,Q,S)
-  colnames(betaMuUn) <- colnames(betaSeUn) <- snames
-  rownames(betaMuUn) <- rownames(betaSeUn) <- xnames
+  tmp <- .chain2tab(bgibbsUn[burnin:ng,], snames, xnames)
+  betaMu <- tmp$mu
+  betaTable <- tmp$tab
   
-  fBetaMu <- colMeans(fbgibbs[burnin:ng,])
-  fBetaMu <- matrix(fBetaMu,q2,SO)
-  fBetaSd <- apply(fbgibbs[burnin:ng,],2,sd)
-  fBetaSd <- matrix(fBetaSd,q2,SO)
+  tmp <- .chain2tab(bFacGibbs[burnin:ng,], snames[notOther], rownames(agg))
+  betaStandXWmu <- tmp$mu
+  betaStandXWTable <- tmp$tab
   
-  fMu <- colMeans(fgibbs[burnin:ng,,drop=F])
-  fSe <- apply(fgibbs,2,sd)
-  
-  rownames(fBetaMu) <- rownames(fBetaSd) <- names(fMu)
-  colnames(fBetaMu) <- colnames(fBetaSd) <- snames[notOther]
+  tmp <- .chain2tab(fSensGibbs[burnin:ng,])
+  sensTable <- tmp$tab[,1:4]
   
   yMu <- ypred/ntot
   y22 <- ypred2/ntot - yMu^2
@@ -5431,7 +5438,6 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   
   tmp <- .dMVN(wMu[,notOther],x%*%betaMu[,notOther],
                      sMean[notOther,notOther], log=T)
-
   pd  <- meanDev - 2*sum(tmp )
   DIC <- pd + meanDev
   
@@ -5503,7 +5509,6 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       
       tmp <- .dMVN(wMu[,notOther],muw[,notOther],
                          sMean[notOther,notOther], log=T )
-      
       pd  <- meanDev - 2*sum(tmp )
       DIC <- pd + meanDev
     }
@@ -5553,17 +5558,17 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       tMuOrd <- tMuOrd[,wo]
     }
     
-    tmp <- .processPars(agibbs)$summary
-    btMu <- matrix(tmp[,'estimate'], Q, M)
-    btSe <- matrix(tmp[,'se'], Q, M)
+    tmp <- .chain2tab(bTraitGibbs[burnin:ng,], tnames, xnames) #standardized
+    betaTraitXMu <- tmp$mu
+    betaTraitXTable <- tmp$tab
     
-    tmp <- .processPars(mgibbs)$summary
-    stMu <- matrix(tmp[,'estimate'],M,M)
-    stSe <- matrix(tmp[,'se'],M,M)
+    tmp <- .chain2tab(mgibbs[burnin:ng,], tnames, tnames) 
+    varTraitMu <- tmp$mu
+    varTraitTable <- tmp$tab
     
-    rownames(btMu) <- rownames(btSe) <- colnames(x)
-    colnames(btMu) <- colnames(btSe) <- rownames(stMu) <- colnames(stMu) <- 
-      rownames(stSe) <- colnames(stSe) <- tnames
+    tmp <- .chain2tab(bTraitFacGibbs[burnin:ng,], tnames, rownames(tagg) )
+    betaTraitXWmu <- tmp$mu
+    betaTraitXWTable <- tmp$tab
   }
   
   if('OC' %in% typeNames){
@@ -5610,17 +5615,20 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
                  linFactor = linFactor, intMat = intMat, RANDOM = RANDOM)
   missing <- list(xmiss = xmiss, xmissMu = xmissMu, xmissSe = xmissSe, 
                   ymiss = ymiss, ymissMu = ymissPred, ymissSe = ymissPred2)
-  parameters <- list(fMu = fMu, fSe = fSe, betaMu = betaMu, betaSe = betaSe, 
-                     betaMuUn = betaMuUn, betaSeUn = betaSeUn,
-                     corMu = corMu, corSe = corSe, fBetaMu = fBetaMu, 
-                     fBetaSd = fBetaSd, sigMu = sigMu, sigSe = sigSe, 
+  parameters <- list(betaMu = betaMu, betaTable = betaTable, 
+                     betaStandXmu = betaStandXmu, 
+                     betaStandXTable = betaStandXTable,
+                     betaStandXWmu =  betaStandXWmu,
+                     betaStandXWTable = betaStandXWTable,
+                     corMu = corMu, corSe = corSe, 
+                     sigMu = sigMu, sigSe = sigSe, 
                      ematrix = ematrix, fmatrix = fmatrix,
                      whichZero = whichZero, whConZero = whConZero,
-                     wMu = wMu, wSd = wSd)
+                     wMu = wMu, wSd = wSd, sensTable = sensTable)
   prediction <- list(presence = presence, xpredMu = xpredMu, xpredSd = xpredSd,
                      ypredMu = yMu, ypredSd = ySd, richness = richness)
   chains <- list(sgibbs = sgibbs, bgibbs = bgibbs, bgibbsUn = bgibbsUn,
-                 fgibbs = fgibbs, fbgibbs = fbgibbs) 
+                 fSensGibbs = fSensGibbs, bFacGibbs = bFacGibbs) 
   fit <- list(DIC = DIC, yscore = yscore, 
               xscore = xscore, rmspeAll = rmspeAll,
               rmspeBySpec = rmspeBySpec)
@@ -5645,12 +5653,19 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     chains <- c(chains,list(cgibbs = cgibbs))
     modelList <- c(modelList,list(yordNames = yordNames))
   }
+  
   if(TRAITS){
     parameters <- c(parameters,
-                    list(betaTraitMu = btMu, betaTraitSe = btSe, 
-                         sigmaTraitMu = stMu, sigmaTraitSe = stSe))
-    prediction <- c(prediction, list(tMuOrd = tMuOrd,tMu = tMu,tSe = tSd))
-    chains <- append( chains,list(agibbs = agibbs,mgibbs = mgibbs) ) 
+                    list(betaTraitXMu = betaTraitXMu, 
+                         betaTraitXTable = betaTraitXTable,
+                         varTraitMu = varTraitMu, 
+                         varTraitTable = varTraitTable,
+                         betaTraitXWmu = betaTraitXWmu,
+                         betaTraitXWTable = betaTraitXWTable))
+    prediction <- c(prediction, list(tMuOrd = tMuOrd, tMu = tMu, tSe = tSd))
+    chains <- append( chains,list(bTraitGibbs = bTraitGibbs,
+                                  bTraitFacGibbs = bTraitFacGibbs,
+                                  mgibbs = mgibbs) ) 
   }
   if(TIME){
     inputs <- c(inputs, list(xtime = xtime, timeZero = timeZero,
@@ -5689,14 +5704,16 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
 .contrastCoeff <- function(beta, sigma, sinv, notStand, stand, factorObject,
                            conditional=NULL){ 
    
-  if(!is.null(notStand)){
-    beta[notStand,] <- beta[notStand,]*stand[notStand,]
-  }
+ # if(!is.null(notStand)){
+ #   beta[notStand,] <- beta[notStand,]*stand[notStand,]
+ # }
   SO  <- ncol(beta)
-  agg <- .sqrtRootMatrix(beta,sigma,DIVIDE=T)  #cor-stand scale
   
-  if(factorObject$nfact > 0){          
-    agg <- factorObject$lCont%*%agg    # standardized x, cor scale for y
+  
+  agg <- .sqrtRootMatrix(beta,sigma,DIVIDE=T)  #cor/stand scale
+  
+  if(factorObject$nfact > 0){          # center factors
+    agg <- factorObject$lCont%*%agg    # standardized x, cor scale for w
     for(k in 1:factorObject$nfact){
       f2  <- factorObject$facList2[[k]]
       fk  <- paste(names(factorObject$facList2)[k],f2,sep='')
@@ -5726,9 +5743,41 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   list(ag = agg, eg = egg, sens = sens)
 }
 
+
+.chain2tab <- function(chain, snames = NULL, xnames = NULL){
+  
+  mu <- colMeans(chain)  
+  SE <- apply(chain,2,sd)
+  CI <- apply(chain,2,quantile,c(.025,.975))
+  splus <- rep('', length=length(SE))
+  splus[CI[1,] > 0 | CI[2,] < 0] <- '*'
+  
+  tab <- cbind( mu, SE, t(CI))
+  tab <- signif(tab, 3)
+  colnames(tab) <- c('Estimate','SE','CI_025','CI_975')
+  tab <- as.data.frame(tab)
+  tab$sig95 <- splus
+  attr(tab, 'note') <- '* indicates that zero is outside the 95% CI'
+  
+  if(!is.null(snames)){
+    Q <- length(xnames)
+    S <- length(snames)
+    
+    mu <- matrix(mu,Q,S)
+    colnames(mu) <- snames
+    rownames(mu) <- xnames 
+    mu <- signif(mu, 3)
+  }
+  
+  list(mu = mu, tab = tab)
+}
+
+
 summary.gjam <- function(object,...){ 
   
-  beta   <- object$parameters$betaMu
+  TRAITS <- F
+  
+  beta   <- object$parameters$betaMu # not standardized
   rb <- rownames(beta)
   cb <- colnames(beta)
   S  <- ncol(beta)
@@ -5736,10 +5785,13 @@ summary.gjam <- function(object,...){
   n  <- nrow(object$inputs$y)
   notOther <- object$inputs$notOther
   other    <- object$inputs$other
- 
-  Sensitivity <- object$parameters$fMu
-  StdErr      <- object$parameters$fSe
-  sens <- data.frame(Sensitivity, StdErr)
+  
+  ng <- object$modelList$ng
+  burnin <- object$modelList$burnin
+  
+  if("betaTraitTable" %in% names(object$parameters))TRAITS <- T
+  
+  sens <- .chain2tab(object$chains$fSensGibbs[burnin:ng,])$tab[,1:4]
   
   RMSPE       <- object$fit$rmspeBySpec
   imputed <- rep(0,S)
@@ -5754,43 +5806,53 @@ summary.gjam <- function(object,...){
   }
   
   RMSPE <- RMSPE[notOther]
-  imputedY <- imputed[notOther]
-  bb   <- signif(rbind(beta[,notOther], RMSPE, imputedY),3)
-  imputedX <- c(missingx,NA,NA)
-  bb <- cbind(bb,imputedX)
+#  imputedY <- imputed[notOther]
+  bb   <- t( signif(rbind(beta[,notOther], RMSPE),3) )
+ # imputedX <- c(missingx,NA,NA)
+ # bb <- cbind(bb,imputedX)
   
-  cc <- as.vector( signif(beta[,notOther], 3) )
-  ss <- object$parameters$betaSe[,notOther]
-  ss <- as.vector( signif(ss, 3) )
-  rr <- as.vector( t(outer(cb[notOther],rb,paste,sep='_')) )
-  TAB <- data.frame(Estimate = cc, StdErr = ss)
-  rownames(TAB) <- rr
+ # cc <- as.vector( signif(beta[,notOther], 3) )
+ # ss <- object$parameters$betaSe[,notOther]
+ # ss <- as.vector( signif(ss, 3) )
+ # rr <- as.vector( t(outer(cb[notOther],rb,paste,sep='_')) )
+ # TAB <- data.frame(Estimate = cc, StdErr = ss)
+ # rownames(TAB) <- rr
   
-  qb <- t( apply(object$chains$bgibbsUn,2,quantile,c(.025,.975)) )
-  mq <- match(rr,rownames(qb))
-  ci <- signif(qb[mq,],3)
-  TAB <- cbind(TAB,ci)
+ # qb <- t( apply(object$chains$bgibbsUn,2,quantile,c(.025,.975)) )
+ # mq <- match(rr,rownames(qb))
+ # ci <- signif(qb[mq,],3)
+ # TAB <- cbind(TAB,ci)
   
   cat("\nSensitivity by predictor variables f:\n")
-  print( signif(sens, 3) )
+  print( sens )
   
   cat("\nCoefficient matrix B:\n")
-  print(bb)
+  print( t(bb) )
   
-  cat("\nCoefficient matrix B with SEs:\n")
+  cat("\nCoefficient matrix B:\n")
+  print(object$parameters$betaTable)
+  cat("\nLast column indicates if 95% posterior distribution contains zero.\n")
   
-  bp <- which(TAB[,3] > 0)
-  bm <- which(TAB[,4] < 0)
+  cat("\nCoefficient matrix B, standardized for X:\n")
+  print(object$parameters$betaStandXtable)
+  cat("\nLast column indicates if 95% posterior distribution contains zero.\n")
   
-  Signif <- rep(' ',nrow(TAB))
-  Signif[bp] <- '+'
-  Signif[bm] <- '-'
- 
-  TAB <- data.frame(TAB,Signif)
-  names(TAB)[3:4] <- c('0.025','0.975')
+  cat("\nCoefficient matrix B, standardized for X and W:\n")
+  print(object$parameters$betaStandXWtable)
+  cat("\nLast column indicates if 95% posterior distribution contains zero.\n")
   
-  print(TAB)
-  cat("Last column indicates if 95% posterior distribution contains zero.\n")
+  
+  if(TRAITS){
+    cat("\nCoefficient matrix for traits:\n")
+    print(object$parameters$betaTraitTable)
+    cat("\nLast column indicates if 95% posterior distribution contains zero.\n")
+    
+    cat("\nCoefficient matrix for traits, standardized for X and W:\n")
+    print(object$parameters$betaTraitXWTable)
+    cat("\nLast column indicates if 95% posterior distribution contains zero.\n")
+    
+  }
+  
   
   if( length(object$modelSummary$missFacSpec) > 0 ){
     cat("\nMissing factor combinations:\n")
@@ -5805,7 +5867,7 @@ summary.gjam <- function(object,...){
   cat("\n",words)
     
   res <- list(DIC=object$fit$DIC, sensitivity = sens, 
-              Coefficients=TAB, beta = beta)
+              Coefficients=bb)
   class(res) <- "summary.gjam"
   invisible(res) 
 }
@@ -5887,20 +5949,7 @@ summary.gjam <- function(object,...){
 
 print.gjam <- function(x, ...){
   
-  cat("Call:\n")
-  print(x$call)
-  
-  cat("\nDIC:\n")
-  print( round(x$fit$DIC,0) )
-
-  cat("\nCoefficients:\n")
-  print( signif(x$parameters$betaMuUn, 3) )
-  
-  cat("\nStandard errors:\n")
-  print( signif(x$parameters$betaSeUn, 3) )
-  
-  words <- .summaryWords(x)
-  cat("\n",words)
+  summary.gjam(x)
   
 }
 
@@ -6128,7 +6177,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   kgibbs <- NULL
   chains <- inputs <- parameters <- prediction <- reductList  <- 
     bgibbs <- sgibbs <- sigErrGibbs <- factorBeta <- gsens <- 
-    fbgibbs <- alphaGibbs <- times <- alphaMu <- lambdaMu <-  
+    bFacGibbs <- alphaGibbs <- times <- alphaMu <- lambdaMu <-  
     factorLambda <- lambdaMuUn <- notOther <- other <- xtime <- NULL
   holdoutN <- 0
   
@@ -7145,7 +7194,9 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         if( !typeNames[wk[1]] %in% c('PA','CAT') ){
           ncc   <- max( c(100,max(y1)/20) )
           if(bins[1] > min(y1))bins <- c(min(y1),bins)
-          if(max(bins) > max(y1))bins[length(bins)] <- max(y1)
+          ymm <- max(y1) + diff(range(y1,na.rm=T))*.01
+          bins <- c(bins[bins < ymm], ymm) 
+          
           xy <- .gjamBaselineHist(y1,bins=bins,nclass=ncc)
           xy[2,] <- ylimit[1] + .8*xy[2,]*diff(ylimit)/max(xy[2,])
           
@@ -7186,7 +7237,6 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         } 
         
         fill <- .getColor('blue',.3)
-        
         
         opt <- list(log=F, xlabel='Observed', bins = bins,
                     nbin=nbin, ylabel='Predicted', col='darkblue', 
@@ -7297,27 +7347,27 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   ##############sensitivity 
   
   nfact <- factorBeta$nfact
-  if(!is.matrix(fgibbs)){
-    fgibbs <- matrix(fgibbs)
-    colnames(fgibbs) <- xnames[-1]
+  if(!is.matrix(fSensGibbs)){
+    fSensGibbs <- matrix(fSensGibbs)
+    colnames(fSensGibbs) <- xnames[-1]
   }
   
-  wc <- c(1:ncol(fgibbs))
-  wx <- grep(':',colnames(fgibbs))
-  wx <- c(wx, grep('^2',colnames(fgibbs), fixed=T) )
+  wc <- c(1:ncol(fSensGibbs))
+  wx <- grep(':',colnames(fSensGibbs))
+  wx <- c(wx, grep('^2',colnames(fSensGibbs), fixed=T) )
   if(length(wx) > 0)wc <- wc[-wx]
   
-  wx <- grep('intercept',colnames(fgibbs))
+  wx <- grep('intercept',colnames(fSensGibbs))
   if(length(wx) > 0)wc <- wc[-wx]
-  wc <- c(1:ncol(fgibbs))
+  wc <- c(1:ncol(fSensGibbs))
   
-  tmp <- apply(fgibbs,2,range)
+  tmp <- apply(fSensGibbs,2,range)
   wx <- which(tmp[1,] == tmp[2,])
   if(length(wx) > 0)wc <- wc[-wx]
   
   if(SAVEPLOTS)pdf( file=.outFile(outFolder,'sensitivity.pdf') ) # start plot
   
-  xx   <- fgibbs[,wc,drop=F]
+  xx   <- fSensGibbs[,wc,drop=F]
   tcol <- rep('black',ncol(xx))
   names(tcol) <- colnames(xx)
   
@@ -7429,30 +7479,35 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   
   ######################  coefficient summary tables ############
   
-  bTab   <- .getSigTable(bgibbs,S, Q, xnames, snames) 
   
-  q1    <- nrow(factorBeta$eCont)
-  fnames <- rownames(factorBeta$eCont)
-  bfTab <- .getSigTable(fbgibbs,SO, q1, fnames, 
-                        colnames(parameters$fBetaMu)) 
   
-  bfCoeffTable <- .processPars(fbgibbs,sigOnly=SIGONLY)$summary
-  sigFbeta     <- rownames(bfCoeffTable)
+ # bTab   <- .getSigTable(bgibbs,S, Q, xnames, snames) 
   
-  bfSig <- fbgibbs[,sigFbeta]
+ # q1    <- nrow(factorBeta$eCont)
+ # fnames <- rownames(factorBeta$eCont)
+ # bfTab <- .getSigTable(bFacGibbs,SO, q1, fnames, 
+ #                       colnames(parameters$fBetaMu)) 
   
-  bCoeffTable <- .processPars(bgibbs[,keepBC],sigOnly=SIGONLY)$summary
-  sigBeta     <- rownames(bCoeffTable)
-  bCoeffTable <- .processPars(bgibbs[,keepBC],sigOnly=F)$summary
+ # bfCoeffTable <- .processPars(bFacGibbs,sigOnly=SIGONLY)$summary
+ # sigFbeta     <- rownames(bfCoeffTable)
   
-  if(length(sigBeta) == 0)sigBeta <- c(1:ncol(bgibbs))
+ # bfSig <- bFacGibbs[,sigFbeta]
   
-  scaleNote <- 'W/X scale'
+ # bCoeffTable <- .processPars(bgibbs[,keepBC],sigOnly=SIGONLY)$summary
+ # sigBeta     <- rownames(bCoeffTable)
+ # bCoeffTable <- .processPars(bgibbs[,keepBC],sigOnly=F)$summary
   
-  betaSig <- bgibbs[,sigBeta]
+ # if(length(sigBeta) == 0)sigBeta <- c(1:ncol(bgibbs))
   
-  summaryCoeffs <- list(betaSig = bTab, fBetaSig = bfTab, 
-                        betaCoeff = bCoeffTable, fBetaCoeff = bfCoeffTable)
+ # scaleNote <- 'W/X scale'
+  
+ # betaSig <- bgibbs[,sigBeta]
+  
+ # summaryCoeffs <- list(betaSig = bTab, fBetaSig = bfTab, 
+ #                       betaCoeff = bCoeffTable, fBetaCoeff = bfCoeffTable)
+  ##################################333333333
+  
+  
   
   tmp <- .splitNames(colnames(bgibbs),snames=colnames(y))
   vnames <- unique(tmp$vnam)
@@ -7712,7 +7767,11 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     
     ############################### beta posteriors as boxes
     
-    fnames <- names( parameters$fMu )
+    fMu <- parameters$betaStandXWtable
+ #   fMu <- parameters$betaStandXWmu
+    
+    sigFbeta <- rownames(fMu)[fMu$sig95 == '*']
+    bfSig <- bFacGibbs[,sigFbeta]
     
     if(length(bfSig) > 0){
       
@@ -7725,6 +7784,8 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       xpNames <- .replaceString(xpNames,')','')
       xpNames <- .replaceString(xpNames,'^2','2')
       xpNames <- .replaceString(xpNames,'*','TIMES')
+      
+      fnames <- unique( xnam )
       
       brange <- apply(bfSig,2,range)
       
@@ -7744,7 +7805,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         
         
         if(!SAVEPLOTS){
-          readline('95% posterior -- return to continue ')
+          readline('standardized for W/X, 95% posterior -- return to continue ')
         } else {
           dev.off()
         }
@@ -7860,7 +7921,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       
       M  <- nrow(specByTrait)
       nc     <- 0
-      vnam   <- .splitNames(colnames(chains$agibbs))$vnam
+      vnam   <- .splitNames(colnames(chains$bTraitFacGibbs))$vnam
       mnames <- colnames(specByTrait)
       
       if( length(is.finite(match(mnames,vnam[,1]))) > 0 )nc <- 2
@@ -7875,7 +7936,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       tboxCol <- .getColor(traitColor,.4)
       
       traitSd <- apply(plotByTrait,2,sd,na.rm=T)
-      traitSd <- matrix(traitSd,nrow(chains$agibbs),length(traitSd),byrow=T)
+      traitSd <- matrix(traitSd,nrow(chains$bTraitGibbs),length(traitSd),byrow=T)
       
       for(j in 2:length(xnames)){
         
@@ -7888,7 +7949,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         
         if(length(wc) > 100)wc <- sample(wc,100)
         
-        mat <- chains$agibbs[,wc]*xSd[j]/traitSd
+        mat <- chains$bTraitGibbs[,wc]*xSd[j]/traitSd
         vn  <- .splitNames(colnames(mat))$vnam[,1]
         
         .myBoxPlot( mat, tnam = vn, snames = mnames,
@@ -7897,7 +7958,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         .plotLabel(xnames[j],location='bottomright')  
         
         if(!SAVEPLOTS){
-          readline('95% posterior -- return to continue ')
+          readline('traits, standardized for X/W, 95% posterior -- return to continue ')
         } else {
           dev.off()
         }
@@ -7940,7 +8001,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       clusterOrder <- clusterDat$corder
     }
     
-    invisible( return( list(summaryCoeffs = summaryCoeffs, fit = fit, 
+    invisible( return( list(fit = fit, 
                             ematrix = ematrix, clusterIndex = clusterIndex, 
                             clusterOrder = clusterOrder) ) )
   }
@@ -8002,11 +8063,11 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   ename <- rep( character(0), max(etab) )
   
   egroup <- clusterIndex[,'E']
-  bTab   <- cbind(egroup,bTab[notOther,])
-  summaryCoeffs$betaSig <- bTab
+ # bTab   <- cbind(egroup,bTab[notOther,])
+ # summaryCoeffs$betaSig <- bTab
   
-  bfTab <- cbind(egroup, bfTab[notOther,])
-  summaryCoeffs$fBetaSig <- bfTab
+ # bfTab <- cbind(egroup, bfTab[notOther,])
+ # summaryCoeffs$fBetaSig <- bfTab
   
   for(j in 1:ncluster){
     
@@ -8222,7 +8283,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     main1 <- expression( paste('Sensitivity ',hat(F)))
     main2 <- expression( paste('Responses ',hat(B)))
     
-    fBetaMu <- output$parameters$fBetaMu
+    fBetaMu <- output$parameters$betaStandXWmu
     
     ws <- which( rowSums(fMat) == 0)
     if(length(ws) > 0){
@@ -8324,14 +8385,15 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   }
   
   #################### beta grid
-  if(BETAGRID & nrow(parameters$fBetaMu) > 2){
+  if(BETAGRID & nrow(fBetaMu) > 2){
     
     graphics.off()
     
     if(SAVEPLOTS)pdf( file=.outFile(outFolder,'clusterGridB.pdf') ) # start plot
     
     mat1 <- ematrix[notOther,notOther]
-    mat2 <- t(parameters$fBetaMu)
+ #   mat2 <- t(betaStandXWmu[,notOther])
+    mat2 <- t(output$parameters$betaStandXWmu)
     main1 <- expression(paste('Species ',hat(E)))
     main2 <- expression(paste(hat(B),' by predictor'))
     topLab1 <- F
@@ -8386,7 +8448,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       }
     }
       
-      
+    
     ###################### Time grid
     if(TIME){
       
@@ -8452,48 +8514,50 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         dev.off()
       }
     }
-  
-     if(TRAITS){
-
-       bb <- betaTraitMu[-1,]
-       ord <- order(colSums(abs(bb)),decreasing=T)
-       bb  <- bb[,ord]
-       bl  <- bb[,ord]
-       bh  <- bb[,ord]
-       ror <- order(rowSums(abs(bb)),decreasing=T)
-       bb  <- bb[ror,]
-       bl  <- bl[ror,]
-       bh  <- bh[ror,]
-       
-       white <- which(bl < 0 & bh > 0,arr.ind=T)
-       
-       makeColor <- list('white' = white )
-       
-       if(SAVEPLOTS)pdf( file=.outFile(outFolder,'gridTraitB.pdf') ) 
-       
-       plotScale <- max(c(10,c(S,Q)/10))
-       
-       par(mfrow=c(1,1), bty='n', oma=c(1,1,1,1), 
-           mar=c(5,4,4,2), tcl= tcl, mgp=mgp)
-       
-       ht <- nrow(bb)/ncol(bb)*width
-       
-       opt <- list(mainLeft='', main1='', main2 = '',
-                   topClus1=T, topClus2=T, topLab1 = T, topLab2=F,
-                   leftClus=T, 
-                   leftLab=T, ncluster = ncluster,
-                   colCode1 = traitColor)
-       .clusterWithGrid(mat1=betaTraitMu[-1,], mat2=NULL, expand=1, opt)
-       
-       if(!SAVEPLOTS){
-         readline('trait beta -- return to continue ')
-       } else {
-         dev.off()
-       }
-     }
+    
+    if(TRAITS){
+      if(nrow(betaTraitMu) > 3){
+        
+        bb <- betaTraitMu[-1,]
+        ord <- order(colSums(abs(bb)),decreasing=T)
+        bb  <- bb[,ord]
+        bl  <- bb[,ord]
+        bh  <- bb[,ord]
+        ror <- order(rowSums(abs(bb)),decreasing=T)
+        bb  <- bb[ror,]
+        bl  <- bl[ror,]
+        bh  <- bh[ror,]
+        
+        white <- which(bl < 0 & bh > 0,arr.ind=T)
+        
+        makeColor <- list('white' = white )
+        
+        if(SAVEPLOTS)pdf( file=.outFile(outFolder,'gridTraitB.pdf') ) 
+        
+        plotScale <- max(c(10,c(S,Q)/10))
+        
+        par(mfrow=c(1,1), bty='n', oma=c(1,1,1,1), 
+            mar=c(5,4,4,2), tcl= tcl, mgp=mgp)
+        
+        ht <- nrow(bb)/ncol(bb)*width
+        
+        opt <- list(mainLeft='', main1='', main2 = '',
+                    topClus1=T, topClus2=T, topLab1 = T, topLab2=F,
+                    leftClus=T, 
+                    leftLab=T, ncluster = ncluster,
+                    colCode1 = traitColor)
+        .clusterWithGrid(mat1=betaTraitMu[-1,], mat2=NULL, expand=1, opt)
+        
+        if(!SAVEPLOTS){
+          readline('trait beta -- return to continue ')
+        } else {
+          dev.off()
+        }
+      }
+    }
   }
   
-  all <- list(summaryCoeffs = summaryCoeffs, fit = fit, ematrix = ematrix,
+  all <- list(fit = fit, ematrix = ematrix,
               eComs = eComs, ncluster = ncluster,
               clusterIndex = clusterIndex, clusterOrder = clusterOrder,
               eVecs = eVecs, eValues = eValues) 
@@ -11726,7 +11790,8 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
         if(RANDOM)muo <- muo + groupRandEff
         
         if(holdoutN < n){
-          mur <- muo + .sqrtRootMatrix(rndEff,sg,DIVIDE=T)
+          mur <- muo 
+          if(length(rndEff) > 1)mur <- mur + .sqrtRootMatrix(rndEff,sg,DIVIDE=T)
           SC  <- length(corCols)
           
           # includes RE on correlation scale

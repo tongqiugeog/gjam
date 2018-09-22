@@ -136,10 +136,19 @@ bigskip <- function(){
 #  out$inputs$classBySpec
 
 ## ----betaMu, eval=F------------------------------------------------------
-#  signif( out$parameters$betaMuUn, 3 )
+#  out$parameters$betaMu
 
-## ----betaSd, eval=F------------------------------------------------------
-#  signif( out$parameters$betaSeUn, 3 )
+## ----betaAll, eval=F-----------------------------------------------------
+#  out$parameters$betaMu         # S by M coefficient matrix alpha
+#  out$parameters$betaStandXmu   # S by M standardized for X
+#  out$parameters$betaStandXWmu  # (S-F) by M standardized for W/X, centered factors
+#  
+#  out$parameters$betaTable        # SM by stats posterior summary
+#  out$parameters$betaStandXtable  # SM by stats posterior summary
+#  out$parameters$betaStandXWtable # (S-F)M by stats posterior summary
+#  
+#  out$parameters$sigMu         # S by S covariance matrix omega
+#  out$parameters$sigSe         # S by S covariance std errors
 
 ## ----plot CA data, family='', eval = FALSE-------------------------------
 #  f   <- gjamSimData(n = 500, S = 10, typeNames = 'CA')
@@ -219,7 +228,7 @@ x[1:5,]
 #  specColor[ c(grep('acer',specNames),grep('frax',specNames)) ] <- 'darkgreen'
 #  specColor[ c(grep('abie',specNames),grep('pice',specNames)) ] <- 'blue'
 #  
-#  pl   <- list(SMALLPLOTS = F, GRIDPLOTS=T, specColor = specColor)
+#  pl   <- list(GRIDPLOTS=T, specColor = specColor)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----gsens, eval = F-----------------------------------------------------
@@ -237,9 +246,9 @@ x[1:5,]
 #  
 #  nt <- ncol(full)
 #  
-#  boxplot( full, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
+#  boxplot( full, boxwex = 0.2,  at = 1:nt - .15, col='blue', log='y',
 #           ylim = ylim, xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
-#  boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
+#  boxplot( cc, boxwex = 0.2, at = 1:nt + .15, col='forestgreen', add=T,
 #           xaxt = 'n')
 #  axis(1,at=1:nt,labels=colnames(full))
 #  legend('bottomright',c('full response','CC data'),
@@ -253,9 +262,9 @@ x[1:5,]
 #  
 #  nt <- ncol(full)
 #  
-#  boxplot( ca, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
+#  boxplot( ca, boxwex = 0.2,  at = 1:nt - .15, col='blue', log='y',
 #           xaxt = 'n', ylim = ylim, xlab = 'Predictors', ylab='Sensitivity')
-#  boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
+#  boxplot( cc, boxwex = 0.2, at = 1:nt + .15, col='forestgreen', add=T,
 #           xaxt = 'n')
 #  axis(1,at=1:nt,labels=colnames(full))
 #  legend('bottomright',c('CA data','CC data'),
@@ -335,7 +344,7 @@ x[1:5,]
 #  sc  <- rep('grey',ncol(treeYdata))
 #  sc[snames %in% hot] <- 'orange'      # highlight informative priors
 #  sc[snames %in% humid] <- 'blue'
-#  pl  <- list(SMALLPLOTS=F, specColor=sc)
+#  pl  <- list(specColor=sc)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----compData, eval = FALSE----------------------------------------------
@@ -391,7 +400,7 @@ cbind(ml,mx)
 #  f     <- gjamSimData(n=2000, S = length(types), typeNames = types)
 #  ml    <- list(ng = 1500, burnin = 500, typeNames = f$typeNames, PREDICTX = F)
 #  out   <- gjam( f$formula, xdata = f$xdata, ydata = f$ydata, modelList = ml )
-#  pl    <- list(trueValues = f$trueValues, SMALLPLOTS=F, PLOTALLY = T)
+#  pl    <- list(trueValues = f$trueValues, PLOTALLY = T)
 #  gjamPlot(out, plotPars = pl)
 
 ## ----many types, eval = FALSE--------------------------------------------
@@ -403,7 +412,7 @@ cbind(ml,mx)
 #  print(tmp)
 
 ## ----mixed analysis, eval = FALSE----------------------------------------
-#  pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F, GRIDPLOTS = T)
+#  pl  <- list(trueValues = f$trueValues, GRIDPLOTS = T)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----random group, eval = FALSE------------------------------------------
@@ -430,11 +439,11 @@ cbind(ml,mx)
 #  title('holdouts in y'); abline(0,1)
 #  
 #  xmiss <- out$missing$xmiss                              #locations of missing x
-#  xMu   <- out$missing$xmissMu
-#  xSe   <- out$missing$xmissSe
-#  xmean <- apply(f$xdata,2,mean,na.rm=T)[xmiss[,2]]               #column means for missing values
-#  plot(xmean, xMu, xlab='Variable mean', ylab='Missing estimate') #posterior estimates
-#  segments(xmean, xMu - 1.96*xSe, xmean, xMu + 1.96*xSe)          #approx 95% CI
+#  xmissMu   <- out$missing$xmissMu
+#  xmissSe   <- out$missing$xmissSe
+#  xmean <- apply(f$xdata,2,mean,na.rm=T)[xmiss[,2]] #column means for missing values
+#  plot(xmean, xmissMu, xlab='Variable mean', ylab='Missing estimate') #posterior estimates
+#  segments(xmean, xmissMu - 1.96*xmissSe, xmean, xmissMu + 1.96*xmissSe)          #approx 95% CI
 #  title('missing x')
 
 ## ----effortPredict, eval = FALSE-----------------------------------------
@@ -490,9 +499,10 @@ cbind(ml,mx)
 #  ydata <- gjamTrimY(ydata, 10, OTHER=F)$y
 
 ## ----gjamCA, eval=F------------------------------------------------------
-#  rl      <- list(N = 15, r = 15)
+#  rl      <- list(N = 15, r = 10)
 #  ml      <- list(ng = 5000, burnin = 2000, typeNames = 'CA',
 #                  reductList = rl, PREDICTX = F)
+#  formula <- as.formula(~ temp + deficit*moisture)
 #  out <- gjam(formula, xdata, ydata, modelList = ml)
 #  
 #  #prediction
@@ -569,8 +579,7 @@ cbind(ml,mx)
 #  S <- ncol(ydata)
 #  specColor     <- rep('black',S)
 #  specColor[1]  <- 'red'                 # highlight host status
-#  plotPars      <- list(specColor = specColor, GRIDPLOTS=T,
-#                        SMALLPLOTS = F)
+#  plotPars      <- list(specColor = specColor, GRIDPLOTS=T)
 #  fit <- gjamPlot(output, plotPars)
 #  fit$eComs[1:5,]
 
@@ -733,18 +742,21 @@ for(j in 1:length(xbox)){
 #  sc[wf] <- 'darkblue'
 #  sc[wo] <- 'darkgreen'
 #  
-#  pl  <- list(GRIDPLOTS = TRUE, PLOTALLY = T, specColor = sc, SMALLPLOTS = F)
-#  fit <- gjamPlot(output = out, plotPars = pl)
+#  pl  <- list(GRIDPLOTS = TRUE, PLOTALLY = T, specColor = sc)
+#  gjamPlot(output = out, plotPars = pl)
 #  summary(out)
 
 ## ----fit pars, eval = F--------------------------------------------------
-#  out$parameters$betaMuUn      # Q by M coefficient matrix alpha
-#  out$parameters$betaSeUn      # Q by M coefficient std errors
+#  out$parameters$betaMu         # Q by M coefficient matrix alpha
+#  out$parameters$betaStandXmu   # Q by M standardized for X
+#  out$parameters$betaStandXWmu  # (Q-F) by M standardized for W/X, centered factors
+#  
+#  out$parameters$betaTable        # QM by stats posterior summary
+#  out$parameters$betaStandXtable  # QM by stats posterior summary
+#  out$parameters$betaStandXWtable # (Q-F)M by stats posterior summary
+#  
 #  out$parameters$sigMu         # M by M covariance matrix omega
 #  out$parameters$sigSe         # M by M covariance std errors
-
-## ----fitTable, eval = F--------------------------------------------------
-#  fit$summaryCoeffs$betaCoeff[1:5,]      # Q by M coefficient matrix alpha
 
 ## ----IIEx, eval = F------------------------------------------------------
 #  xdrydry <- xwetdry  <- out$inputs$x[1,]
@@ -858,14 +870,16 @@ for(j in 1:length(xbox)){
 #  fit <- gjamPlot(output = out, pl)
 
 ## ----trait pars, eval = F------------------------------------------------
-#  out$parameters$betaTraitMu   # Q by M coefficient matrix alpha
-#  out$parameters$betaTraitSe   # Q by M coefficient std errors
-#  out$parameters$sigmaTraitMu  # M by M covariance matrix omega
-#  out$parametes$sigmaTraitSe  # M by M covariance std errors
+#  out$parameters$betaTraitXMu     # Q by M coefficient matrix alpha, standardized for X
+#  out$parameters$betaTraitXWmu    # Q by M standardized for X/W
+#  out$parameters$betaTraitXTable  # QM by stats posterior summary
+#  out$parameters$betaTraitXWTable # QM by stats summary for X/W
+#  out$parameters$varTraitMu       # M by M trait residual covariance, standardized for X
+#  out$parameters$varTraitTable    # M^2 by stats summary, standardized for X/W
 
 ## ----trait pred, eval = F------------------------------------------------
-#  out$parameters$tMu[1:5,]     # n by M predictive means
-#  out$parameters$tSd[1:5,]     # n by M predictive std errors
+#  out$prediction$tMu[1:5,]     # n by M predictive means
+#  out$prediction$tSe[1:5,]     # n by M predictive std errors
 
 ## ----ecoms, eval = F-----------------------------------------------------
 #  fit$eComs[,1:4]

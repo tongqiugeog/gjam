@@ -12,7 +12,7 @@
 
 <meta name="author" content="James S. Clark" />
 
-<meta name="date" content="2018-08-02" />
+<meta name="date" content="2018-09-22" />
 
 <title>Generalized joint attribute modeling - gjam</title>
 
@@ -70,12 +70,12 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Generalized joint attribute modeling - gjam</h1>
 <h4 class="author"><em><a href="http://sites.nicholas.duke.edu/clarklab/">James S. Clark</a></em></h4>
-<h4 class="date"><em>2018-08-02</em></h4>
+<h4 class="date"><em>2018-09-22</em></h4>
 
 
 <div id="TOC">
 <ul>
-<li><a href="#version-2.2.5">version 2.2.5</a></li>
+<li><a href="#version-2.2.6">version 2.2.6</a></li>
 <li><a href="#overview"><span style="color:darkgreen">overview</span></a><ul>
 <li><a href="#model-summary"><span style="color:teal">model summary</span></a></li>
 <li><a href="#data-types"><span style="color:teal">data types</span></a></li>
@@ -132,8 +132,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </ul>
 </div>
 
-<div id="version-2.2.5" class="section level2">
-<h2>version 2.2.5</h2>
+<div id="version-2.2.6" class="section level2">
+<h2>version 2.2.6</h2>
 <div id="citation" class="section level4">
 <h4>citation:</h4>
 <p><em>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, 87, 34–56.</em></p>
@@ -361,8 +361,8 @@ f &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class=
 <tr class="odd">
 <td align="center"><span class="math inline">\(\tilde{\mathbf{B}}^3_{Q_1 \times S}\)</span></td>
 <td align="center">-</td>
-<td align="center"><code>fBetaMu</code></td>
-<td align="center"><code>fbgibbs</code></td>
+<td align="center"><code>betaStandXmu</code></td>
+<td align="center"><code>bFacGibbs</code></td>
 <td align="left">dimensionless</td>
 </tr>
 <tr class="even">
@@ -383,7 +383,7 @@ f &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class=
 <td align="center"><span class="math inline">\(\mathbf{f}_{Q_1}^4\)</span></td>
 <td align="center">-</td>
 <td align="center"><code>fMu</code></td>
-<td align="center"><code>fgibbs</code></td>
+<td align="center"><code>fSensGibbs</code></td>
 <td align="left">dimensionless</td>
 </tr>
 <tr class="odd">
@@ -439,7 +439,7 @@ f &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class=
 </table>
 <p><span class="math inline">\(^1\)</span> simulated object from <code>gjamSimData</code>.</p>
 <p><span class="math inline">\(^2\)</span> fitted object from <code>gjam</code>.</p>
-<p><span class="math inline">\(^3\)</span> coefficients are <span class="math inline">\((\mathbf{B}_u)\)</span>: unstandardized; <span class="math inline">\((\mathbf{B})\)</span>: standardized for <span class="math inline">\(\mathbf{X}\)</span>; <span class="math inline">\(\tilde{\mathbf{B}}\)</span>: standardized for <span class="math inline">\(\mathbf{X}\)</span>, correlation scale for <span class="math inline">\(\mathbf{Y}\)</span> and factor levels relative to the mean for each factor (see section <em><span style="color:teal">factors in <span class="math inline">\(\mathbf{X}\)</span></em></span>**).</p>
+<p><span class="math inline">\(^3\)</span> coefficients are <span class="math inline">\(\mathbf{B}_u\)</span>: unstandardized; <span class="math inline">\(\mathbf{B}\)</span>: standardized for <span class="math inline">\(\mathbf{X}\)</span>; <span class="math inline">\(\tilde{\mathbf{B}}\)</span>: standardized for <span class="math inline">\(\mathbf{X}\)</span>, correlation scale for <span class="math inline">\(\mathbf{W}\)</span> and factor levels relative to the mean for each factor (see section <em><span style="color:teal">factors in <span class="math inline">\(\mathbf{X}\)</span></em></span>**).</p>
 <p><span class="math inline">\(^4\)</span> sensitivities based on unstandardized <span class="math inline">\(\mathbf{B}\)</span> and covariance scales <span class="math inline">\(\Sigma\)</span>.</p>
 <p><span class="math inline">\(^5\)</span> Only when <code>ydata</code> includes ordinal types <code>&quot;OC&quot;</code>.</p>
 <p><span class="math inline">\(^6\)</span> Only with dimension reduction, <code>reductList</code> is included in <code>modelList</code>.</p>
@@ -458,7 +458,7 @@ h &lt;-<span class="st"> </span><span class="kw">hist</span>(<span class="kw">c<
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">100</span>, <span class="dt">typeNames =</span> f$typeNames)
 out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
 <span class="kw">summary</span>(out)</code></pre></div>
-<p>The <code>print</code> function will print a summary in an different format</p>
+<p>The <code>print</code> function acts like <code>summary</code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(out)</code></pre></div>
 <p>Among the objects to consider initially are the design matrix <code>out$inputs$x</code>, response matrix <code>out$inputs$y</code>, and the MCMC <code>out$chains</code> with these names and sizes:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(out$chains)</code></pre></div>
@@ -469,9 +469,19 @@ out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdat
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$inputs$classBySpec</code></pre></div>
 <p>The first interval is censored (all values of <span class="math inline">\(y_{is}\)</span> = 0). The second interval is not censored (<span class="math inline">\(y_{is} = w_{is}\)</span>).</p>
 <p>The fitted coefficients in <code>$parameters</code>, as summarized in Table 2. For example, here is posterior mean estimate of unstandardized coefficients <span class="math inline">\(\mathbf{B}_u\)</span>,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">signif</span>( out$parameters$betaMuUn, <span class="dv">3</span> )</code></pre></div>
-<p>The <code>Un</code> in the name <code>betaMuUn</code> indicates that it is on the unstandardized units, <span class="math inline">\(W/X\)</span>, where <span class="math inline">\(X\)</span> has the units supplied by the user in <code>xdata</code>. Here are the standard errors,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">signif</span>( out$parameters$betaSeUn, <span class="dv">3</span> )</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaMu</code></pre></div>
+<p>Here are posterior summaries,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaMu         <span class="co"># S by M coefficient matrix alpha</span>
+out$parameters$betaStandXmu   <span class="co"># S by M standardized for X</span>
+out$parameters$betaStandXWmu  <span class="co"># (S-F) by M standardized for W/X, centered factors</span>
+
+out$parameters$betaTable        <span class="co"># SM by stats posterior summary</span>
+out$parameters$betaStandXtable  <span class="co"># SM by stats posterior summary</span>
+out$parameters$betaStandXWtable <span class="co"># (S-F)M by stats posterior summary</span>
+ 
+out$parameters$sigMu         <span class="co"># S by S covariance matrix omega</span>
+out$parameters$sigSe         <span class="co"># S by S covariance std errors</span></code></pre></div>
+<p>```</p>
 <p>Again, check Table 2 for names of all fitted coefficients.</p>
 <p>The data are also predicted in <code>gjam</code>, summarized by predictive means and standard errors. These are contained in <span class="math inline">\(n \times Q\)</span> matrices <code>$prediction$xpredMu</code> and <code>$prediction$xpredSd</code> and <span class="math inline">\(n \times S\)</span> matrices <code>$prediction$ypredMu</code> and <code>$prediction$ypredSd</code>. These are in-sample predictions.</p>
 <p>The output can be viewed with the function <code>gjamPlot</code>:</p>
@@ -556,7 +566,7 @@ specColor[ <span class="kw">c</span>(<span class="kw">grep</span>(<span class="s
 specColor[ <span class="kw">c</span>(<span class="kw">grep</span>(<span class="st">'acer'</span>,specNames),<span class="kw">grep</span>(<span class="st">'frax'</span>,specNames)) ] &lt;-<span class="st"> 'darkgreen'</span>
 specColor[ <span class="kw">c</span>(<span class="kw">grep</span>(<span class="st">'abie'</span>,specNames),<span class="kw">grep</span>(<span class="st">'pice'</span>,specNames)) ] &lt;-<span class="st"> 'blue'</span>
 
-pl   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">SMALLPLOTS =</span> F, <span class="dt">GRIDPLOTS=</span>T, <span class="dt">specColor =</span> specColor)
+pl   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">GRIDPLOTS=</span>T, <span class="dt">specColor =</span> specColor)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 <p>Additional information on variable types and their treatment in <code>gjam</code> is included later in this document and in the other <code>gjam vignettes</code>.</p>
 <p><br></p>
@@ -587,9 +597,9 @@ ylim &lt;-<span class="st"> </span><span class="kw">range</span>( <span class="k
 
 nt &lt;-<span class="st"> </span><span class="kw">ncol</span>(full)
 
-<span class="kw">boxplot</span>( full, <span class="dt">boxwex =</span> <span class="fl">0.25</span>,  <span class="dt">at =</span> <span class="dv">1</span>:nt -<span class="st"> </span>.<span class="dv">21</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
+<span class="kw">boxplot</span>( full, <span class="dt">boxwex =</span> <span class="fl">0.2</span>,  <span class="dt">at =</span> <span class="dv">1</span>:nt -<span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
          <span class="dt">ylim =</span> ylim, <span class="dt">xaxt =</span> <span class="st">'n'</span>, <span class="dt">xlab =</span> <span class="st">'Predictors'</span>, <span class="dt">ylab=</span><span class="st">'Sensitivity'</span>)
-<span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.25</span>, <span class="dt">at =</span> <span class="dv">1</span>:nt +<span class="st"> </span>.<span class="dv">2</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
+<span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.2</span>, <span class="dt">at =</span> <span class="dv">1</span>:nt +<span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
          <span class="dt">xaxt =</span> <span class="st">'n'</span>)
 <span class="kw">axis</span>(<span class="dv">1</span>,<span class="dt">at=</span><span class="dv">1</span>:nt,<span class="dt">labels=</span><span class="kw">colnames</span>(full))
 <span class="kw">legend</span>(<span class="st">'bottomright'</span>,<span class="kw">c</span>(<span class="st">'full response'</span>,<span class="st">'CC data'</span>),
@@ -602,9 +612,9 @@ ylim &lt;-<span class="st"> </span><span class="kw">range</span>( <span class="k
 
 nt &lt;-<span class="st"> </span><span class="kw">ncol</span>(full)
 
-<span class="kw">boxplot</span>( ca, <span class="dt">boxwex =</span> <span class="fl">0.25</span>,  <span class="dt">at =</span> <span class="dv">1</span>:nt -<span class="st"> </span>.<span class="dv">21</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
+<span class="kw">boxplot</span>( ca, <span class="dt">boxwex =</span> <span class="fl">0.2</span>,  <span class="dt">at =</span> <span class="dv">1</span>:nt -<span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
          <span class="dt">xaxt =</span> <span class="st">'n'</span>, <span class="dt">ylim =</span> ylim, <span class="dt">xlab =</span> <span class="st">'Predictors'</span>, <span class="dt">ylab=</span><span class="st">'Sensitivity'</span>)
-<span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.25</span>, <span class="dt">at =</span> <span class="dv">1</span>:nt +<span class="st"> </span>.<span class="dv">2</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
+<span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.2</span>, <span class="dt">at =</span> <span class="dv">1</span>:nt +<span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
          <span class="dt">xaxt =</span> <span class="st">'n'</span>)
 <span class="kw">axis</span>(<span class="dv">1</span>,<span class="dt">at=</span><span class="dv">1</span>:nt,<span class="dt">labels=</span><span class="kw">colnames</span>(full))
 <span class="kw">legend</span>(<span class="st">'bottomright'</span>,<span class="kw">c</span>(<span class="st">'CA data'</span>,<span class="st">'CC data'</span>),
@@ -819,7 +829,7 @@ out &lt;-<span class="st"> </span><span class="kw">gjam</span>(formula, xdata, <
 sc  &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'grey'</span>,<span class="kw">ncol</span>(treeYdata))
 sc[snames %in%<span class="st"> </span>hot] &lt;-<span class="st"> 'orange'</span>      <span class="co"># highlight informative priors</span>
 sc[snames %in%<span class="st"> </span>humid] &lt;-<span class="st"> 'blue'</span>
-pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">SMALLPLOTS=</span>F, <span class="dt">specColor=</span>sc)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">specColor=</span>sc)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 <p>The combination of <code>lo</code> and <code>hi</code> set the limits for posterior draws from the truncated multivariate normal distribution. The <code>help</code> page for <code>gjamPriorTemplate</code> provides an example with informative priors specified for individual predictor-response combinations.</p>
 </div>
@@ -861,28 +871,28 @@ keep &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="k
 <h2><span style="color:teal">categorical data</span></h2>
 <p>Categorical data have levels within groups. The levels are unordered. The columns in <code>ydata</code> that hold categorical responses are declared as <code>typeNames = &quot;CAT&quot;</code>. In observation vector <span class="math inline">\(\mathbf{y}_{i}\)</span> there are elements for one less than the number of factor levels. Suppose that observations are obtained on attributes of individual plants, each plant being an observation. The group <code>leaf</code> type might have four levels broadleaf decidious <code>bd</code>, needleleaf decidious <code>nd</code>, broadleaf evergreen <code>be</code>, and needleaf evergreen <code>ne</code>. A second group <code>xylem</code> anatomy might have three levels diffuse porous <code>dp</code>, ring porous <code>rp</code>, and tracheid <code>tr</code>. In both cases I assign the last class to be a reference class, <code>other</code>. Ten rows of the response matrix data might look like this:</p>
 <pre><code>##    leaf xylem
-## 1 other    dp
-## 2    be other
-## 3 other    dp
-## 4    be other
-## 5    bd    dp
-## 6    nd    dp
-## 7    nd    dp</code></pre>
+## 1    nd    rp
+## 2    bd other
+## 3 other other
+## 4 other other
+## 5    be other
+## 6    be    dp
+## 7    be other</code></pre>
 <p>This <code>data.frame ydata</code> becomes this response matrix <code>y</code>:</p>
 <pre><code>##      leaf_bd leaf_nd leaf_be leaf_other xylem_dp xylem_rp xylem_other
-## [1,]       0       0       0          1        1        0           0
-## [2,]       0       0       1          0        0        0           1
-## [3,]       0       0       0          1        1        0           0
-## [4,]       0       0       1          0        0        0           1
-## [5,]       1       0       0          0        1        0           0
-## [6,]       0       1       0          0        1        0           0
-## [7,]       0       1       0          0        1        0           0</code></pre>
+## [1,]       0       1       0          0        0        1           0
+## [2,]       1       0       0          0        0        0           1
+## [3,]       0       0       0          1        0        0           1
+## [4,]       0       0       0          1        0        0           1
+## [5,]       0       0       1          0        0        0           1
+## [6,]       0       0       1          0        1        0           0
+## [7,]       0       0       1          0        0        0           1</code></pre>
 <p><code>gjam</code> expands the two groups into four and three columns in <code>y</code>, respectively. As for composition data there is one redundant column for each group. Here is an example with simulated data, having two categorical groups:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'CAT'</span>,<span class="st">'CAT'</span>)
 f     &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n=</span><span class="dv">2000</span>, <span class="dt">S =</span> <span class="kw">length</span>(types), <span class="dt">typeNames =</span> types)
 ml    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1500</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames, <span class="dt">PREDICTX =</span> F)
 out   &lt;-<span class="st"> </span><span class="kw">gjam</span>( f$formula, <span class="dt">xdata =</span> f$xdata, <span class="dt">ydata =</span> f$ydata, <span class="dt">modelList =</span> ml )
-pl    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">SMALLPLOTS=</span>F, <span class="dt">PLOTALLY =</span> T)
+pl    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">PLOTALLY =</span> T)
 <span class="kw">gjamPlot</span>(out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 </div>
 <div id="combinations-of-data-types" class="section level2">
@@ -898,7 +908,7 @@ tmp   &lt;-<span class="st"> </span><span class="kw">data.frame</span>(f$typeNam
 <p>The composition count (<code>'CC'</code>) data occupy a broader range of intervals. Because <code>CC</code> data are only relative, there is information on only <span class="math inline">\(S - 1\)</span> species. One species is selected as <code>other</code>. The <code>other</code> class can be a collection of rare species (Clark et al. 2017).</p>
 <p>Both continuous abundance (<code>'CA'</code>) and presence-absence (<code>'PA'</code>) data have two intervals. For CA data only the first interval is censored, the zeros (see above). For <code>PA</code> data both interval are censored; it is a multivariate probit.</p>
 <p>Here are some plots for analysis of this model:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">SMALLPLOTS =</span> F, <span class="dt">GRIDPLOTS =</span> T)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">GRIDPLOTS =</span> T)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 </div>
 <div id="random-effects" class="section level2">
@@ -935,11 +945,11 @@ hold &lt;-<span class="st"> </span>out$modelList$holdoutIndex    <span class="co
 <span class="kw">title</span>(<span class="st">'holdouts in y'</span>); <span class="kw">abline</span>(<span class="dv">0</span>,<span class="dv">1</span>)
 
 xmiss &lt;-<span class="st"> </span>out$missing$xmiss                              <span class="co">#locations of missing x</span>
-xMu   &lt;-<span class="st"> </span>out$missing$xmissMu
-xSe   &lt;-<span class="st"> </span>out$missing$xmissSe
-xmean &lt;-<span class="st"> </span><span class="kw">apply</span>(f$xdata,<span class="dv">2</span>,mean,<span class="dt">na.rm=</span>T)[xmiss[,<span class="dv">2</span>]]               <span class="co">#column means for missing values</span>
-<span class="kw">plot</span>(xmean, xMu, <span class="dt">xlab=</span><span class="st">'Variable mean'</span>, <span class="dt">ylab=</span><span class="st">'Missing estimate'</span>) <span class="co">#posterior estimates</span>
-<span class="kw">segments</span>(xmean, xMu -<span class="st"> </span><span class="fl">1.96</span>*xSe, xmean, xMu +<span class="st"> </span><span class="fl">1.96</span>*xSe)          <span class="co">#approx 95% CI</span>
+xmissMu   &lt;-<span class="st"> </span>out$missing$xmissMu
+xmissSe   &lt;-<span class="st"> </span>out$missing$xmissSe
+xmean &lt;-<span class="st"> </span><span class="kw">apply</span>(f$xdata,<span class="dv">2</span>,mean,<span class="dt">na.rm=</span>T)[xmiss[,<span class="dv">2</span>]] <span class="co">#column means for missing values</span>
+<span class="kw">plot</span>(xmean, xmissMu, <span class="dt">xlab=</span><span class="st">'Variable mean'</span>, <span class="dt">ylab=</span><span class="st">'Missing estimate'</span>) <span class="co">#posterior estimates</span>
+<span class="kw">segments</span>(xmean, xmissMu -<span class="st"> </span><span class="fl">1.96</span>*xmissSe, xmean, xmissMu +<span class="st"> </span><span class="fl">1.96</span>*xmissSe)          <span class="co">#approx 95% CI</span>
 <span class="kw">title</span>(<span class="st">'missing x'</span>)</code></pre></div>
 <p>Note that there are no ‘true’ values in the simulation for missing x–the last graph at right just shows estimates relative to mean values for respective variables.</p>
 </div>
@@ -1000,9 +1010,10 @@ ydata  &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(forestTr
 ydata &lt;-<span class="st"> </span>ydata[,<span class="kw">colnames</span>(ydata) !=<span class="st"> 'other'</span>]
 ydata &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(ydata, <span class="dv">10</span>, <span class="dt">OTHER=</span>F)$y</code></pre></div>
 <p>Here is a model fitted to the forest <code>&quot;CA&quot;</code> data:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rl      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="dv">15</span>, <span class="dt">r =</span> <span class="dv">15</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rl      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="dv">15</span>, <span class="dt">r =</span> <span class="dv">10</span>)
 ml      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">5000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">typeNames =</span> <span class="st">'CA'</span>, 
                 <span class="dt">reductList =</span> rl, <span class="dt">PREDICTX =</span> F)
+formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>(~<span class="st"> </span>temp +<span class="st"> </span>deficit*moisture)
 out &lt;-<span class="st"> </span><span class="kw">gjam</span>(formula, xdata, ydata, <span class="dt">modelList =</span> ml)
 
 <span class="co">#prediction</span>
@@ -1103,8 +1114,7 @@ output &lt;-<span class="st"> </span><span class="kw">gjam</span>(~<span class="
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">S &lt;-<span class="st"> </span><span class="kw">ncol</span>(ydata)
 specColor     &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'black'</span>,S)
 specColor[<span class="dv">1</span>]  &lt;-<span class="st"> 'red'</span>                 <span class="co"># highlight host status</span>
-plotPars      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">specColor =</span> specColor, <span class="dt">GRIDPLOTS=</span>T,
-                      <span class="dt">SMALLPLOTS =</span> F) 
+plotPars      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">specColor =</span> specColor, <span class="dt">GRIDPLOTS=</span>T) 
 fit &lt;-<span class="st"> </span><span class="kw">gjamPlot</span>(output, plotPars)
 fit$eComs[<span class="dv">1</span>:<span class="dv">5</span>,]</code></pre></div>
 <p>Check the chains for convergence. Those coefficients that do not converge are poorly represented in factorial factor combinations.</p>
@@ -1360,18 +1370,22 @@ sc[wc] &lt;-<span class="st"> 'brown'</span>
 sc[wf] &lt;-<span class="st"> 'darkblue'</span>
 sc[wo] &lt;-<span class="st"> 'darkgreen'</span>
 
-pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">GRIDPLOTS =</span> <span class="ot">TRUE</span>, <span class="dt">PLOTALLY =</span> T, <span class="dt">specColor =</span> sc, <span class="dt">SMALLPLOTS =</span> F)
-fit &lt;-<span class="st"> </span><span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">GRIDPLOTS =</span> <span class="ot">TRUE</span>, <span class="dt">PLOTALLY =</span> T, <span class="dt">specColor =</span> sc)
+<span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)
 <span class="kw">summary</span>(out)</code></pre></div>
 <p>The model fit is interpreted in the same way as other gjam analyses. Note that <code>specColor</code> is used to highlight different types of traits in the posterior plots for values in coefficient matrix <span class="math inline">\(\mathbf{A}\)</span>. Parameter estimates are contained in <code>parameters</code>,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaMuUn      <span class="co"># Q by M coefficient matrix alpha</span>
-out$parameters$betaSeUn      <span class="co"># Q by M coefficient std errors</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaMu         <span class="co"># Q by M coefficient matrix alpha</span>
+out$parameters$betaStandXmu   <span class="co"># Q by M standardized for X</span>
+out$parameters$betaStandXWmu  <span class="co"># (Q-F) by M standardized for W/X, centered factors</span>
+
+out$parameters$betaTable        <span class="co"># QM by stats posterior summary</span>
+out$parameters$betaStandXtable  <span class="co"># QM by stats posterior summary</span>
+out$parameters$betaStandXWtable <span class="co"># (Q-F)M by stats posterior summary</span>
+ 
 out$parameters$sigMu         <span class="co"># M by M covariance matrix omega</span>
 out$parameters$sigSe         <span class="co"># M by M covariance std errors</span></code></pre></div>
-<p>The <code>output</code> list contains a large number of diagnostics explained in help pages.</p>
-<p>The object <code>fit</code> generated by <code>gjamPlot</code> holds coefficients that are summarized in a table:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit$summaryCoeffs$betaCoeff[<span class="dv">1</span>:<span class="dv">5</span>,]      <span class="co"># Q by M coefficient matrix alpha</span></code></pre></div>
-<p>The matrices <code>out$parameters$cutMu</code> and <code>out$parameters$cutSe</code> hold the estimates for the partion for ordinal (<code>'OC'</code>) variables shade, drought, and flood tolerance. Each has three fitted cutpoints, because the first is fixed, with three estimates to partition the remaining four intervals.</p>
+<p>The <code>output</code> list contains a large number of diagnostics explained in help pages.<br />
+The matrices <code>out$parameters$cutMu</code> and <code>out$parameters$cutSe</code> hold the estimates for the partion for ordinal (<code>'OC'</code>) variables shade, drought, and flood tolerance. Each has three fitted cutpoints, because the first is fixed, with three estimates to partition the remaining four intervals.</p>
 </div>
 <div id="interactions-and-indirect-effects-1" class="section level3">
 <h3><span style="color:brown">interactions and indirect effects</span></h3>
@@ -1460,16 +1474,19 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
                   <span class="dt">specColor =</span> sc, <span class="dt">ncluster =</span> <span class="dv">5</span>) 
 fit &lt;-<span class="st"> </span><span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, pl)</code></pre></div>
 <p>Output is interpreted as previously, now with coefficients <span class="math inline">\(\mathbf{B}\)</span> and covariance <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. gjamPlot generates an additional plot with trait predictions. Parameter values are here:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaTraitMu   <span class="co"># Q by M coefficient matrix alpha</span>
-out$parameters$betaTraitSe   <span class="co"># Q by M coefficient std errors</span>
-out$parameters$sigmaTraitMu  <span class="co"># M by M covariance matrix omega</span>
-out$parametes$sigmaTraitSe  <span class="co"># M by M covariance std errors</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaTraitXMu     <span class="co"># Q by M coefficient matrix alpha, standardized for X</span>
+out$parameters$betaTraitXWmu    <span class="co"># Q by M standardized for X/W</span>
+out$parameters$betaTraitXTable  <span class="co"># QM by stats posterior summary</span>
+out$parameters$betaTraitXWTable <span class="co"># QM by stats summary for X/W</span>
+out$parameters$varTraitMu       <span class="co"># M by M trait residual covariance, standardized for X</span>
+out$parameters$varTraitTable    <span class="co"># M^2 by stats summary, standardized for X/W</span></code></pre></div>
 <p>Trait predictive distributions are summarized here:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$tMu[<span class="dv">1</span>:<span class="dv">5</span>,]     <span class="co"># n by M predictive means</span>
-out$parameters$tSd[<span class="dv">1</span>:<span class="dv">5</span>,]     <span class="co"># n by M predictive std errors</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$prediction$tMu[<span class="dv">1</span>:<span class="dv">5</span>,]     <span class="co"># n by M predictive means</span>
+out$prediction$tSe[<span class="dv">1</span>:<span class="dv">5</span>,]     <span class="co"># n by M predictive std errors</span></code></pre></div>
 <p>The groupings of species in terms of their similar responses to the environment (the <code>ematrix</code>) are here, showing only the 4 most frequent species in each of the <code>ncluster</code> = 8 groups:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit$eComs[,<span class="dv">1</span>:<span class="dv">4</span>]</code></pre></div>
 <p>Additional quantities can be predicted from the output using the MCMC output in the list <code>out$chains</code>.</p>
+<p>It is worth checking for combinations of responses and factor levels that might be missing from the data. That is an issue here, because each species has a limited geographic distribution, as do the soil types. The object <code>output$inputs$factorBeta$missFacSpec</code> lists the missing predictor-response combinations. This list could be the basis for consolidating factor levels.</p>
 </div>
 <div id="trouble-shooting-in-ptm" class="section level3">
 <h3><span style="color:brown">trouble shooting in PTM</span></h3>
@@ -1514,7 +1531,7 @@ out$parameters$tSd[<span class="dv">1</span>:<span class="dv">5</span>,]     <sp
 <td align="left">Missing predictor-response combinations listed here–consider consolidating factor levels or removing predictors and/or responses.</td>
 </tr>
 <tr class="even">
-<td align="right"><code>output$parameters$fMu</code>, <code>sensitivity.pdf</code></td>
+<td align="right"><code>output$parameters$sensTable</code>, <code>sensitivity.pdf</code></td>
 <td align="left">High values account for most variation across all responses.</td>
 </tr>
 <tr class="odd">
@@ -1592,7 +1609,7 @@ out$parameters$tSd[<span class="dv">1</span>:<span class="dv">5</span>,]     <sp
 <h2><span style="color:teal">more on parameter dimensions</span></h2>
 <p>Unlike a univariate model that has one <span class="math inline">\(Y\)</span> per observation or multivariate models where all <span class="math inline">\(Y\)</span>’s have the same dimension, gjam has <span class="math inline">\(Y\)</span>’s on multiple dimensions. So there are two sets of dimensions to consider, the dimensions for the <span class="math inline">\(X\)</span>’s and those for the <span class="math inline">\(Y\)</span>’s. To avoid more notation I just refer to the dimension of a coefficient in the unstandardized coefficient matrix <span class="math inline">\(\mathbf{B}_u\)</span> as <span class="math inline">\(W/X\)</span> (Table 2). Except for responses that have no dimension (presence-absence, ordinal, categorical) <span class="math inline">\(W\)</span> has the same dimension as <span class="math inline">\(Y\)</span> (or <span class="math inline">\(Y/E\)</span>, if effort is specified). <code>gjam</code> returns unstandardized coefficients in tables <code>parameters$betaMuUn, parameters$betaSeUn</code>, and in MCMC <code>chains$bgibbsUn</code>, because they are not prone to be misinterpreted by a user who has supplied unstandardized predictors in <code>xdata</code>. I refer to the coefficient matrix as <span class="math inline">\(\mathbf{B}_u\)</span> and corresponding unstandardized design matrix as <span class="math inline">\(\mathbf{X}_u\)</span>. Each row of <code>$chains$bgibbsUn</code> is one draw from the <span class="math inline">\(Q \times S\)</span> matrix <span class="math inline">\(\mathbf{B}_u\)</span>.</p>
 <p>Models are commonly fitted to covariates <span class="math inline">\(X\)</span> that are ‘standardized’ for mean and variance. Standardization can stabilize posterior simulation. It is desirable when coefficients are needed in standard deviations. Inside <code>gjam</code> design matrix <span class="math inline">\(\mathbf{X}\)</span>, and thus <span class="math inline">\(\mathbf{B}\)</span>, are standardized, thus having dimension <span class="math inline">\(W\)</span>, not <span class="math inline">\(W/X\)</span>. Of course, for variables in <code>xdata</code> supplied in standarized form, <span class="math inline">\(\mathbf{B} = \mathbf{B}_u\)</span>. See <strong>Algorithm summary</strong>. Variables returned by <code>gjam</code>, including MCMC chains in <code>$chains$bgibbs</code> and posterior means and standard errors <code>$parameters$betaMu</code> and <code>$parameters$betaSe</code> are standardized.</p>
-<p>The third set of scales comes from the correlation scale for the <span class="math inline">\(W\)</span>’s. The correlation scale can be useful when considering responses that have different dimensions. In addition to <span class="math inline">\(\mathbf{B}_u\)</span> I provide parameters on the correlation scale. This correlation scale is <span class="math inline">\(\mathbf{B}_r = \mathbf{B} \mathbf{D}^{-1/2}\)</span>, where <span class="math inline">\(\mathbf{D} = diag(\boldsymbol{\Sigma})\)</span>. If <span class="math inline">\(\mathbf{X}\)</span> is standardized, <span class="math inline">\(\mathbf{B}_r\)</span> is dimensionless. The MCMC chains in <code>$chains$fbgibbs</code> and the estimates in <code>$parameterTable$fBetaMu</code> and <code>$parameterTable$fBetaSd</code> are standardized for <span class="math inline">\(X\)</span> (standard deviation scale) and for <span class="math inline">\(W\)</span> (correlation scale). They are dimensionless.</p>
+<p>The third set of scales comes from the correlation scale for the <span class="math inline">\(W\)</span>’s. The correlation scale can be useful when considering responses that have different dimensions. In addition to <span class="math inline">\(\mathbf{B}_u\)</span> I provide parameters on the correlation scale. This correlation scale is <span class="math inline">\(\mathbf{B}_r = \mathbf{B} \mathbf{D}^{-1/2}\)</span>, where <span class="math inline">\(\mathbf{D} = diag(\boldsymbol{\Sigma})\)</span>. If <span class="math inline">\(\mathbf{X}\)</span> is standardized, <span class="math inline">\(\mathbf{B}_r\)</span> is dimensionless. The MCMC chains in <code>$chains$bFacGibbs</code> and the estimates in <code>$parameterTable$fBetaMu</code> and <code>$parameterTable$fBetaSd</code> are standardized for <span class="math inline">\(X\)</span> (standard deviation scale) and for <span class="math inline">\(W\)</span> (correlation scale). They are dimensionless.</p>
 <p>For sensitivity over all species and for comparisons between predictors I provide standardized sensitivity in a length-<span class="math inline">\(Q\)</span> vector <span class="math inline">\(\mathbf{f}\)</span>. The sensitivity matrix to <span class="math inline">\(X\)</span> across the full model is given by</p>
 <p><span class="math display">\[\mathbf{F} = \mathbf{B}\boldsymbol{\Sigma}^{-1} \mathbf{B}'\]</span></p>
 <p>Note that <span class="math inline">\(\mathbf{F}\)</span> takes <span class="math inline">\(\mathbf{B}_r\)</span>, not <span class="math inline">\(\mathbf{B}\)</span>, and not <span class="math inline">\(\mathbf{B}_u\)</span>. The sensitivity matrix <span class="math inline">\(\mathbf{F}\)</span> is <code>$parameters$fmatrix</code>. The sensitivity vector <span class="math inline">\(\mathbf{f} = diag( \mathbf{F} )\)</span> is <code>vector $parameters$fMu</code>. Details are given in Clark et al. (2017).</p>

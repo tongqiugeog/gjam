@@ -30,8 +30,8 @@
   \tabular{ll}{
   Package: \tab gjam\cr
   Type: \tab Package\cr
-  Version: \tab 2.2.5\cr
-  Date: \tab 2018-8-2\cr
+  Version: \tab 2.2.6\cr
+  Date: \tab 2018-9-22\cr
   License: \tab GPL (>= 2)\cr
   URL: \tab http://sites.nicholas.duke.edu/clarklab/code/\cr
   }

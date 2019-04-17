@@ -12,7 +12,7 @@
 
 <meta name="author" content="James S. Clark" />
 
-<meta name="date" content="2018-09-22" />
+<meta name="date" content="2019-04-17" />
 
 <title>Generalized joint attribute modeling - gjam</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Generalized joint attribute modeling - gjam</h1>
 <h4 class="author"><em><a href="http://sites.nicholas.duke.edu/clarklab/">James S. Clark</a></em></h4>
-<h4 class="date"><em>2018-09-22</em></h4>
+<h4 class="date"><em>2019-04-17</em></h4>
 
 
 <div id="TOC">
@@ -330,7 +330,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 f &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n =</span> <span class="dv">500</span>, <span class="dt">S =</span> <span class="dv">10</span>, <span class="dt">Q =</span> <span class="dv">4</span>, <span class="dt">typeNames =</span> <span class="st">'CA'</span>)
 <span class="kw">summary</span>(f)</code></pre></div>
 <p>The object <code>f</code> includes elements needed to analyze the simulated data set. <code>f$typeNames</code> is a length-<span class="math inline">\(S\)</span> <code>character vector</code>. The <code>formula</code> follows standard R syntax. It does not start with <code>y ~</code>, because gjam is multivariate. The multivariate response is supplied as a <span class="math inline">\(n \times S\)</span> <code>matrix</code> or <code>data.frame ydata</code>. Here is the <code>formula</code> for this example:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f$formula</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f<span class="op">$</span>formula</code></pre></div>
 <p>The simulated parameter values are returned from <code>gjamSimData</code> in the list <code>f$trueValues</code>, shown in Table 2, with the corresponding names of estimates from <code>function gjam</code>, which I discuss below:</p>
 <p><strong>Table 2. Variable names and dimensions in simulation and fitting</strong></p>
 <table>
@@ -450,51 +450,51 @@ f &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class=
 <p>The matrix <span class="math inline">\(\mathbf{E}\)</span> is the correlation among species in terms of their responses to <span class="math inline">\(\mathbf{X}\)</span>. Relationships to outputs are discussed in the <strong>Reference notes</strong>.</p>
 <p>Simulated data are typical of real data in that there is a large fraction of zeros.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">bty =</span> <span class="st">'n'</span>, <span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>), <span class="dt">family=</span><span class="st">''</span>)
-h &lt;-<span class="st"> </span><span class="kw">hist</span>(<span class="kw">c</span>(-<span class="dv">1</span>,f$y),<span class="dt">nclass =</span> <span class="dv">50</span>,<span class="dt">plot =</span> F)
-<span class="kw">plot</span>(h$counts,h$mids,<span class="dt">type =</span> <span class="st">'s'</span>)
-<span class="kw">plot</span>(f$w,f$y,<span class="dt">cex =</span> .<span class="dv">2</span>)</code></pre></div>
+h &lt;-<span class="st"> </span><span class="kw">hist</span>(<span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>,f<span class="op">$</span>y),<span class="dt">nclass =</span> <span class="dv">50</span>,<span class="dt">plot =</span> F)
+<span class="kw">plot</span>(h<span class="op">$</span>counts,h<span class="op">$</span>mids,<span class="dt">type =</span> <span class="st">'s'</span>)
+<span class="kw">plot</span>(f<span class="op">$</span>w,f<span class="op">$</span>y,<span class="dt">cex =</span> .<span class="dv">2</span>)</code></pre></div>
 <p><br></p>
 <p>Here is a short Gibbs sampler to estimate parameters and fit the data. The function <code>gjam</code> needs the <code>formula</code> for the model, the <code>data.frame xdata</code>, which includes the predictors, the response <code>matrix</code> or <code>data.frame ydata</code>, and a <code>modelList</code> specifying number of Gibbs steps <code>ng</code>, the <code>burnin</code>, and <code>typeNames</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">100</span>, <span class="dt">typeNames =</span> f$typeNames)
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">100</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames)
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
 <span class="kw">summary</span>(out)</code></pre></div>
 <p>The <code>print</code> function acts like <code>summary</code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(out)</code></pre></div>
 <p>Among the objects to consider initially are the design matrix <code>out$inputs$x</code>, response matrix <code>out$inputs$y</code>, and the MCMC <code>out$chains</code> with these names and sizes:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(out$chains)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(out<span class="op">$</span>chains)</code></pre></div>
 <p><code>$chains</code> is a list of matrices, each with <code>ng</code> rows and as many columns as needed to hold parameter estimates. For example, each row of <code>$chains$bgibbs</code> is a length-<span class="math inline">\(QS\)</span> vector of values for the <span class="math inline">\(Q \times S\)</span> matrix <span class="math inline">\(\mathbf{B}\)</span>, standardized for <span class="math inline">\(\mathbf{X}\)</span>. In other words, a coefficient <span class="math inline">\(\mathbf{B}_{qs}\)</span> has the units of <span class="math inline">\(w_s\)</span>. <code>$chains$sgibbs</code> holds either the <span class="math inline">\(S(S + 1)/2\)</span> unique values of <span class="math inline">\(\boldsymbol{\Sigma}\)</span> or the <span class="math inline">\(N \times r\)</span> unique values of the dimension reduced covariance matrix. A summary of the <code>chains</code> is given in Table 2.</p>
 <p>Additional summaries are available in the list <code>inputs</code>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(out$inputs)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(out<span class="op">$</span>inputs)</code></pre></div>
 <p>The matrix <code>classBySpec</code> shows the number of observations in each interval. For this example of continuous data censored at zero, the two labels are <span class="math inline">\(k \in \{0, 1\}\)</span> corresponding to the intervals <span class="math inline">\((p_{s,0}, p_{s,1}] = (-\infty,0]\)</span> and <span class="math inline">\((p_{s,1}, p_{s,2}) = (0, \infty)\)</span>. The length-<span class="math inline">\((K + 1)\)</span> partition vector is the same for all species, <span class="math inline">\(\mathbf{p} = (-\infty, 0, \infty)\)</span>. Here is <code>classBySpec</code> for this example:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$inputs$classBySpec</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out<span class="op">$</span>inputs<span class="op">$</span>classBySpec</code></pre></div>
 <p>The first interval is censored (all values of <span class="math inline">\(y_{is}\)</span> = 0). The second interval is not censored (<span class="math inline">\(y_{is} = w_{is}\)</span>).</p>
 <p>The fitted coefficients in <code>$parameters</code>, as summarized in Table 2. For example, here is posterior mean estimate of unstandardized coefficients <span class="math inline">\(\mathbf{B}_u\)</span>,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaMu</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out<span class="op">$</span>parameters<span class="op">$</span>betaMu</code></pre></div>
 <p>Here are posterior summaries,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaMu         <span class="co"># S by M coefficient matrix alpha</span>
-out$parameters$betaStandXmu   <span class="co"># S by M standardized for X</span>
-out$parameters$betaStandXWmu  <span class="co"># (S-F) by M standardized for W/X, centered factors</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out<span class="op">$</span>parameters<span class="op">$</span>betaMu         <span class="co"># S by M coefficient matrix alpha</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaStandXmu   <span class="co"># S by M standardized for X</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaStandXWmu  <span class="co"># (S-F) by M standardized for W/X, centered factors</span>
 
-out$parameters$betaTable        <span class="co"># SM by stats posterior summary</span>
-out$parameters$betaStandXtable  <span class="co"># SM by stats posterior summary</span>
-out$parameters$betaStandXWtable <span class="co"># (S-F)M by stats posterior summary</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaTable        <span class="co"># SM by stats posterior summary</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaStandXtable  <span class="co"># SM by stats posterior summary</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaStandXWtable <span class="co"># (S-F)M by stats posterior summary</span>
  
-out$parameters$sigMu         <span class="co"># S by S covariance matrix omega</span>
-out$parameters$sigSe         <span class="co"># S by S covariance std errors</span></code></pre></div>
+out<span class="op">$</span>parameters<span class="op">$</span>sigMu         <span class="co"># S by S covariance matrix omega</span>
+out<span class="op">$</span>parameters<span class="op">$</span>sigSe         <span class="co"># S by S covariance std errors</span></code></pre></div>
 <p>```</p>
 <p>Again, check Table 2 for names of all fitted coefficients.</p>
 <p>The data are also predicted in <code>gjam</code>, summarized by predictive means and standard errors. These are contained in <span class="math inline">\(n \times Q\)</span> matrices <code>$prediction$xpredMu</code> and <code>$prediction$xpredSd</code> and <span class="math inline">\(n \times S\)</span> matrices <code>$prediction$ypredMu</code> and <code>$prediction$ypredSd</code>. These are in-sample predictions.</p>
 <p>The output can be viewed with the function <code>gjamPlot</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n =</span> <span class="dv">500</span>, <span class="dt">S =</span> <span class="dv">10</span>, <span class="dt">typeNames =</span> <span class="st">'CA'</span>)
-ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">200</span>, <span class="dt">typeNames =</span> f$typeNames)
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
-pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">GRIDPLOTS =</span> T)
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">200</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames)
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f<span class="op">$</span>trueValues, <span class="dt">GRIDPLOTS =</span> T)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 <p><code>gjamPlot</code> creates a number of plots comparing true and estimated parameters (for simulated data).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">bty =</span> <span class="st">'n'</span>, <span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="dt">family=</span><span class="st">''</span>)
-<span class="kw">plot</span>(f$trueValues$beta, out$parameters$betaMu, <span class="dt">cex =</span> .<span class="dv">2</span>)
-<span class="kw">plot</span>(f$trueValues$corSpec, out$parameters$corMu, <span class="dt">cex =</span> .<span class="dv">2</span>)
-<span class="kw">plot</span>(f$y,out$prediction$ypredMu, <span class="dt">cex =</span> .<span class="dv">2</span>)</code></pre></div>
+<span class="kw">plot</span>(f<span class="op">$</span>trueValues<span class="op">$</span>beta, out<span class="op">$</span>parameters<span class="op">$</span>betaMu, <span class="dt">cex =</span> .<span class="dv">2</span>)
+<span class="kw">plot</span>(f<span class="op">$</span>trueValues<span class="op">$</span>corSpec, out<span class="op">$</span>parameters<span class="op">$</span>corMu, <span class="dt">cex =</span> .<span class="dv">2</span>)
+<span class="kw">plot</span>(f<span class="op">$</span>y,out<span class="op">$</span>prediction<span class="op">$</span>ypredMu, <span class="dt">cex =</span> .<span class="dv">2</span>)</code></pre></div>
 <p>To process the output beyond what is provided in <code>gjamPlot</code> I can work directly with the <code>chains</code>.</p>
 </div>
 <div id="my-data" class="section level2">
@@ -504,11 +504,11 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(repmis)
 d &lt;-<span class="st"> &quot;https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True&quot;</span>
 <span class="kw">source_data</span>(d)
-xdata &lt;-<span class="st"> </span>forestTraits$xdata[,<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">8</span>)]</code></pre></div>
+xdata &lt;-<span class="st"> </span>forestTraits<span class="op">$</span>xdata[,<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">8</span>)]</code></pre></div>
 <p>Here are a few rows:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata[<span class="dv">1</span>:<span class="dv">5</span>,]</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,]</code></pre></div>
 <p>Here is a simple model specification with <code>as.formula()</code> that includes only main effects:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>( ~<span class="st"> </span>temp +<span class="st"> </span>deficit +<span class="st"> </span>soil )</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>( <span class="op">~</span><span class="st"> </span>temp <span class="op">+</span><span class="st"> </span>deficit <span class="op">+</span><span class="st"> </span>soil )</code></pre></div>
 <p>The design matrix <code>x</code> that is generated in <code>gjam</code> has an intercept, two covariates, and four columns for the multilevel factor <code>soil</code>:</p>
 <pre><code>##   (Intercept)  temp deficit soilSpodHist soilEntVert soilMol soilUltKan
 ## 1           1  1.22    0.04            1           0       0          0
@@ -517,7 +517,7 @@ xdata &lt;-<span class="st"> </span>forestTraits$xdata[,<span class="kw">c</span
 ## 4           1  0.64    0.82            1           0       0          0
 ## 5           1  0.82   -0.18            1           0       0          0</code></pre>
 <p>To include interactions between <code>temp</code> and <code>soil</code> I use the symbol ‘<code>*</code>’:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>( ~<span class="st"> </span>temp*soil )</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>( <span class="op">~</span><span class="st"> </span>temp<span class="op">*</span>soil )</code></pre></div>
 <p>Here is the design matrix that results from this <code>formula</code> with interaction terms indicated by the symbol <code>':'</code></p>
 <pre><code>##   (Intercept)  temp soilSpodHist soilEntVert soilMol soilUltKan
 ## 1           1  1.22            1           0       0          0
@@ -532,7 +532,7 @@ xdata &lt;-<span class="st"> </span>forestTraits$xdata[,<span class="kw">c</span
 ## 4              0.64                0            0               0
 ## 5              0.82                0            0               0</code></pre>
 <p>For a quadratic term I use the <code>R</code> function <code>I()</code>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>( ~<span class="st"> </span>temp +<span class="st"> </span><span class="kw">I</span>(temp^<span class="dv">2</span>) +<span class="st"> </span>deficit )</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>( <span class="op">~</span><span class="st"> </span>temp <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(temp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span>deficit )</code></pre></div>
 <p>Here is the design matrix with linear and quadratic terms:</p>
 <pre><code>##   (Intercept)  temp I(temp^2) deficit
 ## 1           1  1.22    1.4884    0.04
@@ -541,7 +541,7 @@ xdata &lt;-<span class="st"> </span>forestTraits$xdata[,<span class="kw">c</span
 ## 4           1  0.64    0.4096    0.82
 ## 5           1  0.82    0.6724   -0.18</code></pre>
 <p>Here is a quadratic response surface for <code>temp</code> and <code>deficit</code>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>( ~<span class="st"> </span>temp*deficit +<span class="st"> </span><span class="kw">I</span>(temp^<span class="dv">2</span>) +<span class="st"> </span><span class="kw">I</span>(deficit^<span class="dv">2</span>) )</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>( <span class="op">~</span><span class="st"> </span>temp<span class="op">*</span>deficit <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(temp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(deficit<span class="op">^</span><span class="dv">2</span>) )</code></pre></div>
 <p>Here is the design matrix with all combinations:</p>
 <pre><code>##   (Intercept)  temp deficit I(temp^2) I(deficit^2) temp:deficit
 ## 1           1  1.22    0.04    1.4884       0.0016       0.0488
@@ -551,14 +551,14 @@ xdata &lt;-<span class="st"> </span>forestTraits$xdata[,<span class="kw">c</span
 ## 5           1  0.82   -0.18    0.6724       0.0324      -0.1476</code></pre>
 <p>These are examples of the <code>formula</code> options available in <code>gjam</code>. Using them will allow for proper inverse prediction of <code>x</code>. To optimize MCMC, gjam does not predict <code>x</code> for higher order polynomials–they are rarely used, being both hard to interpret and a cause of unstable predictions. To accelerate MCMC I can set <code>PREDICTX = F</code> in the <code>modelList</code>.</p>
 <p>I can use this model to analyze a tree data set. For my data set I use the tree data contained in <code>forestTraits</code>. It is stored in de-zeroed (sparse matrix) format, so I extract it with the function <code>gjamReZero</code>. Here are dimensions and the upper left corner of the response matrix <span class="math inline">\(\mathbf{Y}\)</span>,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">y  &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(forestTraits$treesDeZero)  <span class="co"># extract y</span>
-treeYdata  &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(y,<span class="dv">10</span>)$y             <span class="co"># at least 10 plots</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">y  &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(forestTraits<span class="op">$</span>treesDeZero)  <span class="co"># extract y</span>
+treeYdata  &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(y,<span class="dv">10</span>)<span class="op">$</span>y             <span class="co"># at least 10 plots</span>
 <span class="kw">dim</span>(treeYdata)
-treeYdata[<span class="dv">1</span>:<span class="dv">5</span>,<span class="dv">1</span>:<span class="dv">6</span>]</code></pre></div>
+treeYdata[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,<span class="dv">1</span><span class="op">:</span><span class="dv">6</span>]</code></pre></div>
 <p>In code that follows I treat responses as discrete counts, <code>typeNames = 'DA'</code>. Because of the large number of columns (98) I speed things up by calling for dimension reduction, passed as <span class="math inline">\(N \times r = 20 \times 8\)</span>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rl   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">r =</span> <span class="dv">8</span>, <span class="dt">N =</span> <span class="dv">20</span>)
 ml   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2500</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> <span class="st">'DA'</span>, <span class="dt">reductList =</span> rl)
-form &lt;-<span class="st"> </span><span class="kw">as.formula</span>( ~<span class="st"> </span>temp*deficit +<span class="st"> </span><span class="kw">I</span>(temp^<span class="dv">2</span>) +<span class="st"> </span><span class="kw">I</span>(deficit^<span class="dv">2</span>) )
+form &lt;-<span class="st"> </span><span class="kw">as.formula</span>( <span class="op">~</span><span class="st"> </span>temp<span class="op">*</span>deficit <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(temp<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(deficit<span class="op">^</span><span class="dv">2</span>) )
 out  &lt;-<span class="st"> </span><span class="kw">gjam</span>(form, <span class="dt">xdata =</span> xdata, <span class="dt">ydata =</span> treeYdata, <span class="dt">modelList =</span> ml)
 specNames &lt;-<span class="st"> </span><span class="kw">colnames</span>(treeYdata)
 specColor &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'black'</span>,<span class="kw">ncol</span>(treeYdata))
@@ -585,11 +585,11 @@ pl   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt"
 <p>In the help page for the function <code>gjamSensitivity</code> is this example comparing sensitivity for a simulated data set with multiple data types against a group that includes only the composition count (<code>'CC'</code>) data. Note that the latter is supplied identified by <code>group</code>, which is a <code>character string</code> of column names in <code>ydata</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'DA'</span>,<span class="st">'DA'</span>,<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CA'</span>,<span class="st">'CA'</span>,<span class="st">'PA'</span>,<span class="st">'PA'</span>)         
 f    &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">S =</span> <span class="kw">length</span>(types), <span class="dt">typeNames =</span> types)
-ml   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">500</span>, <span class="dt">burnin =</span> <span class="dv">50</span>, <span class="dt">typeNames =</span> f$typeNames)
-out  &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
+ml   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">500</span>, <span class="dt">burnin =</span> <span class="dv">50</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames)
+out  &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
 
-ynames &lt;-<span class="st"> </span><span class="kw">colnames</span>(f$y)
-group  &lt;-<span class="st"> </span>ynames[types ==<span class="st"> 'CC'</span>]
+ynames &lt;-<span class="st"> </span><span class="kw">colnames</span>(f<span class="op">$</span>y)
+group  &lt;-<span class="st"> </span>ynames[types <span class="op">==</span><span class="st"> 'CC'</span>]
 
 full &lt;-<span class="st"> </span><span class="kw">gjamSensitivity</span>(out)
 cc   &lt;-<span class="st"> </span><span class="kw">gjamSensitivity</span>(out, group)
@@ -597,26 +597,26 @@ ylim &lt;-<span class="st"> </span><span class="kw">range</span>( <span class="k
 
 nt &lt;-<span class="st"> </span><span class="kw">ncol</span>(full)
 
-<span class="kw">boxplot</span>( full, <span class="dt">boxwex =</span> <span class="fl">0.2</span>,  <span class="dt">at =</span> <span class="dv">1</span>:nt -<span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
+<span class="kw">boxplot</span>( full, <span class="dt">boxwex =</span> <span class="fl">0.2</span>,  <span class="dt">at =</span> <span class="dv">1</span><span class="op">:</span>nt <span class="op">-</span><span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
          <span class="dt">ylim =</span> ylim, <span class="dt">xaxt =</span> <span class="st">'n'</span>, <span class="dt">xlab =</span> <span class="st">'Predictors'</span>, <span class="dt">ylab=</span><span class="st">'Sensitivity'</span>)
-<span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.2</span>, <span class="dt">at =</span> <span class="dv">1</span>:nt +<span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
+<span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.2</span>, <span class="dt">at =</span> <span class="dv">1</span><span class="op">:</span>nt <span class="op">+</span><span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
          <span class="dt">xaxt =</span> <span class="st">'n'</span>)
-<span class="kw">axis</span>(<span class="dv">1</span>,<span class="dt">at=</span><span class="dv">1</span>:nt,<span class="dt">labels=</span><span class="kw">colnames</span>(full))
+<span class="kw">axis</span>(<span class="dv">1</span>,<span class="dt">at=</span><span class="dv">1</span><span class="op">:</span>nt,<span class="dt">labels=</span><span class="kw">colnames</span>(full))
 <span class="kw">legend</span>(<span class="st">'bottomright'</span>,<span class="kw">c</span>(<span class="st">'full response'</span>,<span class="st">'CC data'</span>),
        <span class="dt">text.col=</span><span class="kw">c</span>(<span class="st">'blue'</span>,<span class="st">'forestgreen'</span>))</code></pre></div>
 <p>Again, the scale is dimensionless. Here is a comparison between two groups:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">group  &lt;-<span class="st"> </span>ynames[types ==<span class="st"> 'CA'</span>]
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">group  &lt;-<span class="st"> </span>ynames[types <span class="op">==</span><span class="st"> 'CA'</span>]
 ca   &lt;-<span class="st"> </span><span class="kw">gjamSensitivity</span>(out, group)
 
 ylim &lt;-<span class="st"> </span><span class="kw">range</span>( <span class="kw">rbind</span>(cc,ca) )
 
 nt &lt;-<span class="st"> </span><span class="kw">ncol</span>(full)
 
-<span class="kw">boxplot</span>( ca, <span class="dt">boxwex =</span> <span class="fl">0.2</span>,  <span class="dt">at =</span> <span class="dv">1</span>:nt -<span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
+<span class="kw">boxplot</span>( ca, <span class="dt">boxwex =</span> <span class="fl">0.2</span>,  <span class="dt">at =</span> <span class="dv">1</span><span class="op">:</span>nt <span class="op">-</span><span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">log=</span><span class="st">'y'</span>,
          <span class="dt">xaxt =</span> <span class="st">'n'</span>, <span class="dt">ylim =</span> ylim, <span class="dt">xlab =</span> <span class="st">'Predictors'</span>, <span class="dt">ylab=</span><span class="st">'Sensitivity'</span>)
-<span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.2</span>, <span class="dt">at =</span> <span class="dv">1</span>:nt +<span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
+<span class="kw">boxplot</span>( cc, <span class="dt">boxwex =</span> <span class="fl">0.2</span>, <span class="dt">at =</span> <span class="dv">1</span><span class="op">:</span>nt <span class="op">+</span><span class="st"> </span>.<span class="dv">15</span>, <span class="dt">col=</span><span class="st">'forestgreen'</span>, <span class="dt">add=</span>T,
          <span class="dt">xaxt =</span> <span class="st">'n'</span>)
-<span class="kw">axis</span>(<span class="dv">1</span>,<span class="dt">at=</span><span class="dv">1</span>:nt,<span class="dt">labels=</span><span class="kw">colnames</span>(full))
+<span class="kw">axis</span>(<span class="dv">1</span>,<span class="dt">at=</span><span class="dv">1</span><span class="op">:</span>nt,<span class="dt">labels=</span><span class="kw">colnames</span>(full))
 <span class="kw">legend</span>(<span class="st">'bottomright'</span>,<span class="kw">c</span>(<span class="st">'CA data'</span>,<span class="st">'CC data'</span>),
        <span class="dt">text.col=</span><span class="kw">c</span>(<span class="st">'blue'</span>,<span class="st">'forestgreen'</span>))</code></pre></div>
 <p><br></p>
@@ -754,22 +754,22 @@ nt &lt;-<span class="st"> </span><span class="kw">ncol</span>(full)
 <p>Here is an example with discrete abundance data, now with heterogeneous sample effort. Heterogeneous effort applies where vegetation plots have different areas, animal survey data have variable search times, or catch returns from fishing vessels have different gear and/or trawling times. Here I simulate a list containing the columns and the effort that applies to those columns, shown for 50 observations:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">S  &lt;-<span class="st"> </span><span class="dv">5</span>                             
 n  &lt;-<span class="st"> </span><span class="dv">50</span>
-ef &lt;-<span class="st"> </span><span class="kw">list</span>( <span class="dt">columns =</span> <span class="dv">1</span>:S, <span class="dt">values =</span> <span class="kw">round</span>(<span class="kw">runif</span>(n,.<span class="dv">5</span>,<span class="dv">5</span>),<span class="dv">1</span>) )
+ef &lt;-<span class="st"> </span><span class="kw">list</span>( <span class="dt">columns =</span> <span class="dv">1</span><span class="op">:</span>S, <span class="dt">values =</span> <span class="kw">round</span>(<span class="kw">runif</span>(n,.<span class="dv">5</span>,<span class="dv">5</span>),<span class="dv">1</span>) )
 f  &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(n, S, <span class="dt">typeNames =</span> <span class="st">'DA'</span>, <span class="dt">effort =</span> ef)
 ef</code></pre></div>
 <p>If <code>ef$values</code> consists of a length-n <code>vector</code>, then gjam assumes each value applies to all columns in the corresponding row specified in the <code>vector ef$columns</code>. This is the case shown above and would apply when effort is plot area, search time, sample volume, and so forth. Alternatively, <code>values</code> can be supplied as a <code>matrix</code>, having the same dimensions as <code>ydata</code>. As a <code>matrix</code>, <code>ef$values</code> can have elements that differ by observation and species. For example, camera trap data detect large animals at greater distances than small animals (column differences), and each camera can be deployed for different lengths of time (row differences). For simulation purposes <code>gjamSimData</code> only accepts a <code>vector</code>. However, for fitting with <code>gjam</code> <code>effort$values</code> can be supplied as a <code>matrix</code> with as many columns as are listed in <code>effort$columns</code>.</p>
 <p>Because observations are discrete the continuous latent variables <span class="math inline">\(w_{is}\)</span> are censored. Unlike the previous continuous example, observations <span class="math inline">\(y_{is}\)</span> now assume only discrete values:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(f$w,f$y, <span class="dt">cex =</span> .<span class="dv">2</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(f<span class="op">$</span>w,f<span class="op">$</span>y, <span class="dt">cex =</span> .<span class="dv">2</span>)</code></pre></div>
 <p>The large scatter reflects the variable effort represented by each observation. Incorporating the effort scale gives this plot:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(f$w*ef$values, f$y, <span class="dt">cex =</span> .<span class="dv">2</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(f<span class="op">$</span>w<span class="op">*</span>ef<span class="op">$</span>values, f<span class="op">$</span>y, <span class="dt">cex =</span> .<span class="dv">2</span>)</code></pre></div>
 <p>The heterogeneous effort affects the weight of each observation in model fitting. The <code>effort</code> is entered in <code>modelList</code>. Increase the number of iterations and look at plots:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">S   &lt;-<span class="st"> </span><span class="dv">10</span>                             
 n   &lt;-<span class="st"> </span><span class="dv">1500</span>
-ef  &lt;-<span class="st"> </span><span class="kw">list</span>( <span class="dt">columns =</span> <span class="dv">1</span>:S, <span class="dt">values =</span> <span class="kw">round</span>(<span class="kw">runif</span>(n,.<span class="dv">5</span>,<span class="dv">5</span>),<span class="dv">1</span>) )
+ef  &lt;-<span class="st"> </span><span class="kw">list</span>( <span class="dt">columns =</span> <span class="dv">1</span><span class="op">:</span>S, <span class="dt">values =</span> <span class="kw">round</span>(<span class="kw">runif</span>(n,.<span class="dv">5</span>,<span class="dv">5</span>),<span class="dv">1</span>) )
 f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(n, S, <span class="dt">typeNames =</span> <span class="st">'DA'</span>, <span class="dt">effort =</span> ef)
-ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">250</span>, <span class="dt">typeNames =</span> f$typeNames, <span class="dt">effort =</span> ef)
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
-pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">SMALLPLOTS=</span>F)
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1000</span>, <span class="dt">burnin =</span> <span class="dv">250</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames, <span class="dt">effort =</span> ef)
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f<span class="op">$</span>trueValues, <span class="dt">SMALLPLOTS=</span>F)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 <p>Use <code>summary(out)</code> to see a summary of effort.</p>
 </div>
@@ -780,15 +780,15 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
 upper &lt;-<span class="st"> </span><span class="dv">100</span>
 intv  &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(upper,<span class="ot">Inf</span>),<span class="dv">2</span>)
 <span class="kw">rownames</span>(intv) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'lower'</span>,<span class="st">'upper'</span>)
-tmp &lt;-<span class="st"> </span><span class="kw">gjamCensorY</span>(<span class="dt">values =</span> upper, <span class="dt">intervals =</span> intv, <span class="dt">y =</span> f$ydata, <span class="dt">type=</span><span class="st">'DA'</span>)</code></pre></div>
+tmp &lt;-<span class="st"> </span><span class="kw">gjamCensorY</span>(<span class="dt">values =</span> upper, <span class="dt">intervals =</span> intv, <span class="dt">y =</span> f<span class="op">$</span>ydata, <span class="dt">type=</span><span class="st">'DA'</span>)</code></pre></div>
 <p>There are two objects returned by <code>gjamCensor</code>. The <code>list $censor</code> holds two lists, the <code>$columns</code>, indicating which columns in <code>$y</code> are censored, and the <code>$partition</code>, giving the values and bounds for the partition. Because I did not specify <code>whichcol</code> in my call to <code>gjamCensorY</code>, censoring defaults to all columns in <code>ydata</code>. The object <code>$y</code> matches the mode and dimensions of the input <code>y</code> (a <code>matrix</code> or <code>data.frame</code>). This new version of the response matrix replaces any values in <code>ydata</code> that fall within a censored interval with the censored <code>value</code>. This feature is useful when observers are inconsistent on the assignment of intervals or where an analyst distrusts the precision reported in data. For example, if counts range to thousands, but it is known that counts beyond 100 are inaccurate, then all counts above 100 are censored and, thus, uncertain.</p>
 <p>Censoring can be applied differently to each response variable. For example, chemical constitents reported as concentrations in a sample, sometimes reach non-zero minimum values, taken as detection limits for that instrument and that constituent (detection limits can differ for each constituent). In this case, there is a <code>list</code> for each column in <code>ydata</code>. I can generate this <code>list</code> with a loop, where the censored interval for each column <code>j</code> spans from <code>-Inf</code> to <code>min(ydata[,j])</code>,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">miny   &lt;-<span class="st"> </span><span class="kw">apply</span>(f$ydata, <span class="dv">2</span>, min, <span class="dt">na.rm=</span>T)     <span class="co">#minimum value by column</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">miny   &lt;-<span class="st"> </span><span class="kw">apply</span>(f<span class="op">$</span>ydata, <span class="dv">2</span>, min, <span class="dt">na.rm=</span>T)     <span class="co">#minimum value by column</span>
 censor &lt;-<span class="st">  </span><span class="kw">numeric</span>(<span class="dv">0</span>)     
 p      &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="dv">0</span>, <span class="dv">3</span>, <span class="dt">dimnames=</span><span class="kw">list</span>(<span class="kw">c</span>(<span class="st">&quot;values&quot;</span>,<span class="st">&quot;lower&quot;</span>,<span class="st">&quot;upper&quot;</span>), <span class="ot">NULL</span>))
 
-for(j in <span class="dv">1</span>:<span class="kw">ncol</span>(f$ydata)){
-  p[<span class="dv">1</span>:<span class="dv">3</span>] &lt;-<span class="st"> </span><span class="kw">c</span>(miny[j], -<span class="ot">Inf</span>, miny[j])
+<span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncol</span>(f<span class="op">$</span>ydata)){
+  p[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>] &lt;-<span class="st"> </span><span class="kw">c</span>(miny[j], <span class="op">-</span><span class="ot">Inf</span>, miny[j])
   jlist  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;columns&quot;</span> =<span class="st"> </span>j, <span class="st">&quot;partition&quot;</span> =<span class="st"> </span>p)
   censor &lt;-<span class="st"> </span><span class="kw">c</span>(censor, <span class="kw">list</span>(jlist))
   <span class="kw">names</span>(censor)[j] &lt;-<span class="st"> 'CA'</span>
@@ -801,8 +801,8 @@ for(j in <span class="dv">1</span>:<span class="kw">ncol</span>(f$ydata)){
 <p>The knowledge of the ‘direction’ of the effect can be readily implmented with uniform priors truncated at zero, having the advantage that the posterior distribution that preserves the shape of the likelihood, but is restricted to positive or negative values (Clark et al. 2013).</p>
 <p>The prior distribution for <span class="math inline">\(\mathbf{B}\)</span> is either non-informative (if unspecified) or truncated by limits provided in the <code>list betaPrior</code>. The <code>betaPrior list</code> contains the two matrices <code>lo</code> and <code>hi</code>. The rows of these matrices have <code>rownames</code> that match explanatory variables in the <code>formula</code> and <code>colnames</code> in <code>xdata</code>. In the example that follows I fit a model for FIA data to winter temperature <code>temp</code>, climatic <code>deficit</code>, and their interaction. For this example, I use a prior distribution having positive effects of warm winters and negative effects of climate deficit. This prior is set up with the function <code>gjamPriorTemplate</code>.</p>
 <p>The prior distribution is also the place to exclude specific predictor/response combinations, by setting them equal to <code>NA</code> in <code>lo</code> or <code>hi</code>. Here is an example of informative priors on some coefficients:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata   &lt;-<span class="st"> </span>forestTraits$xdata
-formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>(~<span class="st"> </span>temp*deficit)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata   &lt;-<span class="st"> </span>forestTraits<span class="op">$</span>xdata
+formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>(<span class="op">~</span><span class="st"> </span>temp<span class="op">*</span>deficit)
 snames  &lt;-<span class="st"> </span><span class="kw">colnames</span>(treeYdata)
 
 <span class="co"># warm winter</span>
@@ -812,14 +812,14 @@ hot &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&qu
 nh &lt;-<span class="st"> </span><span class="kw">length</span>(hot)
 lo  &lt;-<span class="st"> </span><span class="kw">vector</span>(<span class="st">'list'</span>, nh)
 <span class="kw">names</span>(lo) &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="st">'temp'</span>,hot,<span class="dt">sep=</span><span class="st">'_'</span>)
-for(j in <span class="dv">1</span>:nh)lo[[j]] &lt;-<span class="st"> </span><span class="dv">0</span>
+<span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>nh)lo[[j]] &lt;-<span class="st"> </span><span class="dv">0</span>
 
 <span class="co"># humid climate (negative deficit)</span>
 humid &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;abieBals&quot;</span>, <span class="st">&quot;betuAlle&quot;</span>, <span class="st">&quot;querNigr&quot;</span>, <span class="st">&quot;querPhel&quot;</span>)  <span class="co">#again, arbitrary</span>
 nh &lt;-<span class="st"> </span><span class="kw">length</span>(humid)
 hi  &lt;-<span class="st"> </span><span class="kw">vector</span>(<span class="st">'list'</span>, nh)
 <span class="kw">names</span>(hi) &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="st">'deficit'</span>,humid,<span class="dt">sep=</span><span class="st">'_'</span>)
-for(j in <span class="dv">1</span>:nh)hi[[j]] &lt;-<span class="st"> </span><span class="dv">0</span>
+<span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>nh)hi[[j]] &lt;-<span class="st"> </span><span class="dv">0</span>
                       
 bp &lt;-<span class="st"> </span><span class="kw">gjamPriorTemplate</span>(formula, xdata, <span class="dt">ydata =</span> treeYdata, <span class="dt">lo =</span> lo, <span class="dt">hi=</span>hi)
 rl &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="dv">10</span>, <span class="dt">r =</span> <span class="dv">5</span>) 
@@ -827,8 +827,8 @@ ml &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">n
 out &lt;-<span class="st"> </span><span class="kw">gjam</span>(formula, xdata, <span class="dt">ydata =</span> treeYdata, <span class="dt">modelList =</span> ml)
 
 sc  &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'grey'</span>,<span class="kw">ncol</span>(treeYdata))
-sc[snames %in%<span class="st"> </span>hot] &lt;-<span class="st"> 'orange'</span>      <span class="co"># highlight informative priors</span>
-sc[snames %in%<span class="st"> </span>humid] &lt;-<span class="st"> 'blue'</span>
+sc[snames <span class="op">%in%</span><span class="st"> </span>hot] &lt;-<span class="st"> 'orange'</span>      <span class="co"># highlight informative priors</span>
+sc[snames <span class="op">%in%</span><span class="st"> </span>humid] &lt;-<span class="st"> 'blue'</span>
 pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">specColor=</span>sc)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 <p>The combination of <code>lo</code> and <code>hi</code> set the limits for posterior draws from the truncated multivariate normal distribution. The <code>help</code> page for <code>gjamPriorTemplate</code> provides an example with informative priors specified for individual predictor-response combinations.</p>
@@ -841,58 +841,58 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
 <h2><span style="color:teal">sample effort in composition data</span></h2>
 <p>Composition count (<code>'CC'</code>) data have heterogenous effort due to different numbers of counts for each sample. For example, in microbiome data, the number of reads per sample can range from <span class="math inline">\(10^{2}\)</span> to <span class="math inline">\(10^{6}\)</span>. Typically, the number of reads does not depend on total abundance. It is generally agreed that only relative differences are important. gjam knows that the effort in <code>CC</code> data is the total count for the sample, so <code>effort</code> does not need to be specified. Here is an example with simulated data:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">S =</span> <span class="dv">8</span>, <span class="dt">typeNames =</span> <span class="st">'CC'</span>)
-ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames)
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
-pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">SMALLPLOTS =</span> F)
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames)
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f<span class="op">$</span>trueValues, <span class="dt">SMALLPLOTS =</span> F)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 <p>For comparison, here is an example with fractional composition, where there is no effort:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">S =</span> <span class="dv">20</span>, <span class="dt">typeNames =</span> <span class="st">'FC'</span>)
-ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames)
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
-pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">SMALLPLOTS =</span> F)
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames)
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f<span class="op">$</span>trueValues, <span class="dt">SMALLPLOTS =</span> F)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 </div>
 <div id="the-partition-in-ordinal-data" class="section level2">
 <h2><span style="color:teal">the partition in ordinal data</span></h2>
 <p>Ordinal count (<code>'OC'</code>) data are collected where abundance must be evaluated rapidly or precise measurements are difficult. Because there is no absolute scale the partition must be inferred. Here is an example with 10 species:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">typeNames =</span> <span class="st">'OC'</span>) 
-ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames)
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames)
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
 <span class="kw">print</span>(out)</code></pre></div>
 <p>A simple plot of the posterior mean values of <code>cutMu</code> shows the estimates with true values from simulation:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">keep &lt;-<span class="st"> </span><span class="kw">strsplit</span>(<span class="kw">colnames</span>(out$parameters$cutMu),<span class="st">'C-'</span>) <span class="co">#only saved columns</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">keep &lt;-<span class="st"> </span><span class="kw">strsplit</span>(<span class="kw">colnames</span>(out<span class="op">$</span>parameters<span class="op">$</span>cutMu),<span class="st">'C-'</span>) <span class="co">#only saved columns</span>
 keep &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">as.numeric</span>(<span class="kw">unlist</span>(keep)), <span class="dt">ncol =</span> <span class="dv">2</span>, <span class="dt">byrow =</span> T)[,<span class="dv">2</span>]
-<span class="kw">plot</span>(f$trueValues$cuts[,keep],out$parameters$cutMu)</code></pre></div>
+<span class="kw">plot</span>(f<span class="op">$</span>trueValues<span class="op">$</span>cuts[,keep],out<span class="op">$</span>parameters<span class="op">$</span>cutMu)</code></pre></div>
 <p>Here are plots:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f<span class="op">$</span>trueValues)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 </div>
 <div id="categorical-data" class="section level2">
 <h2><span style="color:teal">categorical data</span></h2>
 <p>Categorical data have levels within groups. The levels are unordered. The columns in <code>ydata</code> that hold categorical responses are declared as <code>typeNames = &quot;CAT&quot;</code>. In observation vector <span class="math inline">\(\mathbf{y}_{i}\)</span> there are elements for one less than the number of factor levels. Suppose that observations are obtained on attributes of individual plants, each plant being an observation. The group <code>leaf</code> type might have four levels broadleaf decidious <code>bd</code>, needleleaf decidious <code>nd</code>, broadleaf evergreen <code>be</code>, and needleaf evergreen <code>ne</code>. A second group <code>xylem</code> anatomy might have three levels diffuse porous <code>dp</code>, ring porous <code>rp</code>, and tracheid <code>tr</code>. In both cases I assign the last class to be a reference class, <code>other</code>. Ten rows of the response matrix data might look like this:</p>
 <pre><code>##    leaf xylem
-## 1    nd    rp
-## 2    bd other
-## 3 other other
-## 4 other other
-## 5    be other
-## 6    be    dp
-## 7    be other</code></pre>
+## 1    nd    dp
+## 2 other other
+## 3    nd    rp
+## 4    be    dp
+## 5    nd other
+## 6    nd    rp
+## 7 other    dp</code></pre>
 <p>This <code>data.frame ydata</code> becomes this response matrix <code>y</code>:</p>
 <pre><code>##      leaf_bd leaf_nd leaf_be leaf_other xylem_dp xylem_rp xylem_other
-## [1,]       0       1       0          0        0        1           0
-## [2,]       1       0       0          0        0        0           1
-## [3,]       0       0       0          1        0        0           1
-## [4,]       0       0       0          1        0        0           1
-## [5,]       0       0       1          0        0        0           1
-## [6,]       0       0       1          0        1        0           0
-## [7,]       0       0       1          0        0        0           1</code></pre>
+## [1,]       0       1       0          0        1        0           0
+## [2,]       0       0       0          1        0        0           1
+## [3,]       0       1       0          0        0        1           0
+## [4,]       0       0       1          0        1        0           0
+## [5,]       0       1       0          0        0        0           1
+## [6,]       0       1       0          0        0        1           0
+## [7,]       0       0       0          1        1        0           0</code></pre>
 <p><code>gjam</code> expands the two groups into four and three columns in <code>y</code>, respectively. As for composition data there is one redundant column for each group. Here is an example with simulated data, having two categorical groups:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'CAT'</span>,<span class="st">'CAT'</span>)
 f     &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n=</span><span class="dv">2000</span>, <span class="dt">S =</span> <span class="kw">length</span>(types), <span class="dt">typeNames =</span> types)
-ml    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1500</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames, <span class="dt">PREDICTX =</span> F)
-out   &lt;-<span class="st"> </span><span class="kw">gjam</span>( f$formula, <span class="dt">xdata =</span> f$xdata, <span class="dt">ydata =</span> f$ydata, <span class="dt">modelList =</span> ml )
-pl    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">PLOTALLY =</span> T)
+ml    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">1500</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames, <span class="dt">PREDICTX =</span> F)
+out   &lt;-<span class="st"> </span><span class="kw">gjam</span>( f<span class="op">$</span>formula, <span class="dt">xdata =</span> f<span class="op">$</span>xdata, <span class="dt">ydata =</span> f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml )
+pl    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f<span class="op">$</span>trueValues, <span class="dt">PLOTALLY =</span> T)
 <span class="kw">gjamPlot</span>(out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 </div>
 <div id="combinations-of-data-types" class="section level2">
@@ -900,22 +900,22 @@ pl    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt
 <p>One of the advantages of gjam is that it combines data of many types. Here is an example showing joint analysis of 12 species represented by five data types, specified by column:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'OC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CC'</span>,<span class="st">'CA'</span>,<span class="st">'CA'</span>,<span class="st">'PA'</span>,<span class="st">'PA'</span>) 
 f     &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">S =</span> <span class="kw">length</span>(types), <span class="dt">Q =</span> <span class="dv">5</span>, <span class="dt">typeNames =</span> types)
-ml    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames)
-out   &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
-tmp   &lt;-<span class="st"> </span><span class="kw">data.frame</span>(f$typeNames, out$inputs$classBySpec[,<span class="dv">1</span>:<span class="dv">10</span>])
+ml    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames)
+out   &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
+tmp   &lt;-<span class="st"> </span><span class="kw">data.frame</span>(f<span class="op">$</span>typeNames, out<span class="op">$</span>inputs<span class="op">$</span>classBySpec[,<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>])
 <span class="kw">print</span>(tmp)</code></pre></div>
 <p>I have displayed the first 10 columns of <code>classBySpec</code> from the <code>inputs</code> of <code>out</code>, with their <code>typeNames</code>. The ordinal count (<code>'OC'</code>) data occupy lower intervals. The width of each interval in <code>OC</code> data depends on the estimate of the partition in <code>cutMu</code>.</p>
 <p>The composition count (<code>'CC'</code>) data occupy a broader range of intervals. Because <code>CC</code> data are only relative, there is information on only <span class="math inline">\(S - 1\)</span> species. One species is selected as <code>other</code>. The <code>other</code> class can be a collection of rare species (Clark et al. 2017).</p>
 <p>Both continuous abundance (<code>'CA'</code>) and presence-absence (<code>'PA'</code>) data have two intervals. For CA data only the first interval is censored, the zeros (see above). For <code>PA</code> data both interval are censored; it is a multivariate probit.</p>
 <p>Here are some plots for analysis of this model:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">GRIDPLOTS =</span> T)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f<span class="op">$</span>trueValues, <span class="dt">GRIDPLOTS =</span> T)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 </div>
 <div id="random-effects" class="section level2">
 <h2><span style="color:teal">random effects</span></h2>
 <p>In addition to random effects on species used in dimension reduction, <code>gjam</code> allows for random groups. Examples could be observer effects for bird point counts or plot effects, where there are multiple observations per plot. Just like fixed effects, random effects should have replication. In other words, if I want to estimate an observer effect, I should have multiple observations for each observer. For plot effects, I want replication within plots.</p>
 <p>To specify random groups, I provide the name of the column in <code>xdata</code> that holds the group indicator. This can be entered as an integer, a factor level, or a character variable.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">modelList$random &lt;-<span class="st"> 'columnNameInXdata'</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">modelList<span class="op">$</span>random &lt;-<span class="st"> 'columnNameInXdata'</span></code></pre></div>
 <p>This column will be the basis for the random groups. Any rare groups (less than a few observations) will be aggregated into a single <code>rareGroups</code> category, again, to insure replication.</p>
 </div>
 <div id="missing-data-out-of-sample-prediction" class="section level2">
@@ -923,33 +923,33 @@ tmp   &lt;-<span class="st"> </span><span class="kw">data.frame</span>(f$typeNam
 <p>gjam identifies missing values in <code>xdata</code> and <code>ydata</code> and models them as part of the posterior distribution. These are located at <code>$missing$xmiss</code> and <code>$missing$ymiss</code>. The estimates for missing <span class="math inline">\(\mathbf{X}\)</span> are <code>$missing$xmissMu</code> and <code>$missing$xmissSe</code>. The estimates for missing <span class="math inline">\(\mathbf{Y}\)</span> are <code>$missing$ymissMu</code> and <code>$missing$ymissSe</code>.</p>
 <p>To simulate missing data use <code>nmiss</code> to indicate the number of missing values. The actual value will be less than <code>nmiss</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">typeNames =</span> <span class="st">'OC'</span>, <span class="dt">nmiss =</span> <span class="dv">20</span>)
-<span class="kw">which</span>(<span class="kw">is.na</span>(f$xdata), <span class="dt">arr.ind =</span> T)</code></pre></div>
+<span class="kw">which</span>(<span class="kw">is.na</span>(f<span class="op">$</span>xdata), <span class="dt">arr.ind =</span> T)</code></pre></div>
 <p>Note that missing values are assumed to occur in random rows and columns, but not in column one, which is the intercept and known. No further action is needed for model fitting, as <code>gjam</code> knows to treat these as missing data.</p>
 <p>Out-of-sample prediction of <span class="math inline">\(\mathbf{Y}\)</span> is not part of the posterior distribution. For model fitting, holdouts can be specified randomly in <code>modelList</code> with <code>holdoutN</code> (the number of plots to be held out at random) or with <code>holdoutIndex</code> (observation numbers, i.e., row numbers in <code>x</code> and <code>y</code>). The latter can be useful when a comparison of predictions is desired for different models using the same plots as holdouts.</p>
 <p>When observations are held out, <code>gjam</code> provides out-of-sample prediction for both <code>x[holdoutIndex,]</code> and <code>y[holdoutIndex,]</code>. The holdouts are not included in the fitting of <span class="math inline">\(\boldsymbol{B}\)</span>,<span class="math inline">\(\boldsymbol{\Sigma}\)</span>, or <span class="math inline">\(\mathcal{P}\)</span>. For prediction of <code>y[holdoutIndex,]</code>, the values of <code>x[holdoutIndex,]</code> are known, and sampling for <code>w[holdoutIndex,]</code> is done with multivariate normal distribution, without censoring. This is done because the censoring depends on <code>y[holdoutIndex,]</code>, which taken to be unknown. This sample of <code>w[holdoutIndex,]</code> becomes a prediction for <code>y[holdoutIndex,]</code> using the partition (Figure 1a).</p>
 <p>For inverse prediction of <code>x[holdoutIndex,]</code> the values of <code>y[holdoutIndex,]</code> are known. This represents the situation where a sample of the community is available, and the investigator would like to predict the environment of origin.</p>
 <p>Here is an example with simulated data having both missing values and holdout observations:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">typeNames =</span> <span class="st">'CA'</span>, <span class="dt">nmiss =</span> <span class="dv">20</span>)
-ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames, <span class="dt">holdoutN =</span> <span class="dv">50</span>)
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames, <span class="dt">holdoutN =</span> <span class="dv">50</span>)
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
 
 <span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>))
-xMu  &lt;-<span class="st"> </span>out$prediction$xpredMu        <span class="co">#inverse prediction of x</span>
-xSd  &lt;-<span class="st"> </span>out$prediction$xpredSd
-yMu  &lt;-<span class="st"> </span>out$prediction$ypredMu        <span class="co">#predicted y</span>
-hold &lt;-<span class="st"> </span>out$modelList$holdoutIndex    <span class="co">#holdout observations (rows)</span>
+xMu  &lt;-<span class="st"> </span>out<span class="op">$</span>prediction<span class="op">$</span>xpredMu        <span class="co">#inverse prediction of x</span>
+xSd  &lt;-<span class="st"> </span>out<span class="op">$</span>prediction<span class="op">$</span>xpredSd
+yMu  &lt;-<span class="st"> </span>out<span class="op">$</span>prediction<span class="op">$</span>ypredMu        <span class="co">#predicted y</span>
+hold &lt;-<span class="st"> </span>out<span class="op">$</span>modelList<span class="op">$</span>holdoutIndex    <span class="co">#holdout observations (rows)</span>
 
-<span class="kw">plot</span>(out$inputs$x[hold,-<span class="dv">1</span>],xMu[hold,-<span class="dv">1</span>], <span class="dt">cex=</span>.<span class="dv">2</span>, <span class="dt">xlab=</span><span class="st">'True'</span>, <span class="dt">ylab=</span><span class="st">'Predictive mean'</span>)
+<span class="kw">plot</span>(out<span class="op">$</span>inputs<span class="op">$</span>x[hold,<span class="op">-</span><span class="dv">1</span>],xMu[hold,<span class="op">-</span><span class="dv">1</span>], <span class="dt">cex=</span>.<span class="dv">2</span>, <span class="dt">xlab=</span><span class="st">'True'</span>, <span class="dt">ylab=</span><span class="st">'Predictive mean'</span>)
 <span class="kw">title</span>(<span class="st">'holdouts in x'</span>); <span class="kw">abline</span>(<span class="dv">0</span>,<span class="dv">1</span>)
-<span class="kw">plot</span>(out$inputs$y[hold,], yMu[hold,], <span class="dt">cex=</span>.<span class="dv">2</span>, <span class="dt">xlab=</span><span class="st">'True'</span>, <span class="dt">ylab=</span><span class="st">''</span>)
+<span class="kw">plot</span>(out<span class="op">$</span>inputs<span class="op">$</span>y[hold,], yMu[hold,], <span class="dt">cex=</span>.<span class="dv">2</span>, <span class="dt">xlab=</span><span class="st">'True'</span>, <span class="dt">ylab=</span><span class="st">''</span>)
 <span class="kw">title</span>(<span class="st">'holdouts in y'</span>); <span class="kw">abline</span>(<span class="dv">0</span>,<span class="dv">1</span>)
 
-xmiss &lt;-<span class="st"> </span>out$missing$xmiss                              <span class="co">#locations of missing x</span>
-xmissMu   &lt;-<span class="st"> </span>out$missing$xmissMu
-xmissSe   &lt;-<span class="st"> </span>out$missing$xmissSe
-xmean &lt;-<span class="st"> </span><span class="kw">apply</span>(f$xdata,<span class="dv">2</span>,mean,<span class="dt">na.rm=</span>T)[xmiss[,<span class="dv">2</span>]] <span class="co">#column means for missing values</span>
+xmiss &lt;-<span class="st"> </span>out<span class="op">$</span>missing<span class="op">$</span>xmiss                              <span class="co">#locations of missing x</span>
+xmissMu   &lt;-<span class="st"> </span>out<span class="op">$</span>missing<span class="op">$</span>xmissMu
+xmissSe   &lt;-<span class="st"> </span>out<span class="op">$</span>missing<span class="op">$</span>xmissSe
+xmean &lt;-<span class="st"> </span><span class="kw">apply</span>(f<span class="op">$</span>xdata,<span class="dv">2</span>,mean,<span class="dt">na.rm=</span>T)[xmiss[,<span class="dv">2</span>]] <span class="co">#column means for missing values</span>
 <span class="kw">plot</span>(xmean, xmissMu, <span class="dt">xlab=</span><span class="st">'Variable mean'</span>, <span class="dt">ylab=</span><span class="st">'Missing estimate'</span>) <span class="co">#posterior estimates</span>
-<span class="kw">segments</span>(xmean, xmissMu -<span class="st"> </span><span class="fl">1.96</span>*xmissSe, xmean, xmissMu +<span class="st"> </span><span class="fl">1.96</span>*xmissSe)          <span class="co">#approx 95% CI</span>
+<span class="kw">segments</span>(xmean, xmissMu <span class="op">-</span><span class="st"> </span><span class="fl">1.96</span><span class="op">*</span>xmissSe, xmean, xmissMu <span class="op">+</span><span class="st"> </span><span class="fl">1.96</span><span class="op">*</span>xmissSe)          <span class="co">#approx 95% CI</span>
 <span class="kw">title</span>(<span class="st">'missing x'</span>)</code></pre></div>
 <p>Note that there are no ‘true’ values in the simulation for missing x–the last graph at right just shows estimates relative to mean values for respective variables.</p>
 </div>
@@ -962,41 +962,41 @@ tn   &lt;-<span class="st"> </span><span class="kw">c</span>( <span class="kw">r
 S    &lt;-<span class="st"> </span><span class="kw">length</span>(tn)
 n    &lt;-<span class="st"> </span><span class="dv">500</span>
 emat &lt;-<span class="st"> </span><span class="kw">matrix</span>( <span class="kw">runif</span>(n,.<span class="dv">5</span>,<span class="dv">5</span>), n, sd)              <span class="co">#simulated DA effort</span>
-eff  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">columns =</span> <span class="kw">c</span>((sc<span class="dv">+1</span>):S), <span class="dt">values =</span> emat )
+eff  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">columns =</span> <span class="kw">c</span>((sc<span class="op">+</span><span class="dv">1</span>)<span class="op">:</span>S), <span class="dt">values =</span> emat )
 f    &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n =</span> n, <span class="dt">typeNames =</span> tn, <span class="dt">effort =</span> eff)
-ml   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames, <span class="dt">effort =</span> f$effort)
-out  &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
+ml   &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames, <span class="dt">effort =</span> f<span class="op">$</span>effort)
+out  &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
 
 <span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>),<span class="dt">bty=</span><span class="st">'n'</span>)             
-<span class="kw">gjamPredict</span>(out, <span class="dt">y2plot =</span> <span class="kw">colnames</span>(f$ydata)[tn ==<span class="st"> 'DA'</span>]) <span class="co">#predict DA data</span></code></pre></div>
+<span class="kw">gjamPredict</span>(out, <span class="dt">y2plot =</span> <span class="kw">colnames</span>(f<span class="op">$</span>ydata)[tn <span class="op">==</span><span class="st"> 'DA'</span>]) <span class="co">#predict DA data</span></code></pre></div>
 <p>The prediction plot fits the data well, because it assumes the same effort. However, I might wish to predict data with a standard level of effort, say ‘1’. This new effort is taken in the same units as was used to fit the data, e.g., plot area, time observed, and so on. I use the same design matrix, but specify this new effort. Here I first predict the data with the actual effort, followed by the new effort of 1</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">new &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">xdata =</span> f$xdata, <span class="dt">effort=</span>eff, <span class="dt">nsim =</span> <span class="dv">500</span> ) <span class="co"># effort unchanged </span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">new &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">xdata =</span> f<span class="op">$</span>xdata, <span class="dt">effort=</span>eff, <span class="dt">nsim =</span> <span class="dv">500</span> ) <span class="co"># effort unchanged </span>
 p1  &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(<span class="dt">output =</span> out, <span class="dt">newdata =</span> new)
 
-<span class="kw">plot</span>(f$y[,tn ==<span class="st"> 'DA'</span>], p1$sdList$yMu[,tn ==<span class="st"> 'DA'</span>],<span class="dt">ylab =</span> <span class="st">'Predicted'</span>,<span class="dt">cex=</span>.<span class="dv">1</span>)
+<span class="kw">plot</span>(f<span class="op">$</span>y[,tn <span class="op">==</span><span class="st"> 'DA'</span>], p1<span class="op">$</span>sdList<span class="op">$</span>yMu[,tn <span class="op">==</span><span class="st"> 'DA'</span>],<span class="dt">ylab =</span> <span class="st">'Predicted'</span>,<span class="dt">cex=</span>.<span class="dv">1</span>)
 <span class="kw">abline</span>(<span class="dv">0</span>,<span class="dv">1</span>)
 
-new$effort$values &lt;-<span class="st"> </span>eff$values*<span class="dv">0</span> +<span class="st"> </span><span class="dv">1</span>       <span class="co"># predict for effort = 1</span>
+new<span class="op">$</span>effort<span class="op">$</span>values &lt;-<span class="st"> </span>eff<span class="op">$</span>values<span class="op">*</span><span class="dv">0</span> <span class="op">+</span><span class="st"> </span><span class="dv">1</span>       <span class="co"># predict for effort = 1</span>
 p2 &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(<span class="dt">output =</span> out, <span class="dt">newdata =</span> new)
 
-<span class="kw">points</span>(f$y[,tn ==<span class="st"> 'DA'</span>], p2$sdList$yMu[,tn ==<span class="st"> 'DA'</span>],<span class="dt">col=</span><span class="st">'orange'</span>,<span class="dt">cex=</span>.<span class="dv">1</span>)
+<span class="kw">points</span>(f<span class="op">$</span>y[,tn <span class="op">==</span><span class="st"> 'DA'</span>], p2<span class="op">$</span>sdList<span class="op">$</span>yMu[,tn <span class="op">==</span><span class="st"> 'DA'</span>],<span class="dt">col=</span><span class="st">'orange'</span>,<span class="dt">cex=</span>.<span class="dv">1</span>)
 <span class="kw">abline</span>(<span class="dv">0</span>,<span class="dv">1</span>)</code></pre></div>
 <p>The orange dots show what the model would predict had effort on all observations been equal to 1.</p>
 </div>
 <div id="conditional-prediction" class="section level2">
 <h2><span style="color:teal">conditional prediction</span></h2>
 <p><code>gjam</code> can predict a subset of columns in <code>y</code> conditional on other columns using the function <code>gjamPredict</code>. Here is an example using the model fitted in the previous section. Consider model prediction in the case where the second plant species is absent, and the first species is at its mean value. In other words, for these plant species abundances, what is the effect of model predictors? I compare it to predictions where I first condition on the observed values for the first two plant species. I do not specify a new version of <code>xdata</code>, but rather include the columns of <code>y</code> to condition on:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">new &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> f$y[,<span class="dv">1</span>:<span class="dv">2</span>], <span class="dt">nsim=</span><span class="dv">200</span>)   <span class="co"># cond on obs CA data</span>
-p1  &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(<span class="dt">output =</span> out, <span class="dt">newdata =</span> new)$sdList$yMu[,tn ==<span class="st"> 'DA'</span>]
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">new &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> f<span class="op">$</span>y[,<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>], <span class="dt">nsim=</span><span class="dv">200</span>)   <span class="co"># cond on obs CA data</span>
+p1  &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(<span class="dt">output =</span> out, <span class="dt">newdata =</span> new)<span class="op">$</span>sdList<span class="op">$</span>yMu[,tn <span class="op">==</span><span class="st"> 'DA'</span>]
 
-yc     &lt;-<span class="st"> </span>f$y[,<span class="dv">1</span>:<span class="dv">2</span>]                                  <span class="co"># cond on new CA values</span>
+yc     &lt;-<span class="st"> </span>f<span class="op">$</span>y[,<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>]                                  <span class="co"># cond on new CA values</span>
 yc[,<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="kw">mean</span>(yc[,<span class="dv">1</span>])
 yc[,<span class="dv">2</span>] &lt;-<span class="st"> </span><span class="dv">0</span>
 new    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> yc, <span class="dt">nsim=</span><span class="dv">200</span>)
-p2     &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(<span class="dt">output =</span> out, <span class="dt">newdata =</span> new)$sdList$yMu[,tn ==<span class="st"> 'DA'</span>]
-<span class="kw">plot</span>(f$y[,tn ==<span class="st"> 'DA'</span>], p1, <span class="dt">xlab=</span><span class="st">'Obs'</span>, <span class="dt">ylab =</span> <span class="st">'Pred'</span>, <span class="dt">cex=</span>.<span class="dv">1</span>,
+p2     &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(<span class="dt">output =</span> out, <span class="dt">newdata =</span> new)<span class="op">$</span>sdList<span class="op">$</span>yMu[,tn <span class="op">==</span><span class="st"> 'DA'</span>]
+<span class="kw">plot</span>(f<span class="op">$</span>y[,tn <span class="op">==</span><span class="st"> 'DA'</span>], p1, <span class="dt">xlab=</span><span class="st">'Obs'</span>, <span class="dt">ylab =</span> <span class="st">'Pred'</span>, <span class="dt">cex=</span>.<span class="dv">1</span>,
     <span class="dt">ylim=</span><span class="kw">range</span>(<span class="kw">c</span>(p1,p2)))
-<span class="kw">points</span>(f$y[,tn ==<span class="st"> 'DA'</span>], p2,<span class="dt">col=</span><span class="st">'orange'</span>,<span class="dt">cex=</span>.<span class="dv">1</span>)
+<span class="kw">points</span>(f<span class="op">$</span>y[,tn <span class="op">==</span><span class="st"> 'DA'</span>], p2,<span class="dt">col=</span><span class="st">'orange'</span>,<span class="dt">cex=</span>.<span class="dv">1</span>)
 <span class="kw">abline</span>(<span class="dv">0</span>,<span class="dv">1</span>)</code></pre></div>
 <p>In the first case, I held the values for columns 1 and 2 at the values observed. In the second case, I conditioned on the specific values of <code>y</code> mentioned above. Both differ from the unconditional prediction.</p>
 <p>When there are large covariances in the estimates of <span class="math inline">\(\Sigma\)</span> the conditional predictions can differ dramatically from anything observed. In fact, if I condition on values of y that are well outside the data predictions will make no sense at all. Conversely, if covariances in <span class="math inline">\(\Sigma\)</span> are near zero conditional distributions will not look much different from unconditional predictions. With dimension reduction we have only a crude estimate of <span class="math inline">\(\Sigma\)</span>, so conditional prediction was be judged accordingly.</p>
@@ -1005,36 +1005,36 @@ p2     &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(<span c
 d &lt;-<span class="st"> &quot;https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True&quot;</span>
 <span class="kw">source_data</span>(d)
 
-xdata &lt;-<span class="st"> </span>forestTraits$xdata                          <span class="co"># n X Q</span>
-ydata  &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(forestTraits$treesDeZero)        <span class="co"># n X S</span>
-ydata &lt;-<span class="st"> </span>ydata[,<span class="kw">colnames</span>(ydata) !=<span class="st"> 'other'</span>]
-ydata &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(ydata, <span class="dv">10</span>, <span class="dt">OTHER=</span>F)$y</code></pre></div>
+xdata &lt;-<span class="st"> </span>forestTraits<span class="op">$</span>xdata                          <span class="co"># n X Q</span>
+ydata  &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(forestTraits<span class="op">$</span>treesDeZero)        <span class="co"># n X S</span>
+ydata &lt;-<span class="st"> </span>ydata[,<span class="kw">colnames</span>(ydata) <span class="op">!=</span><span class="st"> 'other'</span>]
+ydata &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(ydata, <span class="dv">10</span>, <span class="dt">OTHER=</span>F)<span class="op">$</span>y</code></pre></div>
 <p>Here is a model fitted to the forest <code>&quot;CA&quot;</code> data:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rl      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="dv">15</span>, <span class="dt">r =</span> <span class="dv">10</span>)
 ml      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">5000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">typeNames =</span> <span class="st">'CA'</span>, 
                 <span class="dt">reductList =</span> rl, <span class="dt">PREDICTX =</span> F)
-formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>(~<span class="st"> </span>temp +<span class="st"> </span>deficit*moisture)
+formula &lt;-<span class="st"> </span><span class="kw">as.formula</span>(<span class="op">~</span><span class="st"> </span>temp <span class="op">+</span><span class="st"> </span>deficit<span class="op">*</span>moisture)
 out &lt;-<span class="st"> </span><span class="kw">gjam</span>(formula, xdata, ydata, <span class="dt">modelList =</span> ml)
 
 <span class="co">#prediction</span>
 newdata &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">xdata =</span> xdata, <span class="dt">nsim=</span><span class="dv">100</span>)
 tmp     &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(out, <span class="dt">newdata=</span>newdata)
-full    &lt;-<span class="st"> </span>tmp$sdList$yMu</code></pre></div>
+full    &lt;-<span class="st"> </span>tmp<span class="op">$</span>sdList<span class="op">$</span>yMu</code></pre></div>
 <p>Here I condition on half of the species and predict the other half:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cnames &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="kw">colnames</span>(ydata),S/<span class="dv">2</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cnames &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="kw">colnames</span>(ydata),S<span class="op">/</span><span class="dv">2</span>)
 wc     &lt;-<span class="st"> </span><span class="kw">match</span>(cnames, <span class="kw">colnames</span>(ydata))
 
 yc &lt;-<span class="st"> </span>ydata[,cnames]
 
 newdata &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> yc, <span class="dt">nsim=</span><span class="dv">200</span>)
 tmp     &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(out, <span class="dt">newdata =</span> newdata)
-condy   &lt;-<span class="st"> </span>tmp$sdList$yMu
+condy   &lt;-<span class="st"> </span>tmp<span class="op">$</span>sdList<span class="op">$</span>yMu
 
-<span class="kw">plot</span>(ydata[,-wc], full[,-wc], <span class="dt">ylim=</span><span class="kw">c</span>(<span class="kw">range</span>(ydata)), <span class="dt">cex=</span>.<span class="dv">2</span>)
+<span class="kw">plot</span>(ydata[,<span class="op">-</span>wc], full[,<span class="op">-</span>wc], <span class="dt">ylim=</span><span class="kw">c</span>(<span class="kw">range</span>(ydata)), <span class="dt">cex=</span>.<span class="dv">2</span>)
 <span class="kw">abline</span>(<span class="dv">0</span>,<span class="dv">1</span>)
-<span class="kw">points</span>(ydata[,-wc],condy[,-wc],<span class="dt">col=</span><span class="dv">2</span>, <span class="dt">cex=</span>.<span class="dv">2</span>)
-rmspe &lt;-<span class="st"> </span><span class="kw">c</span>( <span class="kw">mean</span>((ydata[,-wc] -<span class="st"> </span>full[,-wc])^<span class="dv">2</span>),
-            <span class="kw">mean</span>((ydata[,-wc] -<span class="st"> </span>condy[,-wc])^<span class="dv">2</span>))
+<span class="kw">points</span>(ydata[,<span class="op">-</span>wc],condy[,<span class="op">-</span>wc],<span class="dt">col=</span><span class="dv">2</span>, <span class="dt">cex=</span>.<span class="dv">2</span>)
+rmspe &lt;-<span class="st"> </span><span class="kw">c</span>( <span class="kw">mean</span>((ydata[,<span class="op">-</span>wc] <span class="op">-</span><span class="st"> </span>full[,<span class="op">-</span>wc])<span class="op">^</span><span class="dv">2</span>),
+            <span class="kw">mean</span>((ydata[,<span class="op">-</span>wc] <span class="op">-</span><span class="st"> </span>condy[,<span class="op">-</span>wc])<span class="op">^</span><span class="dv">2</span>))
 <span class="kw">names</span>(rmspe) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'unconditional'</span>,<span class="st">'conditional'</span>)
 rmspe</code></pre></div>
 <p>The rmspe for the unconditional prediction is lower, because there are residual relationships between species.</p>
@@ -1061,10 +1061,10 @@ rmspe</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">S   &lt;-<span class="st"> </span><span class="dv">200</span>
 f   &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n =</span> <span class="dv">100</span>, <span class="dt">S =</span> S, <span class="dt">typeNames=</span><span class="st">'CA'</span>)
 rl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">r =</span> <span class="dv">5</span>, <span class="dt">N =</span> <span class="dv">20</span>)
-ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f$typeNames, 
+ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> f<span class="op">$</span>typeNames, 
             <span class="dt">reductList =</span> rl, <span class="dt">PREDICTX =</span> F)  
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f$formula, f$xdata, f$ydata, <span class="dt">modelList =</span> ml)
-pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f$trueValues, <span class="dt">SMALLPLOTS =</span> F)
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(f<span class="op">$</span>formula, f<span class="op">$</span>xdata, f<span class="op">$</span>ydata, <span class="dt">modelList =</span> ml)
+pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">trueValues =</span> f<span class="op">$</span>trueValues, <span class="dt">SMALLPLOTS =</span> F)
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)</code></pre></div>
 <p>The full matrix is not stored, so gjam needs time to construct versions of it as needed. The setting <code>PREDICTX = F</code> can be included in <code>modelList</code> to speed up computation, when prediction of inputs is not of interest.</p>
 <p>The massive reduction in rank of the covariance matrix means that the we cannot estimate the ‘true’ version of <span class="math inline">\(\boldsymbol{\Sigma}\)</span>, particularly given the fact that the simulator does not generate a structured <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. These appear as highly structured <code>GRIDPLOTS</code> for the posterior mean estimates of the correlation matrix <span class="math inline">\(\mathbf{R}\)</span>. However, we can still obtain estimates of <span class="math inline">\(\mathbf{B}\)</span> and predictions of <span class="math inline">\(\mathbf{Y}\)</span> that are close to true values.</p>
@@ -1082,20 +1082,20 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
 d &lt;-<span class="st"> &quot;https://github.com/jimclarkatduke/gjam/blob/master/fungEnd.RData?raw=True&quot;</span>
 <span class="kw">source_data</span>(d)
 
-xdata  &lt;-<span class="st"> </span>fungEnd$xdata
-otu    &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(fungEnd$yDeZero)
-status &lt;-<span class="st"> </span>fungEnd$status
+xdata  &lt;-<span class="st"> </span>fungEnd<span class="op">$</span>xdata
+otu    &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(fungEnd<span class="op">$</span>yDeZero)
+status &lt;-<span class="st"> </span>fungEnd<span class="op">$</span>status
 
 <span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
-    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
+    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> <span class="op">-</span><span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
 <span class="kw">hist</span>(status, <span class="dt">main=</span><span class="st">'Host condition (morbid = 0)'</span>, <span class="dt">ylab =</span> <span class="st">'Host obs'</span>)
 <span class="kw">hist</span>(otu, <span class="dt">nclass=</span><span class="dv">100</span>, <span class="dt">ylab =</span> <span class="st">'Reads'</span>, <span class="dt">main=</span><span class="st">'each observation'</span>)
-nobs &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(otu, <span class="dt">minObs =</span> <span class="dv">1</span>, <span class="dt">OTHER =</span> F)$nobs
+nobs &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(otu, <span class="dt">minObs =</span> <span class="dv">1</span>, <span class="dt">OTHER =</span> F)<span class="op">$</span>nobs
 <span class="kw">hist</span>(nobs, <span class="dt">nclass=</span><span class="dv">100</span>, <span class="dt">ylab =</span> <span class="st">'Total reads per OTU'</span>, <span class="dt">main=</span><span class="st">'Full sample'</span>)</code></pre></div>
 <p>The model will provide no information on the rarest taxa. Here we trim <code>otu</code> to include only OTUs that occur in &gt; 100 observations. The rarest OTUs are aggregated into the last column of <code>y</code> with the column name <code>other</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tmp &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(otu, <span class="dt">minObs =</span> <span class="dv">100</span>)
-y   &lt;-<span class="st"> </span>tmp$y
-<span class="kw">dim</span>(fungEnd$y)               <span class="co"># all OTUs</span>
+y   &lt;-<span class="st"> </span>tmp<span class="op">$</span>y
+<span class="kw">dim</span>(fungEnd<span class="op">$</span>y)               <span class="co"># all OTUs</span>
 <span class="kw">dim</span>(y)                       <span class="co"># trimmed data</span>
 <span class="kw">tail</span>(<span class="kw">colnames</span>(y))            <span class="co"># 'other' class added</span></code></pre></div>
 <p>The full response matrix includes the OTU composition counts and the host status in column 1:</p>
@@ -1104,37 +1104,37 @@ S     &lt;-<span class="st"> </span><span class="kw">ncol</span>(ydata)
 typeNames    &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'CC'</span>,S)   <span class="co"># composition count data</span>
 typeNames[<span class="dv">1</span>] &lt;-<span class="st"> 'PA'</span>          <span class="co"># binary host status </span></code></pre></div>
 <p>The interactions in the model involve two factors <code>poly</code> (two levels, polyculture vs monoculture) and <code>host</code> (eight factor levels, one for each host species). I assign <code>acerRubr</code> as the reference class for <code>host</code>,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata$host &lt;-<span class="st"> </span><span class="kw">relevel</span>(xdata$host,<span class="st">'acerRubr'</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata<span class="op">$</span>host &lt;-<span class="st"> </span><span class="kw">relevel</span>(xdata<span class="op">$</span>host,<span class="st">'acerRubr'</span>)</code></pre></div>
 <p>The <code>gjam vignette</code> on traits discusses multilevel factors in more detail. We discuss multilevel factors in the context of interactions below.</p>
 <p>For this example we specify up to <span class="math inline">\(N = 20\)</span> clusters with <span class="math inline">\(r = 3\)</span> columns each. Here is an analysis of host seedling and polyculture effect on combined host morbidity status and the microbiome composition:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rl &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">r =</span> <span class="dv">5</span>, <span class="dt">N =</span> <span class="dv">15</span>)
 ml &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> typeNames, <span class="dt">reductList =</span> rl)
-output &lt;-<span class="st"> </span><span class="kw">gjam</span>(~<span class="st"> </span>host*poly, xdata, ydata, <span class="dt">modelList =</span> ml)</code></pre></div>
+output &lt;-<span class="st"> </span><span class="kw">gjam</span>(<span class="op">~</span><span class="st"> </span>host<span class="op">*</span>poly, xdata, ydata, <span class="dt">modelList =</span> ml)</code></pre></div>
 <p>Here is output:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">S &lt;-<span class="st"> </span><span class="kw">ncol</span>(ydata)
 specColor     &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'black'</span>,S)
 specColor[<span class="dv">1</span>]  &lt;-<span class="st"> 'red'</span>                 <span class="co"># highlight host status</span>
 plotPars      &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">specColor =</span> specColor, <span class="dt">GRIDPLOTS=</span>T) 
 fit &lt;-<span class="st"> </span><span class="kw">gjamPlot</span>(output, plotPars)
-fit$eComs[<span class="dv">1</span>:<span class="dv">5</span>,]</code></pre></div>
+fit<span class="op">$</span>eComs[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,]</code></pre></div>
 <p>Check the chains for convergence. Those coefficients that do not converge are poorly represented in factorial factor combinations.</p>
 <p>Again, the low dimensional version of covariance <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is expected to perform best when there is structure in the data. The responses in matrix <span class="math inline">\(\mathbf{E}\)</span>, returned in <code>fit$ematrix</code>, classify OTUs in three main groups, contained in <code>fit$eComs</code>.</p>
 </div>
 <div id="interactions-and-indirect-effects" class="section level2">
 <h2><span style="color:teal">interactions and indirect effects</span></h2>
 <p>A plot of main effects, interactions, and indirect effects is used in this example to show contributions to host status, the response variable <code>status</code>. The effects on host status of on responses is available as a table with standard errors and credible intervals:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">beta &lt;-<span class="st"> </span>fit$summaryCoeffs$betaCoeff
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">beta &lt;-<span class="st"> </span>fit<span class="op">$</span>summaryCoeffs<span class="op">$</span>betaCoeff
 ws   &lt;-<span class="st"> </span><span class="kw">grep</span>(<span class="st">'status_'</span>,<span class="kw">rownames</span>(beta))  <span class="co"># find coefficients for status</span>
 beta[ws,]</code></pre></div>
 <p>Following the intercept are rows showing main effects. These are followed by interaction terms. A quick visual of coefficients having credible intervals that exclude zero is here:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit$summaryCoeffs$betaSig[<span class="st">'status'</span>,]</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit<span class="op">$</span>summaryCoeffs<span class="op">$</span>betaSig[<span class="st">'status'</span>,]</code></pre></div>
 <p>with <code>-</code> and <code>+</code> indicating negative and postive values.</p>
 <p>Here I use the function <code>gamIIE</code> to create the object <code>fit1</code>, a <code>list</code> of these main, interaction, and indirect effects. I specify not to include the response variable <code>other</code> as an indirect effect on <code>status</code>, because we want to focus on the effects of microbes that have been assigned to known taxonomic groups.</p>
 <p>I specify the values for main effects that are involved in the interactions between <code>poly</code> and <code>host</code>. Each factor has one less column in the design matrix <code>x</code> than factor levels. <code>poly</code> has two classes in <code>xdata</code>, one each for monoculture and polyculture, so there is one <code>poly</code> column in <code>x</code>. <code>host</code> has eight species in <code>xdata</code>, so there are seven columns in <code>x</code>. Recall that we assigned <code>acerRubr</code> to be the reference class, so there is no column for it in <code>x</code>.</p>
 <p>The vector of predictor values <code>xvector</code> passed to <code>gjamIIE</code> has the same elements and names as columns in <code>x</code>. For this reason it is easiest to simply assign it a row in <code>x</code>, then change the values. The only values that influence interactions are those that are involved in interaction terms, as specified in <code>formula</code>.</p>
 <p>For the following plots I copy the first row of <code>x</code>. In the first are main effects of all predictors on <code>status</code>. In the second plot is interactions with <code>poly</code> set to 1. In the third plot are indirect effects of the microbes:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span>output$inputs$x
-xvector &lt;-<span class="st"> </span>x[<span class="dv">1</span>,]*<span class="dv">0</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span>output<span class="op">$</span>inputs<span class="op">$</span>x
+xvector &lt;-<span class="st"> </span>x[<span class="dv">1</span>,]<span class="op">*</span><span class="dv">0</span>
 <span class="kw">names</span>(xvector)  &lt;-<span class="st"> </span><span class="kw">colnames</span>(x)
 
 xvector[<span class="st">'hostfraxAmer'</span>] &lt;-<span class="st"> </span><span class="dv">1</span>
@@ -1142,38 +1142,38 @@ xvector[<span class="st">'polypoly'</span>] &lt;-<span class="st"> </span><span 
 fit1 &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(output, xvector, <span class="dt">omitY =</span> <span class="st">'other'</span>)
 
 <span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
-    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>))
+    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> <span class="op">-</span><span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>))
 <span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'status'</span>, <span class="dt">effectMu =</span> <span class="st">'direct'</span>, 
-            <span class="dt">effectSd =</span> <span class="st">'direct'</span>, <span class="dt">legLoc =</span> <span class="st">'bottomright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-<span class="dv">5</span>,<span class="dv">10</span>))
+            <span class="dt">effectSd =</span> <span class="st">'direct'</span>, <span class="dt">legLoc =</span> <span class="st">'bottomright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span><span class="dv">5</span>,<span class="dv">10</span>))
 <span class="kw">title</span>(<span class="st">'Direct effect by host'</span>)
 
 <span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'status'</span>, <span class="dt">effectMu =</span> <span class="st">'int'</span>, <span class="dt">effectSd =</span> <span class="st">'int'</span>,
-            <span class="dt">legLoc =</span> <span class="st">'topright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-<span class="dv">5</span>,<span class="dv">10</span>))
+            <span class="dt">legLoc =</span> <span class="st">'topright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span><span class="dv">5</span>,<span class="dv">10</span>))
 <span class="kw">title</span>(<span class="st">'Interactions with polyculture'</span>)
 
 <span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'status'</span>, <span class="dt">effectMu =</span> <span class="st">'ind'</span>, <span class="dt">effectSd =</span> <span class="st">'ind'</span>,
-            <span class="dt">legLoc =</span> <span class="st">'topright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-<span class="dv">1</span>,<span class="dv">1</span>))
+            <span class="dt">legLoc =</span> <span class="st">'topright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>))
 <span class="kw">title</span>(<span class="st">'Indirect effect of microbiome'</span>)</code></pre></div>
 <p>The plot at left is the direct effect, which includes both the main effects plus interactions and plotted relative to the mean over all hosts. The interaction contribution at center is the effect of each host, when grown in polyculture (<code>poly = ref1</code>) and of polyculture when the <code>host = 'fraxAmer</code>.</p>
 <p>The indirect effects bring with them the main effects and interaction effects on each microbial taxon. In this example the indirect effects are noisy, showing large 95% intervals.</p>
 <p>I might also wish to explore the taxa that are more abundant in healthy versus morbid hosts. This can be done with <code>gjamPredict</code>. Here are conditional predictions for responses with <code>status</code> first set to 0 (morbid) and then set to 1 (healthy):</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">y0 &lt;-<span class="st"> </span>ydata[,<span class="dv">1</span>,drop=F]*<span class="dv">0</span>       <span class="co">#unhealthy host</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">y0 &lt;-<span class="st"> </span>ydata[,<span class="dv">1</span>,drop=F]<span class="op">*</span><span class="dv">0</span>       <span class="co">#unhealthy host</span>
 
 new    &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> y0, <span class="dt">nsim=</span><span class="dv">50</span>)
 morbid &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(output, <span class="dt">newdata =</span> new ) 
 
-new     &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> y0 +<span class="st"> </span><span class="dv">1</span>, <span class="dt">nsim =</span> <span class="dv">50</span> )
+new     &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ydataCond =</span> y0 <span class="op">+</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">nsim =</span> <span class="dv">50</span> )
 healthy &lt;-<span class="st"> </span><span class="kw">gjamPredict</span>(output, <span class="dt">newdata =</span> new )
 
 <span class="co"># compare predictions</span>
-y &lt;-<span class="st"> </span>output$inputs$y
+y &lt;-<span class="st"> </span>output<span class="op">$</span>inputs<span class="op">$</span>y
 <span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>), <span class="dt">bty=</span><span class="st">'n'</span>)
-<span class="kw">plot</span>(healthy$sdList$yMu[,-<span class="dv">1</span>],morbid$sdList$yMu[,-<span class="dv">1</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,
+<span class="kw">plot</span>(healthy<span class="op">$</span>sdList<span class="op">$</span>yMu[,<span class="op">-</span><span class="dv">1</span>],morbid<span class="op">$</span>sdList<span class="op">$</span>yMu[,<span class="op">-</span><span class="dv">1</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,
      <span class="dt">xlab=</span><span class="st">'healty'</span>,<span class="dt">ylab=</span><span class="st">'morbid'</span>)
 <span class="kw">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">lty=</span><span class="dv">2</span>,<span class="dt">col=</span><span class="st">'grey'</span>)
-<span class="kw">plot</span>(y[,<span class="dv">2</span>:<span class="dv">20</span>],healthy$sdList$yMu[,<span class="dv">2</span>:<span class="dv">20</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,<span class="dt">col=</span><span class="st">'orange'</span>,
+<span class="kw">plot</span>(y[,<span class="dv">2</span><span class="op">:</span><span class="dv">20</span>],healthy<span class="op">$</span>sdList<span class="op">$</span>yMu[,<span class="dv">2</span><span class="op">:</span><span class="dv">20</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,<span class="dt">col=</span><span class="st">'orange'</span>,
      <span class="dt">xlab=</span><span class="st">'Observed'</span>,<span class="dt">ylab=</span><span class="st">'Predicted'</span>, <span class="dt">pch=</span><span class="dv">16</span>)
-<span class="kw">points</span>(y[,<span class="dv">2</span>:<span class="dv">20</span>],morbid$sdList$yMu[,<span class="dv">2</span>:<span class="dv">20</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,<span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">pch=</span><span class="dv">16</span>)
+<span class="kw">points</span>(y[,<span class="dv">2</span><span class="op">:</span><span class="dv">20</span>],morbid<span class="op">$</span>sdList<span class="op">$</span>yMu[,<span class="dv">2</span><span class="op">:</span><span class="dv">20</span>], <span class="dt">cex=</span>.<span class="dv">4</span>,<span class="dt">col=</span><span class="st">'blue'</span>, <span class="dt">pch=</span><span class="dv">16</span>)
 <span class="kw">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">lty=</span><span class="dv">2</span>,<span class="dt">col=</span><span class="st">'grey'</span>)</code></pre></div>
 <p>In the first plot dots above the the 1:1 line are microbial taxa predicted to be more abundant in morbid hosts, and vice versa. In the second plot response to healthy hosts are in orange for a subset of types, to limit clutter.</p>
 <p><br></p>
@@ -1197,25 +1197,25 @@ y &lt;-<span class="st"> </span>output$inputs$y
 d &lt;-<span class="st"> &quot;https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True&quot;</span>
 <span class="kw">source_data</span>(d)
 
-xdata &lt;-<span class="st"> </span>forestTraits$xdata                          <span class="co"># n X Q</span>
-types &lt;-<span class="st"> </span>forestTraits$traitTypes                     <span class="co"># 12 trait types </span>
-sbyt  &lt;-<span class="st"> </span>forestTraits$specByTrait                    <span class="co"># S X 12</span>
-pbys  &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(forestTraits$treesDeZero)        <span class="co"># n X S</span>
-pbys  &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(pbys,<span class="dv">5</span>)$y                         <span class="co"># at least 5 plots</span>
+xdata &lt;-<span class="st"> </span>forestTraits<span class="op">$</span>xdata                          <span class="co"># n X Q</span>
+types &lt;-<span class="st"> </span>forestTraits<span class="op">$</span>traitTypes                     <span class="co"># 12 trait types </span>
+sbyt  &lt;-<span class="st"> </span>forestTraits<span class="op">$</span>specByTrait                    <span class="co"># S X 12</span>
+pbys  &lt;-<span class="st"> </span><span class="kw">gjamReZero</span>(forestTraits<span class="op">$</span>treesDeZero)        <span class="co"># n X S</span>
+pbys  &lt;-<span class="st"> </span><span class="kw">gjamTrimY</span>(pbys,<span class="dv">5</span>)<span class="op">$</span>y                         <span class="co"># at least 5 plots</span>
 sbyt  &lt;-<span class="st"> </span>sbyt[<span class="kw">match</span>(<span class="kw">colnames</span>(pbys),<span class="kw">rownames</span>(sbyt)),] <span class="co"># trait matrix matches ydata</span>
 <span class="kw">identical</span>(<span class="kw">rownames</span>(sbyt),<span class="kw">colnames</span>(pbys))</code></pre></div>
 <p>The matrix <code>pbys</code> holds biomass values for species, rounded off to reduce storage. The first six columns of <code>sbyt</code> are centered and standardized. The three ordinal classes are integer values, but do not represent an absolute scale (see below). The three groups of categorical variables in <code>data.frame sbyt</code> have different numbers of levels shown here:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">table</span>(sbyt$leaf)      <span class="co"># four levels</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">table</span>(sbyt<span class="op">$</span>leaf)      <span class="co"># four levels</span>
 
-<span class="kw">table</span>(sbyt$xylem)     <span class="co"># diffuse/tracheid vs ring-porous</span>
+<span class="kw">table</span>(sbyt<span class="op">$</span>xylem)     <span class="co"># diffuse/tracheid vs ring-porous</span>
 
-<span class="kw">table</span>(sbyt$repro)     <span class="co"># two levels</span></code></pre></div>
+<span class="kw">table</span>(sbyt<span class="op">$</span>repro)     <span class="co"># two levels</span></code></pre></div>
 <p>These species traits are translated into community-weighted means and modes (CWMM) by the function <code>gjamSpec2Trait</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tmp         &lt;-<span class="st"> </span><span class="kw">gjamSpec2Trait</span>(pbys, sbyt, types)
-tTypes      &lt;-<span class="st"> </span>tmp$traitTypes                  <span class="co"># M = 15 values</span>
-u           &lt;-<span class="st"> </span>tmp$plotByCWM                   <span class="co"># n X M</span>
-censor      &lt;-<span class="st"> </span>tmp$censor                      <span class="co"># (0, 1) censoring, two-level CAT's</span>
-specByTrait &lt;-<span class="st"> </span>tmp$specByTrait                 <span class="co"># S X M</span>
+tTypes      &lt;-<span class="st"> </span>tmp<span class="op">$</span>traitTypes                  <span class="co"># M = 15 values</span>
+u           &lt;-<span class="st"> </span>tmp<span class="op">$</span>plotByCWM                   <span class="co"># n X M</span>
+censor      &lt;-<span class="st"> </span>tmp<span class="op">$</span>censor                      <span class="co"># (0, 1) censoring, two-level CAT's</span>
+specByTrait &lt;-<span class="st"> </span>tmp<span class="op">$</span>specByTrait                 <span class="co"># S X M</span>
 M           &lt;-<span class="st"> </span><span class="kw">ncol</span>(u)
 n           &lt;-<span class="st"> </span><span class="kw">nrow</span>(u)
 types                                          <span class="co"># 12 individual trait types</span>
@@ -1338,8 +1338,8 @@ types                                          <span class="co"># 12 individual 
 <p>The three <code>OC</code> variables are ordinal classes, lacking an absolute scale–the partition must be estimated.</p>
 <p>The four fractional composition <code>FC</code> columns are the levels of the single <code>CAT</code> variable <code>leaf</code>, expanded by the function <code>gjamSpec2Trait</code>.</p>
 <p>The last two traits in <code>u</code> are fractions with two classes, only one of which is included here. They are censored at both 0 and 1, the intervals <span class="math inline">\((-\infty, 0)\)</span> and <span class="math inline">\((1, \infty)\)</span>. This censoring can be generated using <code>gjamCensorY</code>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">censorList    &lt;-<span class="st"> </span><span class="kw">gjamCensorY</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="dt">intervals =</span> <span class="kw">cbind</span>( <span class="kw">c</span>(-<span class="ot">Inf</span>,<span class="dv">0</span>),<span class="kw">c</span>(<span class="dv">1</span>,<span class="ot">Inf</span>) ), 
-                             <span class="dt">y =</span> u, <span class="dt">whichcol =</span> <span class="kw">c</span>(<span class="dv">13</span>:<span class="dv">14</span>))$censor</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">censorList    &lt;-<span class="st"> </span><span class="kw">gjamCensorY</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="dt">intervals =</span> <span class="kw">cbind</span>( <span class="kw">c</span>(<span class="op">-</span><span class="ot">Inf</span>,<span class="dv">0</span>),<span class="kw">c</span>(<span class="dv">1</span>,<span class="ot">Inf</span>) ), 
+                             <span class="dt">y =</span> u, <span class="dt">whichcol =</span> <span class="kw">c</span>(<span class="dv">13</span><span class="op">:</span><span class="dv">14</span>))<span class="op">$</span>censor</code></pre></div>
 <p>This censoring was already done with <code>gjamSpec2Trait</code>, which knows to treat <code>'CAT'</code> data with only two levels as censored <code>'CA'</code> data. In this case the <code>values = c(0,1)</code> indicates that zeros and ones in the data indicate censoring. The <code>intervals</code> matrix gives their ranges.</p>
 </div>
 <div id="factors-in-this-example" class="section level3">
@@ -1348,7 +1348,7 @@ types                                          <span class="co"># 12 individual 
 <p>In <code>xdata</code> the variable <code>soil</code> is a multilevel factor, which includes soil types that are both common and have potentially strong effects. Here are the first few rows of <code>xdata</code>:</p>
 <p>I used the name <code>reference</code> for a soil type to aggregate types that are rare. Factor levels that rarely occur cannot be estimated in the model.</p>
 <p>The R function <code>relevel</code> allows definition of a reference level. In this case I want to compare levels to the reference soil type <code>reference</code>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata$soil &lt;-<span class="st"> </span><span class="kw">relevel</span>(xdata$soil,<span class="st">'reference'</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdata<span class="op">$</span>soil &lt;-<span class="st"> </span><span class="kw">relevel</span>(xdata<span class="op">$</span>soil,<span class="st">'reference'</span>)</code></pre></div>
 <p>To avoid confusion, contrasts can be inspected as <code>output$modelSummary$contrasts</code>. If the reference class is all zeros and other classes are zeros and ones, then the intercept is the reference class.</p>
 </div>
 <div id="trm-analysis" class="section level3">
@@ -1358,13 +1358,13 @@ types                                          <span class="co"># 12 individual 
 <p>(Clark 1990). As discussed above, the variable <code>soil</code> is a multi-level factor. Because slope and aspect variables are products (interactions) I do not standardize them, including them in <code>notStandard</code>,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">3000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> tTypes, <span class="dt">holdoutN =</span> <span class="dv">20</span>,
             <span class="dt">censor=</span>censor, <span class="dt">notStandard =</span> <span class="kw">c</span>(<span class="st">'f1'</span>,<span class="st">'f2'</span>,<span class="st">'f3'</span>))
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(~<span class="st"> </span>temp +<span class="st"> </span>stdage +<span class="st"> </span>moisture*deficit +<span class="st"> </span>deficit*soil, 
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(<span class="op">~</span><span class="st"> </span>temp <span class="op">+</span><span class="st"> </span>stdage <span class="op">+</span><span class="st"> </span>moisture<span class="op">*</span>deficit <span class="op">+</span><span class="st"> </span>deficit<span class="op">*</span>soil, 
                  <span class="dt">xdata =</span> xdata, <span class="dt">ydata =</span> u, <span class="dt">modelList =</span> ml)
 tnames &lt;-<span class="st"> </span><span class="kw">colnames</span>(u)
 sc &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'black'</span>, M)                           <span class="co"># highlight types</span>
-wo &lt;-<span class="st"> </span><span class="kw">which</span>(tnames %in%<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;leafN&quot;</span>,<span class="st">&quot;leafP&quot;</span>,<span class="st">&quot;SLA&quot;</span>) )     <span class="co"># foliar traits</span>
+wo &lt;-<span class="st"> </span><span class="kw">which</span>(tnames <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;leafN&quot;</span>,<span class="st">&quot;leafP&quot;</span>,<span class="st">&quot;SLA&quot;</span>) )     <span class="co"># foliar traits</span>
 wf &lt;-<span class="st"> </span><span class="kw">grep</span>(<span class="st">&quot;leaf&quot;</span>,tnames)                              <span class="co"># leaf habit</span>
-wc &lt;-<span class="st"> </span><span class="kw">which</span>(tnames %in%<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;woodSG&quot;</span>,<span class="st">&quot;diffuse&quot;</span>,<span class="st">&quot;ring&quot;</span>) ) <span class="co"># wood anatomy</span>
+wc &lt;-<span class="st"> </span><span class="kw">which</span>(tnames <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;woodSG&quot;</span>,<span class="st">&quot;diffuse&quot;</span>,<span class="st">&quot;ring&quot;</span>) ) <span class="co"># wood anatomy</span>
 
 sc[wc] &lt;-<span class="st"> 'brown'</span>
 sc[wf] &lt;-<span class="st"> 'darkblue'</span>
@@ -1374,16 +1374,16 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
 <span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, <span class="dt">plotPars =</span> pl)
 <span class="kw">summary</span>(out)</code></pre></div>
 <p>The model fit is interpreted in the same way as other gjam analyses. Note that <code>specColor</code> is used to highlight different types of traits in the posterior plots for values in coefficient matrix <span class="math inline">\(\mathbf{A}\)</span>. Parameter estimates are contained in <code>parameters</code>,</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaMu         <span class="co"># Q by M coefficient matrix alpha</span>
-out$parameters$betaStandXmu   <span class="co"># Q by M standardized for X</span>
-out$parameters$betaStandXWmu  <span class="co"># (Q-F) by M standardized for W/X, centered factors</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out<span class="op">$</span>parameters<span class="op">$</span>betaMu         <span class="co"># Q by M coefficient matrix alpha</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaStandXmu   <span class="co"># Q by M standardized for X</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaStandXWmu  <span class="co"># (Q-F) by M standardized for W/X, centered factors</span>
 
-out$parameters$betaTable        <span class="co"># QM by stats posterior summary</span>
-out$parameters$betaStandXtable  <span class="co"># QM by stats posterior summary</span>
-out$parameters$betaStandXWtable <span class="co"># (Q-F)M by stats posterior summary</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaTable        <span class="co"># QM by stats posterior summary</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaStandXtable  <span class="co"># QM by stats posterior summary</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaStandXWtable <span class="co"># (Q-F)M by stats posterior summary</span>
  
-out$parameters$sigMu         <span class="co"># M by M covariance matrix omega</span>
-out$parameters$sigSe         <span class="co"># M by M covariance std errors</span></code></pre></div>
+out<span class="op">$</span>parameters<span class="op">$</span>sigMu         <span class="co"># M by M covariance matrix omega</span>
+out<span class="op">$</span>parameters<span class="op">$</span>sigSe         <span class="co"># M by M covariance std errors</span></code></pre></div>
 <p>The <code>output</code> list contains a large number of diagnostics explained in help pages.<br />
 The matrices <code>out$parameters$cutMu</code> and <code>out$parameters$cutSe</code> hold the estimates for the partion for ordinal (<code>'OC'</code>) variables shade, drought, and flood tolerance. Each has three fitted cutpoints, because the first is fixed, with three estimates to partition the remaining four intervals.</p>
 </div>
@@ -1395,46 +1395,46 @@ The matrices <code>out$parameters$cutMu</code> and <code>out$parameters$cutSe</c
 <p><span class="math display">\[\frac{dy_{s}}{dx_{q}} = \beta_{q,s} + \beta_{qq',s}x_{q'}\]</span></p>
 <p>which depends not on <span class="math inline">\(x_{q}\)</span>, but rather on <span class="math inline">\(x_{q'}\)</span>. So if I want to know how interactions affect the response I have to decide on values for all of the predictors that are involved in interactions. These values are passed to <code>gjamIIE</code> in <code>xvector</code>. The default has <code>sdScaleX = F</code>, which means that effects can be compared on the basis of variation in <span class="math inline">\(\mathbf{X}\)</span>.</p>
 <p>In this example interactions involve <code>moisture</code>, <code>deficit</code>, and the multi-level factor <code>soil</code>, as specified in the <code>formula</code> passed to <code>gjam</code>. The first row of the design matrix is used with <code>moisture</code> and <code>deficit</code> set to -1 or +1 standard deviation to compare dry and wet sites in a dry climate:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdrydry &lt;-<span class="st"> </span>xwetdry  &lt;-<span class="st"> </span>out$inputs$x[<span class="dv">1</span>,]
-xdrydry[<span class="st">'moisture'</span>] &lt;-<span class="st"> </span>xdrydry[<span class="st">'deficit'</span>] &lt;-<span class="st"> </span>-<span class="dv">1</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xdrydry &lt;-<span class="st"> </span>xwetdry  &lt;-<span class="st"> </span>out<span class="op">$</span>inputs<span class="op">$</span>x[<span class="dv">1</span>,]
+xdrydry[<span class="st">'moisture'</span>] &lt;-<span class="st"> </span>xdrydry[<span class="st">'deficit'</span>] &lt;-<span class="st"> </span><span class="op">-</span><span class="dv">1</span>
 xwetdry[<span class="st">'moisture'</span>] &lt;-<span class="st"> </span><span class="dv">1</span>
-xwetdry[<span class="st">'deficit'</span>]  &lt;-<span class="st"> </span>-<span class="dv">1</span></code></pre></div>
+xwetdry[<span class="st">'deficit'</span>]  &lt;-<span class="st"> </span><span class="op">-</span><span class="dv">1</span></code></pre></div>
 <p>The first observation is from the reference soil level <code>reference</code>, so all other soil classes are zero. Here is a plot of main effects and interactions for deciduous and evergreen traits:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">2</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
-    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
+    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> <span class="op">-</span><span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
 
 fit1 &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(<span class="dt">output =</span> out, <span class="dt">xvector =</span> xdrydry)
 fit2 &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(<span class="dt">output =</span> out, <span class="dt">xvector =</span> xwetdry)
 
 <span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'leafbroaddeciduous'</span>, 
             <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), 
-            <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">31</span>,.<span class="dv">3</span>))
+            <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span>.<span class="dv">31</span>,.<span class="dv">3</span>))
 <span class="kw">title</span>(<span class="st">'deciduous'</span>)
 <span class="kw">gjamIIEplot</span>(fit1, <span class="dt">response =</span> <span class="st">'leafneedleevergreen'</span>, 
             <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), 
-            <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">3</span>,.<span class="dv">3</span>))
+            <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span>.<span class="dv">3</span>,.<span class="dv">3</span>))
 <span class="kw">title</span>(<span class="st">'evergreen'</span>)
 
 <span class="kw">gjamIIEplot</span>(fit2, <span class="dt">response =</span> <span class="st">'leafbroaddeciduous'</span>, 
             <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), 
-            <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">3</span>,.<span class="dv">3</span>))
+            <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span>.<span class="dv">3</span>,.<span class="dv">3</span>))
 <span class="kw">gjamIIEplot</span>(fit2, <span class="dt">response =</span> <span class="st">'leafneedleevergreen'</span>, 
             <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'int'</span>), 
-            <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">3</span>,.<span class="dv">3</span>))</code></pre></div>
+            <span class="dt">legLoc =</span> <span class="st">'bottomleft'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span>.<span class="dv">3</span>,.<span class="dv">3</span>))</code></pre></div>
 <p>The main effects plotted in the graphs do not depend on the values in <code>xvector</code>. Although this observation is taken from the <code>reference</code> soil, the plot shows the main effects that would be obtained if it were on the different soils included in the model. The interactions show how the effect of each predictor is modified by interactions with other variables. Again, the interactions from each predictor do not depend on values for the predictor itself, but rather on the other variables with which it interacts. For example, the interaction effect of <code>soilUltKan</code> on the <code>broaddeciduous</code> trait is positive on dry sites in dry climates (top left). Combined with a negative main effect, this means that deciduous trees tend to be more abundance on moist sites in this soil type. Its main effect on <code>leafneedleevergreen</code> is positive, but less so on moist sites in dry climates (bottom right).</p>
 <p>The indirect effects come from the effects of responses. This example shows indirect effects for foliar N and P that come through <code>broaddeciduous</code> leaf habit:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xvector &lt;-<span class="st"> </span>out$inputs$x[<span class="dv">1</span>,]
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">xvector &lt;-<span class="st"> </span>out<span class="op">$</span>inputs<span class="op">$</span>x[<span class="dv">1</span>,]
 <span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">bty=</span><span class="st">'n'</span>, <span class="dt">mar=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">oma =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>), 
-    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> -<span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
+    <span class="dt">mar =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">tcl =</span> <span class="op">-</span><span class="fl">0.5</span>, <span class="dt">mgp =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">0</span>), <span class="dt">family=</span><span class="st">''</span>)
 
-omitY &lt;-<span class="st"> </span><span class="kw">colnames</span>(u)[<span class="kw">colnames</span>(u) !=<span class="st"> 'leafbroaddeciduous'</span>] <span class="co"># omit all but deciduous</span>
+omitY &lt;-<span class="st"> </span><span class="kw">colnames</span>(u)[<span class="kw">colnames</span>(u) <span class="op">!=</span><span class="st"> 'leafbroaddeciduous'</span>] <span class="co"># omit all but deciduous</span>
 
 fit &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(out, xvector)
 <span class="kw">gjamIIEplot</span>(fit, <span class="dt">response =</span> <span class="st">'leafP'</span>, <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), 
-            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), <span class="dt">legLoc =</span> <span class="st">'topright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">6</span>,.<span class="dv">6</span>))
+            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), <span class="dt">legLoc =</span> <span class="st">'topright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span>.<span class="dv">6</span>,.<span class="dv">6</span>))
 <span class="kw">title</span>(<span class="st">'foliar P'</span>)
 <span class="kw">gjamIIEplot</span>(fit, <span class="dt">response =</span> <span class="st">'leafN'</span>, <span class="dt">effectMu =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), 
-            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), <span class="dt">legLoc =</span> <span class="st">'bottomright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(-.<span class="dv">6</span>,.<span class="dv">6</span>))
+            <span class="dt">effectSd =</span> <span class="kw">c</span>(<span class="st">'main'</span>,<span class="st">'ind'</span>), <span class="dt">legLoc =</span> <span class="st">'bottomright'</span>, <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span>.<span class="dv">6</span>,.<span class="dv">6</span>))
 <span class="kw">title</span>(<span class="st">'foliar N'</span>)</code></pre></div>
 <p>There will always be indirect effects, because they come through the covariance matrix.</p>
 </div>
@@ -1457,14 +1457,14 @@ fit &lt;-<span class="st"> </span><span class="kw">gjamIIE</span>(out, xvector)
 rl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">r =</span> <span class="dv">8</span>, <span class="dt">N =</span> <span class="dv">25</span>)
 ml  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">ng =</span> <span class="dv">2000</span>, <span class="dt">burnin =</span> <span class="dv">500</span>, <span class="dt">typeNames =</span> <span class="st">'CC'</span>, <span class="dt">holdoutN =</span> <span class="dv">20</span>,
                   <span class="dt">traitList =</span> tl, <span class="dt">reductList =</span> rl)
-out &lt;-<span class="st"> </span><span class="kw">gjam</span>(~<span class="st"> </span>temp +<span class="st"> </span>stdage +<span class="st"> </span>deficit*soil, <span class="dt">xdata =</span> xdata, 
+out &lt;-<span class="st"> </span><span class="kw">gjam</span>(<span class="op">~</span><span class="st"> </span>temp <span class="op">+</span><span class="st"> </span>stdage <span class="op">+</span><span class="st"> </span>deficit<span class="op">*</span>soil, <span class="dt">xdata =</span> xdata, 
                      <span class="dt">ydata =</span> pbys, <span class="dt">modelList =</span> ml)
 S  &lt;-<span class="st"> </span><span class="kw">nrow</span>(specByTrait)
 sc &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="st">'black'</span>,S)
 
-wr &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'ring'</span>] ==<span class="st"> </span><span class="dv">1</span>)                  <span class="co"># ring porous</span>
-wb &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'leafneedleevergreen'</span>] ==<span class="st"> </span><span class="dv">1</span>)   <span class="co"># evergreen</span>
-ws &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'shade'</span>] &gt;=<span class="st"> </span><span class="dv">4</span>)                 <span class="co"># shade tolerant</span>
+wr &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'ring'</span>] <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)                  <span class="co"># ring porous</span>
+wb &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'leafneedleevergreen'</span>] <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)   <span class="co"># evergreen</span>
+ws &lt;-<span class="st"> </span><span class="kw">which</span>(specByTrait[,<span class="st">'shade'</span>] <span class="op">&gt;=</span><span class="st"> </span><span class="dv">4</span>)                 <span class="co"># shade tolerant</span>
 sc[wr] &lt;-<span class="st"> 'brown'</span>
 sc[ws] &lt;-<span class="st"> 'black'</span>
 sc[wb] &lt;-<span class="st"> 'darkgreen'</span>
@@ -1474,17 +1474,17 @@ pl  &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">
                   <span class="dt">specColor =</span> sc, <span class="dt">ncluster =</span> <span class="dv">5</span>) 
 fit &lt;-<span class="st"> </span><span class="kw">gjamPlot</span>(<span class="dt">output =</span> out, pl)</code></pre></div>
 <p>Output is interpreted as previously, now with coefficients <span class="math inline">\(\mathbf{B}\)</span> and covariance <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. gjamPlot generates an additional plot with trait predictions. Parameter values are here:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$parameters$betaTraitXMu     <span class="co"># Q by M coefficient matrix alpha, standardized for X</span>
-out$parameters$betaTraitXWmu    <span class="co"># Q by M standardized for X/W</span>
-out$parameters$betaTraitXTable  <span class="co"># QM by stats posterior summary</span>
-out$parameters$betaTraitXWTable <span class="co"># QM by stats summary for X/W</span>
-out$parameters$varTraitMu       <span class="co"># M by M trait residual covariance, standardized for X</span>
-out$parameters$varTraitTable    <span class="co"># M^2 by stats summary, standardized for X/W</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out<span class="op">$</span>parameters<span class="op">$</span>betaTraitXMu     <span class="co"># Q by M coefficient matrix alpha, standardized for X</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaTraitXWmu    <span class="co"># Q by M standardized for X/W</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaTraitXTable  <span class="co"># QM by stats posterior summary</span>
+out<span class="op">$</span>parameters<span class="op">$</span>betaTraitXWTable <span class="co"># QM by stats summary for X/W</span>
+out<span class="op">$</span>parameters<span class="op">$</span>varTraitMu       <span class="co"># M by M trait residual covariance, standardized for X</span>
+out<span class="op">$</span>parameters<span class="op">$</span>varTraitTable    <span class="co"># M^2 by stats summary, standardized for X/W</span></code></pre></div>
 <p>Trait predictive distributions are summarized here:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out$prediction$tMu[<span class="dv">1</span>:<span class="dv">5</span>,]     <span class="co"># n by M predictive means</span>
-out$prediction$tSe[<span class="dv">1</span>:<span class="dv">5</span>,]     <span class="co"># n by M predictive std errors</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">out<span class="op">$</span>prediction<span class="op">$</span>tMu[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,]     <span class="co"># n by M predictive means</span>
+out<span class="op">$</span>prediction<span class="op">$</span>tSe[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,]     <span class="co"># n by M predictive std errors</span></code></pre></div>
 <p>The groupings of species in terms of their similar responses to the environment (the <code>ematrix</code>) are here, showing only the 4 most frequent species in each of the <code>ncluster</code> = 8 groups:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit$eComs[,<span class="dv">1</span>:<span class="dv">4</span>]</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit<span class="op">$</span>eComs[,<span class="dv">1</span><span class="op">:</span><span class="dv">4</span>]</code></pre></div>
 <p>Additional quantities can be predicted from the output using the MCMC output in the list <code>out$chains</code>.</p>
 <p>It is worth checking for combinations of responses and factor levels that might be missing from the data. That is an issue here, because each species has a limited geographic distribution, as do the soil types. The object <code>output$inputs$factorBeta$missFacSpec</code> lists the missing predictor-response combinations. This list could be the basis for consolidating factor levels.</p>
 </div>
@@ -1565,7 +1565,7 @@ out$prediction$tSe[<span class="dv">1</span>:<span class="dv">5</span>,]     <sp
 <p>If a model won’t execute, start by simplifying it. Use a small number of predictors and response variables. It’s easy to add complexity later. If execution fails there are several options.</p>
 <p><strong>Check <span class="math inline">\(\mathbf{X}\)</span> and <span class="math inline">\(\mathbf{Y}\)</span></strong>. Most errors come from the data. If there are many species (large <span class="math inline">\(\mathbf{Y}\)</span>), some may occur once or not at all. This is easy to check with the function <code>gjamTrimY</code>. If I suspect trouble with the design matrix <span class="math inline">\(\mathbf{X}\)</span>, I can make sure it is full rank, e.g.,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(formula, xdata)
-<span class="kw">qr</span>(x)$rank</code></pre></div>
+<span class="kw">qr</span>(x)<span class="op">$</span>rank</code></pre></div>
 <p>The rank must equal the number of columns in <code>x</code>.</p>
 <p><strong>If I am simulating data</strong>, first try it again. The simulator aims to generate data that will actually work, more challenging than would be the case for a univariate simulation of a single data type. Simulated data are random, so try again.</p>
 <p><strong>If the fit is bad</strong>, it could be noisy data (there is no ‘signal’), but there are other things to check. Again, insure that all columns in <code>ydata</code> include at least some non-zero values. One would not expect a univariate model to fit a data set where the response is all zeros. However, when there are many columns in <code>ydata</code>, the fact that some are never or rarely observed can be overlooked. The functions <code>hist</code>, <code>colSums</code>, and, for discrete data, <code>table</code>, can be used. The function <code>gjamTrimY(ydata, m)</code> can be used to limit <code>ydata</code> to only those columns with at least <code>m</code> non-zero observations.</p>

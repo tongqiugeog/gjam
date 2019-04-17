@@ -387,6 +387,7 @@ To process the output beyond what is provided in `gjamPlot` I can work directly 
 To illustrate proper model specification I use a few lines from the `data.frame` of predictors in the `forestTraits` data set:
 
 ```{r design1, eval = F}
+
 library(repmis)
 d <- "https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True"
 source_data(d)

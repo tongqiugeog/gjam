@@ -164,6 +164,7 @@ bigskip <- function(){
 #  plot(f$y,out$prediction$ypredMu, cex = .2)
 
 ## ----design1, eval = F---------------------------------------------------
+#  
 #  library(repmis)
 #  d <- "https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True"
 #  source_data(d)

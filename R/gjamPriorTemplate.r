@@ -10,9 +10,9 @@ gjamPriorTemplate <- function(formula, xdata, ydata, lo = NULL, hi = NULL){
   tmp <- grep('_',colnames(xdata))
   if(length(tmp) > 0)stop("remove '_' from colnames(xdata)")
   
-  x     <- model.matrix(formula,xdata)
-  S     <- ncol(ydata)                    # no. responses
-  Q     <- ncol(x)                        # no. predictors
+  x      <- model.matrix(formula,xdata)
+  S      <- ncol(ydata)                    # no. responses
+  Q      <- ncol(x)                        # no. predictors
   xnames <- colnames(x)
   xnames[1] <- 'intercept'
   ynames <- colnames(ydata)

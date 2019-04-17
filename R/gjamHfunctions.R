@@ -431,26 +431,25 @@
   sinverse
 }
 
-.fillMissingTimes <- function(xdat, ydat, edat, groups, times, 
+gjamFillMissingTimes <- function(xdata, ydata, edata, groups, times, 
                               sequences=NULL, fillNA=T, fillTimes=T){
   
   # fill missing times, add initial time for prior
-  # xdat, ydat, edat - x, y, effort
+  # xdata, ydata, edata - x, y, effort
   # fillTimes - insert rows for missing times: integers between "times"
   # fillNA    - fill new rows in ydat with NA; otherwise fitted value
-  # IMPORTANT - groups must uniquely define an 
+  # IMPORTANT - groups must uniquely defined 
   
-  groupIndex <- xdat[,groups]
+  groupIndex <- xdata[,groups]
   if(is.factor(groupIndex))groupIndex <- as.character(groupIndex)
   allGroups  <- sort(unique(groupIndex))
   groupIndex <- match(groupIndex,allGroups)
   ngroups    <- length(allGroups)
   
-  allTimes   <- sort(unique(xdat[,times]))
+  allTimes   <- sort(unique(xdata[,times]))
+  allTimes   <- min(xdata[,times], na.rm=T):max(xdata[,times], na.rm=T)
+  timeIndex  <- match(xdata[,times],allTimes)
   
-  allTimes   <- min(xdat[,times], na.rm=T):max(xdat[,times], na.rm=T)
-  
-  timeIndex  <- match(xdat[,times],allTimes)
   if(!fillTimes){
     timeIndex <- numeric(0)
     for(j in 1:ngroups){
@@ -460,23 +459,23 @@
     }
   }
 
-  xdat     <- cbind(groupIndex,timeIndex,xdat)
+  xdata     <- cbind(groupIndex,timeIndex,xdata)
   timeZero <- numeric(0)
   
   if(!is.null(sequences)){
     if(!is.character(sequences) & !is.factor(sequences)){
       stop('sequences cannot be character or factor')
     }
-    allSeq   <- sort(unique(xdat[,sequences]))
-    seqIndex <- match(xdat[,sequences],allSeq)
+    allSeq   <- sort(unique(xdata[,sequences]))
+    seqIndex <- match(xdata[,sequences],allSeq)
     tord <- order(groupIndex, seqIndex, timeIndex, decreasing=F)
   } else{
     tord <- order(groupIndex, timeIndex, decreasing=F)
   }
   
-  xtmp <- xdat[tord,]
-  ytmp <- ydat[tord,]
-  etmp <- edat[tord,]
+  xtmp <- xdata[tord,]
+  ytmp <- ydata[tord,]
+  etmp <- edata[tord,]
   
   timeIndex  <- xtmp[,'timeIndex']
   groupIndex <- xtmp[,'groupIndex']
@@ -494,7 +493,9 @@
   
   xtmp <- cbind(0,xtmp)
   
-  notFactor <- which( !sapply(xtmp,is.factor) )
+  notFactor <- !sapply(xtmp,is.factor)
+  notChar   <- !sapply(xtmp,is.character)
+  notFactor <- which(notFactor & notChar)
   
   for(j in 1:ngroups){
     
@@ -587,10 +588,11 @@
   noEffort <- noEffort[!noEffort %in% timeZero]
   
   rowInserts <- which(xtmp[,1] == 1)
-  list(xdata = xtmp[,-1], ydata = as.matrix(ytmp), effData = etmp, 
+  list(xdata = xtmp[,-1], ydata = as.matrix(ytmp), edata = etmp, 
        timeZero = timeZero, timeLast = timeLast,
        rowInserts = rowInserts, noEffort = noEffort)
 }
+
 
 .traitTables <- function(specs, traitTab, groups, types='CA', fill=T){
   
@@ -1180,7 +1182,7 @@
   
   twoMat <- F
   if(!is.null(mat2)){
-    if( min(dim(mat2)) < 3 )return()
+    if( min(dim(mat2)) < 2 )return()
     if(isSymmetric(mat2))SYM2 <- T
     twoMat <- T
     nc2 <- ncol(mat2)
@@ -1265,17 +1267,20 @@
       }else{
         copt <- list( PLOT=F, DIST = DIST2 )
         tmp  <- .clusterPlot( m2Col, copt)
+        if(is.null(tmp)){
+          colOrder2 <- 1:nrow(m2Col)
+        }else{
         clus <- tmp$clusterIndex
         cord <- tmp$corder
         colClust2 <- clus[cord]
         colOrder2 <- cord
+        }
       }
     }
   }
         
   rowLabs <- rownames(mat1)[rowOrder]
   
-  #rowClust <- horiz1[rowOrder]
   
   #######################
   NEW <- add <- F
@@ -3364,12 +3369,19 @@
   
   isFactor   <- factorObject$isFactor
   factorList <- factorObject$factorList
+  linFactor  <- numeric(0)
+  
+  Q      <- ncol(x)
+  if(Q == 1){
+    return( list(linFactor = linFactor, xpred = x, px = 1, 
+                 lox = 1, hix = 1) )
+  }
   
   # initialize predicted X
   
   xpred  <- x
   n      <- nrow(x)
-  Q      <- ncol(x)
+ 
   xnames <- colnames(x)
   SO     <- length(notOther)
   
@@ -3409,7 +3421,6 @@
     }
   }
   
-  linFactor <- numeric(0)
   
   if(length(isFactor) > 0){
     xpred[,isFactor] <- 0
@@ -3608,6 +3619,8 @@
   npar <- (S+1)/2 + Q
   
   ratio <- 1/5
+  N <- min(c(5, S))
+  r <- N - 1
   if(npar/n > ratio){
     N <- ceiling( ( ratio*n - Q )/5 )
     if(N > 25)N <- 25
@@ -3626,9 +3639,8 @@
     }
   }
   
-  if( !'reductList' %in% names(modelList) & npar/n > ratio ){
+  if( !'reductList' %in% names(modelList) ){
     rl <- list(r = r, N = N, alpha.DP = S)
-    REDUCT <- T
   }
   rl
 }
@@ -3815,6 +3827,9 @@
   contrast   <- factorObject$contrast
   
   Q  <- length(xnames)
+  if(Q == 1){
+    return( list(dCont = matrix(1)) )
+  }
   q1 <- Q - 1
   fnames <- xnames
   findex <- character(0)
@@ -4185,10 +4200,13 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     nlmiss  <- nrow(xmiss)
     xl <- tmp$x
   }
-
+  
   reductList <- .setupReduct(modelList, S, Q, n) ##########
   N <- reductList$N; r <- reductList$r
   if(!is.null(reductList$N))REDUCT <- T
+  
+  
+  
   
   tmp <- .gjamHoldoutSetup(holdoutIndex, holdoutN, n)
   holdoutIndex <- tmp$holdoutIndex; holdoutN <- tmp$holdoutN
@@ -4608,7 +4626,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   if(TIME){
     tmp <- .setupFactors(xdata, xlnames, factorLambda)
     ff <- factorLambda[names(factorLambda) != 'factorList']
-    factorLambda <- append(ff,tmp)
+    if(length(tmp) > 0)factorLambda <- append(ff,tmp)
     factorLambda$LCONT <- rep(TRUE, factorLambda$nfact)
     flnames <- rownames( factorLambda$lCont )
     
@@ -5130,7 +5148,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         bgu <- S2U%*%mub
         lambda[ gindex[,c('rowG','colW')]] <- Lmat[wL]
         lambdas <- S2UL%*%mug      # unstandardized lambda
-        lgibbs[g,] <- lambdas
+        lgibbs[g,] <- lambdas[,notOther]
       }else{
          bgu <- S2U%*%x%*%bg
       }
@@ -5180,6 +5198,11 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       lsens <- tmp$sens
       
       lss <- sqrt(diag(lsens))
+      
+      if(g == 1){
+        if( !all(names(lss) %in% colnames(gsensGibbs)) )
+          colnames(gsensGibbs) <- names(lss)
+      }
       
       gsensGibbs[g,names(lss)] <- lss
       
@@ -5414,7 +5437,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   betaStandXWmu <- tmp$mu
   betaStandXWTable <- tmp$tab
   
-  tmp <- .chain2tab(fSensGibbs[burnin:ng,])
+  tmp <- .chain2tab(fSensGibbs[burnin:ng,,drop=F])
   sensTable <- tmp$tab[,1:4]
   
   yMu <- ypred/ntot
@@ -5470,11 +5493,12 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     if(TIME){
       xrow <- c(standRows, standRowsL) 
       ww   <- !duplicated(names(xrow))
-      xmu  <- c(standMu[,1], standMuL[,1])[ww]
-      xsd  <- c(standMat[,1],standMatL[,1])[ww]
       xrow <- names(xrow)[ww]
-      xrow <- match(xrow,colnames(xpredMu))
-      names(xrow) <- colnames(xpredMu)[xrow]
+      xmu  <- c(standMu[xrow,1], standMuL[xrow,1])
+      xsd  <- c(standMat[xrow,1],standMatL[xrow,1])
+    #  xrow <- names(xrow)[ww]
+    #  xrow <- match(xrow,colnames(xpredMu))
+    #  names(xrow) <- colnames(xpredMu)[xrow]
     }
     
     xpredMu <- .getUnstandX(xpredMu, xrow, xmu, xsd, intMat)$xu
@@ -5505,7 +5529,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       Amat[ aindex[,c('rowA','fromW')] ] <- alphaMu[ aindex[,c('toW','fromW')] ]
       Lmat[ gindex[,c('rowL','colW')] ] <- lambdaMuUn[ gindex[,c('rowG','colW')] ]
       
-      muw <- x%*%betaMu[,notOther] + Vmat%*%Lmat + Umat%*%Amat
+      muw <- x%*%betaMu[,notOther] + Vmat%*%Lmat[,notOther] + Umat%*%Amat[,notOther]
       
       tmp <- .dMVN(wMu[,notOther],muw[,notOther],
                          sMean[notOther,notOther], log=T )
@@ -7402,46 +7426,49 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   if(TIME){
     
     tiny <- 1e-6
-    xg <- gsens
+    xg <- chains$gsens
     xg[is.na(xg)] <- 0
     w0 <- which(colSums(xg) == 0)
-    if(length(w0) > 0)xg <- xg[,-w0]
+    if(length(w0) > 0)xg <- xg[,-w0,drop=F]
     
-    tcol <- rep('black',ncol(xg))
-    names(tcol) <- colnames(xg)
-    
-    if(factorLambda$nfact > 0){
+    if(length(w0) > 0){
       
-      mm <- max(nfact,2)
-      useCols <- colorRampPalette(c('brown','orange','darkblue'))(mm)
+      tcol <- rep('black',ncol(xg))
+      names(tcol) <- colnames(xg)
       
-      for(i in 1:factorLambda$nfact){
-        im <- which(colnames(xg) %in% rownames(factorLambda$contrast[[i]]))
-        tcol[im] <- useCols[i]
+      if(factorLambda$nfact > 0){
+        
+        mm <- max(nfact,2)
+        useCols <- colorRampPalette(c('brown','orange','darkblue'))(mm)
+        
+        for(i in 1:factorLambda$nfact){
+          im <- which(colnames(xg) %in% rownames(factorLambda$contrast[[i]]))
+          tcol[im] <- useCols[i]
+        }
       }
+      xm <- colMeans(xg)
+      ord  <- order( xm )
+      
+      ylim <- c(min(xg),2*quantile(xg,.9999,na.rm=T))
+      if(ylim[1] < 1e-8)ylim[1] <- 1e-8
+      tmp <- .boxplotQuant( xg[,ord, drop=F], xaxt='n',outline=F, 
+                            border=tcol[ord],whiskcol=tcol[ord],
+                            boxfill=.getColor(tcol[ord],.4), 
+                            pars = list(boxwex = 0.5, ylim=ylim), lty=1, log='y')
+      mtext('Predictors in V',side=1,line=1)
+      abline(h=0,lwd=2,col='grey')
+      dy <- .05*diff(par()$yaxp[1:2])
+      text(1:length(ord), dy + tmp$stats[5,],tmp$names,srt=90,pos=4,col=tcol[ord])
+      sensLab   <- expression( paste('Sensitivity ',hat(bold(lambda))  ))
+      .plotLabel(sensLab,'bottomright',above=F, cex=1.1)  
+      
     }
-    xm <- colMeans(xg)
-    ord  <- order( xm )
     
-    ylim <- c(min(xg),2*quantile(xg,.9999,na.rm=T))
-    if(ylim[1] < 1e-8)ylim[1] <- 1e-8
-    tmp <- .boxplotQuant( xg[,ord, drop=F], xaxt='n',outline=F, 
-                          border=tcol[ord],whiskcol=tcol[ord],
-                          boxfill=.getColor(tcol[ord],.4), 
-                          pars = list(boxwex = 0.5, ylim=ylim), lty=1, log='y')
-    mtext('Predictors in V',side=1,line=1)
-    abline(h=0,lwd=2,col='grey')
-    dy <- .05*diff(par()$yaxp[1:2])
-    text(1:length(ord), dy + tmp$stats[5,],tmp$names,srt=90,pos=4,col=tcol[ord])
-    sensLab   <- expression( paste('Sensitivity ',hat(bold(lambda))  ))
-    .plotLabel(sensLab,'bottomright',above=F, cex=1.1)  
-    
-  }
-  
-  if(!SAVEPLOTS){
-    readline('sensitivity over full model -- return to continue ')
-  } else { 
-    dev.off()
+    if(!SAVEPLOTS){
+      readline('sensitivity over full model -- return to continue ')
+    } else { 
+      dev.off()
+    }
   }
   
   if(TIME){
@@ -7479,12 +7506,12 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   
   ######################  coefficient summary tables ############
   
-  
+  fnames <- rownames(factorBeta$eCont)
   
  # bTab   <- .getSigTable(bgibbs,S, Q, xnames, snames) 
   
  # q1    <- nrow(factorBeta$eCont)
- # fnames <- rownames(factorBeta$eCont)
+ # 
  # bfTab <- .getSigTable(bFacGibbs,SO, q1, fnames, 
  #                       colnames(parameters$fBetaMu)) 
   
@@ -7767,8 +7794,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     
     ############################### beta posteriors as boxes
     
-    fMu <- parameters$betaStandXWtable
- #   fMu <- parameters$betaStandXWmu
+    fMu <- parameters$betaStandXWTable
     
     sigFbeta <- rownames(fMu)[fMu$sig95 == '*']
     bfSig <- bFacGibbs[,sigFbeta]
@@ -8275,6 +8301,8 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   
   ########################### cluster Fmat with beta
   
+  fBetaMu <- output$parameters$betaStandXWmu
+  
   if(Q > 4){
     
     graphics.off()
@@ -8282,8 +8310,6 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
     
     main1 <- expression( paste('Sensitivity ',hat(F)))
     main2 <- expression( paste('Responses ',hat(B)))
-    
-    fBetaMu <- output$parameters$betaStandXWmu
     
     ws <- which( rowSums(fMat) == 0)
     if(length(ws) > 0){
@@ -8339,7 +8365,7 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   dcor <- .cov2Cor(covy)
   dcor[is.na(dcor)] <- 0
   
-  mat1 <- dcor    #####################################
+  mat1 <- dcor     
   mat2 <- ematrix[notOther,notOther]
 
   main1 <- expression(paste('Ordered by error ',hat(R)))
@@ -8385,13 +8411,13 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   }
   
   #################### beta grid
-  if(BETAGRID & nrow(fBetaMu) > 2){
+  if(BETAGRID & nrow(output$parameters$betaStandXWmu) > 2){
     
     graphics.off()
     
     if(SAVEPLOTS)pdf( file=.outFile(outFolder,'clusterGridB.pdf') ) # start plot
     
-    mat1 <- ematrix[notOther,notOther]
+    mat1 <- output$parameters$ematrix[notOther,notOther]
  #   mat2 <- t(betaStandXWmu[,notOther])
     mat2 <- t(output$parameters$betaStandXWmu)
     main1 <- expression(paste('Species ',hat(E)))
@@ -8470,11 +8496,12 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       topLab1 <- F
       if(S < 20)topLab1 <- T
       
-      ee <- ncol(mat2)/(ncol(mat1) + ncol(mat2) )
-      ee <- max(ee,.3)
+      ee <- ncol(mat1)/(ncol(mat1) + ncol(mat2) )
+    #  ee <- max(ee,.3)
       slim1 <- range(mat1)
       if(slim1[2] == 0)slim1[2] <- .0001
-      opt <- list(mainLeft=side1, main1=main1, main2 = main2,ncluster = ncluster,
+      opt <- list(mainLeft=side1, main1=main1, main2 = main2,
+                  ncluster = ncluster,
                   topClus1=F, topClus2=F, topLab1 = topLab1, 
                   topLab2=T, rowOrder = c(1:S)[notOther], colOrder1 = c(1:S)[notOther], 
                   colOrder2 = 1:ncol(mat2), slim1 = slim1,
@@ -8492,20 +8519,18 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
       if(SAVEPLOTS)pdf( file=.outFile(outFolder,'clusterGridLambda.pdf') ) # start plot
       
       mat1 <- ematrix[notOther,notOther]
-      mat2 <- t(parameters$lambdaMuUn)
-      colnames(mat2)[1] <- 'lambda - 1'
-      mat2[,1] <- mat2[,1] - 1
       main1 <- expression(paste('Species ',hat(E)))
       main2 <- expression(paste(hat(Lambda),' by predictor'))
       topLab1 <- F
       if(S < 40)topLab1 <- T
       
-      ee <- ncol(mat2)/(ncol(mat1) + ncol(mat2) )
-      ee <- max(ee,.05)
-      opt <- list(mainLeft=main1, main1=main1, main2 = main2,ncluster = ncluster,
+      ee <- ncol(mat1)/(ncol(mat1) + ncol(mat2) )
+    #  ee <- max(ee,.05)
+      opt <- list(mainLeft=main1, main1=main1, main2 = main2,
+                  colOrder2 = 1:ncol(mat2), ncluster = ncluster,
                   topClus1=T, topClus2=T, topLab1 = topLab1, topLab2=T,
-                  colCode1 = boxCol[notOther], lower1 = T, diag1 = F,
-                  vert1=clusterIndex[,'E'], horiz2=clusterIndex[,'E'])
+                  colCode1 = boxCol[notOther], lower1 = T, diag1 = F)
+  #                vert1=clusterIndex[,'E'], horiz2=clusterIndex[,'E'])
       .clusterWithGrid(mat1, mat2, expand=ee, opt)
       
       if(!SAVEPLOTS){
@@ -9760,7 +9785,10 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   S        <- ncol(y)
   snames   <- colnames(y)
   facNames <- character(0)
+  factorList <- contrast <- NULL
   colnames(xdata) <- .cleanNames(colnames(xdata))
+  NOX <- T
+  xmean <- 1
   
   original <- colnames(xdata)
   
@@ -9769,57 +9797,62 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   if(!is.null(notStandard))notStandard <- .cleanNames(notStandard)
   
   form <- attr( terms(formula), 'term.labels' )
-  form <- .cleanNames(form)
-  form <- paste0(form,collapse=' + ')
-  formula <- as.formula( paste('~',form) )
   
-  # no transformation
-  t1 <- attr( terms(formula), 'term.labels' )
-  wi <- grep('I(',t1,fixed=T)
-  if(length(wi) > 0)t1 <- t1[-wi]      # linear terms
-  
-  wi <- grep(':',t1,fixed=T)
-  if(length(wi) > 0)t1 <- t1[-wi]
- 
-  xdata0 <- xdata[,t1, drop=F]
-  xnames <- colnames(xdata0)
-  
-  standX <- !sapply(xdata0,is.factor)
-  facNames <- names(standX)[!standX]
-  standX   <- names(standX)[standX]
-  standX   <- standX[!standX %in% notStandard]
-  
-  tmp <- .getStandX(xdata0,standX)
-  xdata0 <- tmp$xstand
-  xmean  <- tmp$xmu
-  xsd    <- tmp$xsd
-  xscale <- rbind(xmean,xsd)
-  
-  factorList <- contrast <- vector('list',length = length(facNames))
-  names(factorList) <- facNames
-  
-  if(length(facNames) > 0){
+  if(length(form) > 0){       # not done if formula = ~ 1
+    NOX  <- F
+    form <- .cleanNames(form)
+    form <- paste0(form,collapse=' + ')
+    formula <- as.formula( paste('~',form) )
     
-    for(j in 1:length(facNames)){
+    # no transformation
+    t1 <- attr( terms(formula), 'term.labels' )
+    wi <- grep('I(',t1,fixed=T)
+    if(length(wi) > 0)t1 <- t1[-wi]      # linear terms
+    
+    wi <- grep(':',t1,fixed=T)
+    if(length(wi) > 0)t1 <- t1[-wi]
+    
+    
+    xdata0 <- xdata[,t1, drop=F]
+    xnames <- colnames(xdata0)
+    
+    standX <- !sapply(xdata0,is.factor)
+    facNames <- names(standX)[!standX]
+    standX   <- names(standX)[standX]
+    standX   <- standX[!standX %in% notStandard]
+    
+    tmp <- .getStandX(xdata0,standX)
+    xdata0 <- tmp$xstand
+    xmean  <- tmp$xmu
+    xsd    <- tmp$xsd
+    xscale <- rbind(xmean,xsd)
+    
+    factorList <- contrast <- vector('list',length = length(facNames))
+    names(factorList) <- facNames
+    
+    if(length(facNames) > 0){
       
-      wj <- which(names(xdata0) == facNames[j])
-      xf <- as.character(xdata0[[wj]])
-      
-      cj <- attr(xdata0[[wj]],'contrasts')
-      contrast[[j]] <- cj
-      tt <- .setContrasts(xdata0[[wj]])$cont
-      factorList[[j]] <- paste(facNames[j],colnames(tt),sep='')
-      
-      if(!is.null(cj))next                       # contrasts previously set
-
-      contrast[[j]] <- tt
-      attr(xdata0[[wj]],'contrasts') <- tt
-    }
-    names(contrast) <- facNames
-  }  
-  
-  www <- match(colnames(xdata0),colnames(xdata))
-  if(length(www) > 0)xdata[,www] <- xdata0
+      for(j in 1:length(facNames)){
+        
+        wj <- which(names(xdata0) == facNames[j])
+        xf <- as.character(xdata0[[wj]])
+        
+        cj <- attr(xdata0[[wj]],'contrasts')
+        contrast[[j]] <- cj
+        tt <- .setContrasts(xdata0[[wj]])$cont
+        factorList[[j]] <- paste(facNames[j],colnames(tt),sep='')
+        
+        if(!is.null(cj))next                       # contrasts previously set
+        
+        contrast[[j]] <- tt
+        attr(xdata0[[wj]],'contrasts') <- tt
+      }
+      names(contrast) <- facNames
+    }  
+    
+    www <- match(colnames(xdata0),colnames(xdata))
+    if(length(www) > 0)xdata[,www] <- xdata0
+  }
   
   tmp <- model.frame(formula,data=xdata,na.action=NULL)
   x   <- model.matrix(formula, data=tmp)
@@ -9834,89 +9867,95 @@ sqrtSeq <- function(maxval){ #labels for sqrt scale
   
   facBySpec <- missFacSpec <- NULL
   
-  if(length(facNames) > 0){
-    
-    iy <- y*0
-    iy[y > 0] <- 1
-    facBySpec <- numeric(0)
-    missFacSpec <- character(0)
-    
-    for(j in 1:length(facNames)){
-      
-   #   ij <- grep(facNames[j],colnames(x))
-      
-      ij <- which( colnames(x) %in% factorList[[j]] )
-      ij <- xnames[ij]
-    #  ix <- grep(':',ij)
-    #  if(length(ix) > 0)ij <- ij[-ix]
-      isFactor <- c(isFactor,ij)
-      
-      print(paste('observations in factor',facNames[j]))
-      print(colSums(x, na.rm=T)[ij])
-      
-      fs <- matrix(NA,S,length(factorList[[j]]))
-      colnames(fs) <- factorList[[j]]
-      rownames(fs) <- snames
-      
-      for(k in 1:length(ij)){
-        xi   <- ij[k]
-        fs[,k] <- colSums( matrix(x[,xi],n,S)*iy, na.rm=T )
-      }
-      ms <- 'none missing'
-      missFS <- which(fs == 0,arr.ind=T)
-      if(length(missFS) > 0){
-        ms <- paste(rownames(missFS),ij[missFS[,2]],sep='_')
-      }
-        
-      facBySpec <- append(facBySpec,list(fs))
-      missFacSpec <- append(missFacSpec,list(ms))
-      
-    }
-    names(facBySpec) <- names(missFacSpec) <- facNames
-  }
-  
   VIF <- isNonLinX <- designTable <- NULL
   isInt <- intMat <- numeric(0)
   
-  # check design
-  
-  if(checkX & length(standX) > 0){
-    checkInt <- range(x[,1])
-    if(checkInt[1] != 1 | checkInt[2] != 1)
-      stop( paste('x[,1] must be intercept (ones)') )
+  if(!NOX){
     
-    tmp <- .checkDesign(x[,c('intercept',standX)])
-    if(tmp$rank < tmp$p)stop( 'x not full rank' )
-    VIF         <- tmp$VIF
-    designTable <- tmp$designTable$table
-  }
-  
-  if(Q > 2 & length(standX) > 0){
-    
-    wx <- grep('^2',colnames(x),fixed=T)
-    if(length(wx) > 0){
-      mm <- unique(unlist(strsplit(colnames(x)[wx],'^2)',fixed=T)))
-      mm <- .replaceString(mm,'I(','')
-      mm <- match(mm,colnames(x))
-      mat <- cbind(wx,mm,mm)
-      colnames(mat) <- c('int','main1','main2')
-      intMat <- mat
-      isInt <- wx
-      isNonLinX <- sort(unique( c(isNonLinX,mm,isInt)))
+    if(length(facNames) > 0){
+      
+      iy <- y*0
+      iy[y > 0] <- 1
+      facBySpec <- numeric(0)
+      missFacSpec <- character(0)
+      
+      for(j in 1:length(facNames)){
+        
+        #   ij <- grep(facNames[j],colnames(x))
+        
+        ij <- which( colnames(x) %in% factorList[[j]] )
+        ij <- xnames[ij]
+        #  ix <- grep(':',ij)
+        #  if(length(ix) > 0)ij <- ij[-ix]
+        isFactor <- c(isFactor,ij)
+        
+        print(paste('observations in factor',facNames[j]))
+        print(colSums(x, na.rm=T)[ij])
+        
+        fs <- matrix(NA,S,length(factorList[[j]]))
+        colnames(fs) <- factorList[[j]]
+        rownames(fs) <- snames
+        
+        for(k in 1:length(ij)){
+          xi   <- ij[k]
+          fs[,k] <- colSums( matrix(x[,xi],n,S)*iy, na.rm=T )
+        }
+        ms <- 'none missing'
+        missFS <- which(fs == 0,arr.ind=T)
+        if(length(missFS) > 0){
+          ms <- paste(rownames(missFS),ij[missFS[,2]],sep='_')
+        }
+        
+        facBySpec <- append(facBySpec,list(fs))
+        missFacSpec <- append(missFacSpec,list(ms))
+        
+      }
+      names(facBySpec) <- names(missFacSpec) <- facNames
     }
     
-    wx <- grep(':',colnames(x))
-    if(length(wx) > 0){
-      mm  <- matrix(unlist(strsplit(colnames(x)[wx],':')),ncol=2,byrow=T)
-      mat <- matrix( match(mm,colnames(x)), ncol=2)
-      mat <- cbind(wx,mat)
-      colnames(mat) <- c('int','main1','main2')
-      wx <- c( which(colnames(x) %in% mm),wx )
-      isInt <- sort(c(isInt,wx))
-      intMat <- rbind(intMat,mat)
+    
+    # check design
+    
+    if(checkX & length(standX) > 0){
+      checkInt <- range(x[,1])
+      if(checkInt[1] != 1 | checkInt[2] != 1)
+        stop( paste('x[,1] must be intercept (ones)') )
+      
+      tmp <- .checkDesign(x[,c('intercept',standX)])
+      if(tmp$rank < tmp$p)stop( 'x not full rank' )
+      VIF         <- tmp$VIF
+      designTable <- tmp$designTable$table
     }
-    if(!is.null(isInt))isNonLinX <- sort(unique( c(isNonLinX,isInt)))
+    
+    if(Q > 2 & length(standX) > 0){
+      
+      wx <- grep('^2',colnames(x),fixed=T)
+      if(length(wx) > 0){
+        mm <- unique(unlist(strsplit(colnames(x)[wx],'^2)',fixed=T)))
+        mm <- .replaceString(mm,'I(','')
+        mm <- match(mm,colnames(x))
+        mat <- cbind(wx,mm,mm)
+        colnames(mat) <- c('int','main1','main2')
+        intMat <- mat
+        isInt <- wx
+        isNonLinX <- sort(unique( c(isNonLinX,mm,isInt)))
+      }
+      
+      wx <- grep(':',colnames(x))
+      if(length(wx) > 0){
+        mm  <- matrix(unlist(strsplit(colnames(x)[wx],':')),ncol=2,byrow=T)
+        mat <- matrix( match(mm,colnames(x)), ncol=2)
+        mat <- cbind(wx,mat)
+        colnames(mat) <- c('int','main1','main2')
+        wx <- c( which(colnames(x) %in% mm),wx )
+        isInt <- sort(c(isInt,wx))
+        intMat <- rbind(intMat,mat)
+      }
+      if(!is.null(isInt))isNonLinX <- sort(unique( c(isNonLinX,isInt)))
+    }
+    
   }
+
   
   standMat <- matrix(1,Q,1)
   rownames(standMat) <- xnames

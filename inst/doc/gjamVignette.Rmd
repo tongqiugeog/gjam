@@ -12,7 +12,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-##version 2.2.6
+##version 2.3
 
 
 ```{r outform, echo=F}
@@ -331,13 +331,17 @@ out$parameters$betaMu
 Here are posterior summaries,
 
 ```{r betaAll, eval=F}
-out$parameters$betaMu         # S by M coefficient matrix alpha
+out$parameters$betaMu         # S by M coefficient matrix unstandardized
+out$parameters$betaSe         # S by M coefficient SE
 out$parameters$betaStandXmu   # S by M standardized for X
 out$parameters$betaStandXWmu  # (S-F) by M standardized for W/X, centered factors
 
 out$parameters$betaTable        # SM by stats posterior summary
-out$parameters$betaStandXtable  # SM by stats posterior summary
-out$parameters$betaStandXWtable # (S-F)M by stats posterior summary
+out$parameters$betaStandXTable  # SM by stats posterior summary
+out$parameters$betaStandXWTable # (S-F)M by stats posterior summary
+
+out$parameters$sensBeta         # sensitivity to ... response variables
+out$parameters$sensTable        # sensitivity to predictor variables
  
 out$parameters$sigMu         # S by S covariance matrix omega
 out$parameters$sigSe         # S by S covariance std errors
@@ -906,7 +910,7 @@ xSd  <- out$prediction$xpredSd
 yMu  <- out$prediction$ypredMu        #predicted y
 hold <- out$modelList$holdoutIndex    #holdout observations (rows)
 
-plot(out$inputs$x[hold,-1],xMu[hold,-1], cex=.2, xlab='True', ylab='Predictive mean')
+plot(out$inputs$xUnstand[hold,-1],xMu[hold,-1], cex=.2, xlab='True', ylab='Predictive mean')
 title('holdouts in x'); abline(0,1)
 plot(out$inputs$y[hold,], yMu[hold,], cex=.2, xlab='True', ylab='')
 title('holdouts in y'); abline(0,1)
@@ -1180,7 +1184,7 @@ Again, the low dimensional version of covariance $\boldsymbol{\Sigma}$ is expect
 A plot of main effects, interactions, and indirect effects is used in this example to show contributions to host status, the response variable `status`.  The effects on host status of on responses is available as a table with standard errors and credible intervals:
 
 ```{r, bstatus, eval=F}
-beta <- fit$summaryCoeffs$betaCoeff
+beta <- output$parameters$betaStandXWTable
 ws   <- grep('status_',rownames(beta))  # find coefficients for status
 beta[ws,]
 ```
@@ -1188,7 +1192,8 @@ beta[ws,]
 Following the intercept are rows showing main effects.  These are followed by interaction terms.  A quick visual of coefficients having credible intervals that exclude zero is here:
 
 ```{r bsig, eval=F}
-fit$summaryCoeffs$betaSig['status',]
+ws <- which(beta$sig95 == '*')
+beta[ws,]
 ```
 with `-` and `+` indicating negative and postive values.
 

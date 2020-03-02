@@ -8,6 +8,7 @@ gjamTrimY <- function(y, minObs = 2, maxCols = NULL, OTHER = TRUE){
     # if already a column 'other', they are combined
     
     y      <- as.matrix(y)
+    
     nc     <- ncol(y)
     ci     <- 1:nc
     mnames <- colnames(y)

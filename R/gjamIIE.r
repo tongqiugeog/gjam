@@ -3,16 +3,16 @@
 gjamIIE <- function(output, xvector, MEAN = T, keepNames = NULL,
                     omitY = NULL, sdScaleX = T, sdScaleY = F){
   
-  xMu    <- colMeans(output$inputs$x)
-  xSd    <- apply(output$inputs$x,2,sd)
+  xMu    <- colMeans(output$inputs$xStand)
+  xSd    <- apply(output$inputs$xStand,2,sd)
   standX <- cbind(xMu,xSd)
   colnames(standX) <- c('xmean','xsd')
   
   
-  xii <- which(!names(xvector) %in% colnames(output$inputs$x))
+  xii <- which(!names(xvector) %in% colnames(output$inputs$xStand))
   if(length(xii) > 0)xvector <- xvector[-xii]
   
-  xii <- which(!colnames(output$inputs$x) %in% names(xvector))
+  xii <- which(!colnames(output$inputs$xStand) %in% names(xvector))
   if(length(xii) > 0){
     stop('xvector is missing variables in model')
   }

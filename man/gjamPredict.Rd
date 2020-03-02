@@ -91,6 +91,46 @@ p1        <- gjamPredict(output = out, newdata = newdata)
 plot(out$inputs$y[,4],p0$sdList$yMu[,4], cex=.4,col='orange'); abline(0,1,lty=2)
 points(out$inputs$y[,4],p1$sdList$yMu[,4], cex=.4,col='blue')
 title('Cond. on 1st Sp')
+
+
+# conditional, out-of-sample prediction compared with unconditional, in-sample
+n   <- 1000
+S   <- 5
+f   <- gjamSimData(n = n, S = S, Q = 3, typeNames = 'CA') 
+
+holdOuts <- sort( sample(n, 50) )
+
+xdata <- f$xdata[-holdOuts,] # fitted data
+ydata <- f$ydata[-holdOuts,]
+
+xx <- f$xdata[holdOuts,]     # holdout for prediction
+yy <- f$ydata[holdOuts,]
+
+ml  <- list(ng = 2000, burnin = 50, typeNames = f$typeNames) # fit the non-holdouts
+out <- gjam(f$formula, xdata, ydata, modelList = ml)
+
+cdex <- 1:2                 # condition on 2 species
+ndex <- c(1:S)[-cdex]       # conditionally predict others
+
+newdata <- list(xdata = xx, ydataCond = yy[,cdex], nsim = 200) # conditionally predict out-of-sample
+p2      <- gjamPredict(output = out, newdata = newdata)
+
+plot( as.matrix(yy[,ndex]), p2$sdList$yMu[,ndex]); abline(0,1,lty=2)
+title('Conditional, out-of-sample')
+mspeC <- sqrt( mean(  (as.matrix(yy[,ndex]) - p2$sdList$yMu[,ndex])^2 ) )
+
+#predict unconditionally, out-of-sample
+newdata   <- list(xdata = xx, nsim = 200 ) 
+p1 <- gjamPredict(out, newdata = newdata)
+
+points( as.matrix(yy[,ndex]), p1$sdList$yMu[,ndex], col=2)
+mspeU <- sqrt( mean(  (as.matrix(yy[,ndex]) - p1$sdList$yMu[,ndex])^2 ) )
+
+e1 <- paste( 'cond, out-of-sample =', round(mspeC, 2) )
+e2 <- paste( 'uncond, out-of-sample =', round(mspeU, 2) )
+
+legend('topleft', c(e1, e2), text.col=c(1,2))
+
 }
 }
 

@@ -5,8 +5,9 @@
   Fills in predictor, response, and effort matrics for time series data where there are multiple multivariate time series.  Time series gjam is still under development.
 }
 \usage{
-  gjamFillMissingTimes(xdata, ydata, edata, groups, times, 
-                       sequences=NULL, fillNA=T, fillTimes=T)
+  gjamFillMissingTimes(xdata, ydata, edata, groupCol, timeCol, groupVars = groupCol,
+                                 FILLMEANS = FALSE, typeNames = NULL, missingEffort = .1)
+                       
 }
 \arguments{
   \item{xdata}{\code{n by Q data.frame} holding predictor variables}
@@ -15,20 +16,20 @@
   
   \item{edata}{\code{n by S matrix} holding effort}
   
-  \item{groups}{column name in \code{xdata} holding group indicator}
+  \item{groupCol}{column name in \code{xdata} for group variable, i.e., observations part of the same time series}
   
-  \item{times}{column name in \code{xdata} holding time indicator}
+  \item{timeCol}{column name in \code{xdata} for time index}
   
-  \item{sequences}{column name in \code{xdata} holding sequence indicator}
+  \item{groupVars}{\code{character vector} of column names in \code{xdata} having values that are fixed for a value of \code{groupCol}, i.e., they do not change with time index in \code{timeCol}}
   
-  \item{fillNA}{fill new rows in ydata with NA; otherwise interpolated value}
+  \item{FILLMEANS}{fill new rows in \code{ydata} with mean for \code{groupCol} times \code{missingEffort}; otherwise NA}
   
-  \item{fillTimes}{insert rows for missing times: integers values in column \code{times}}
+  \item{typeNames}{typenames current limited to \code{'DA'} for discrete counts}
   
-
+  \item{missingEffort}{effort assigned to missing values of \code{edata} and \code{ydata}}
 }
 \details{
-Fills missing times in \code{xdata, ydata, edata}.  If \code{fillTimes = TRUE} insert rows for missing times, including a \code{times = 0}, which serves as a prior mean for \code{times = 1}.  \code{groups} must be uniquely defined.  Within \code{groups} can be \code{sequences}, as when there is a time series for \code{groups} for each year.
+Missing times in the data occur where there are gaps in \code{timeCol} column of \code{xdata} and the initial time \code{0} for each sequence.  New versions of the data have \code{NA} (\code{xdata}) or prior values with appropriate weight (\code{ydata}).  Missing times are filled in \code{xdata, ydata, edata}, including a time \code{0} which serves as a prior mean for \code{ydata} for time code{1}.  The group and time indices in columns \code{groupCol} and \code{timeCol} of \code{xdata} reference the time for a given time series.  Missing values in the columns \code{groupVars} of \code{xdata} are filled automatically filled in.  This assumes that values for these variables are fixed for the group.  If \code{FILLMEANS}, the missing  values in \code{ydata} are filled with means for the group and given a low weight specified in \code{missingEffort}.
 }
 \value{
 A list containing the following:
@@ -39,19 +40,8 @@ A list containing the following:
   
   \item{edata}{filled version of \code{edata}}
   
-  \item{timeZero}{row numbers in new data where each time series begins, with times = 0}
-  
-  \item{timeLast}{row numbers in new data where each time series ends}
-  
-  \item{rowInserts}{row numbers for all inserted rows}
-  
-  \item{noEffort}{rows for which effort is zero, except times = 0}
+  \item{timeList}{time indices used for computation, including, \code{timeZero} (row numbers in new data where each time series begins, with times = 0), \code{timeLast} (row numbers in new data where each time series ends), \code{rowInserts} (row numbers for all inserted rows), \code{noEffort} (rows for which effort in \code{edata} is filled with \code{missingEffort})}
  
-}
-\examples{
-\dontrun{
-# under construction
-}
 }
 
 \author{

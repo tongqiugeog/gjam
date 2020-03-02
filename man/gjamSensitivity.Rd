@@ -49,12 +49,14 @@ cc   <- gjamSensitivity(out, group)
 
 nt <- ncol(full)
 
+ylim <- range(rbind(full, cc))
+
 boxplot( full, boxwex = 0.25,  at = 1:nt - .21, col='blue', log='y',
-         xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
+         ylim = ylim, xaxt = 'n', xlab = 'Predictors', ylab='Sensitivity')
 boxplot( cc, boxwex = 0.25, at = 1:nt + .2, col='forestgreen', add=T,
          xaxt = 'n')
 axis(1,at=1:nt,labels=colnames(full))
-legend('bottomright',c('full response','CC data'),
+legend('bottomleft',c('full response','CC data'),
        text.col=c('blue','forestgreen'))
 }
 }

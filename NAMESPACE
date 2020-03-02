@@ -17,7 +17,7 @@ importFrom("stats", "aggregate", "as.dendrogram", "as.dist", "as.formula", "cor"
            "relevel", "terms", "var")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 
-export(gjam, gjamSimData, gjamPlot, gjamTrimY, gjamCensorY, gjamDeZero, 
+export(gjam, gjamFillMissingTimes, gjamSimData, gjamPlot, gjamTrimY, gjamCensorY, gjamDeZero, 
        gjamReZero, gjamPredict, gjamSensitivity, gjamSpec2Trait, gjamIIE, gjamIIEplot, 
        gjamOrdination, gjamPoints2Grid, gjamPriorTemplate)
 S3method(print, gjam)

@@ -1,10 +1,10 @@
-c08cef4eecc363b5f28666f9a5b3664f *DESCRIPTION
+b41d8b40ce6750e0ede0a5158d2e3dc6 *DESCRIPTION
 ffeb2299daa736e37707da168163e789 *NAMESPACE
 e42d69f213f9a2d937248b75bd9fe27f *R/RcppExports.R
 9864d930e579f03c57e9b39793981022 *R/gjam.r
 842d2770688b7c8b6c4652384662df69 *R/gjamCensorY.r
 8ff66ba967d143260f3d3d87a4483f7b *R/gjamDeZero.r
-304ce6c917f0f6edede5a6700ca2174b *R/gjamHfunctions.R
+cc7592bc3459391229e8fbe625ebfa26 *R/gjamHfunctions.R
 97f3673d9d18a527ebbb816d1365883b *R/gjamIIE.r
 18a3612cc5e4dded09682f76bdff9905 *R/gjamIIEplot.r
 38c9b1ae50f92eedac051f36e93bdde4 *R/gjamOrdination.R
@@ -19,9 +19,9 @@ a7d8039478b0f1c7040bb94bc5d141c1 *R/gjamTrimY.r
 198cd1cbf94d1b981c6a0615ad6d5e94 *build/vignette.rds
 4a9a797c014b6c17324fb4837bbb3265 *inst/CITATION
 e8190f7d94a47cc38a426d64f6f6daa3 *inst/doc/gjamVignette.R
-26ba9376723f0525eae010417cb39621 *inst/doc/gjamVignette.Rmd
-ef254059caf4dd33ab600031b16d8c08 *inst/doc/gjamVignette.html
-b37e9aa57c05a48b51ec8e868040b70b *man/gjam-package.Rd
+d9e975817a5f2520a6e210d0854c0c27 *inst/doc/gjamVignette.Rmd
+123daf707e0edab82314d5f0d6f46b6f *inst/doc/gjamVignette.html
+7f739c78d99d8072f29781b3dc658c52 *man/gjam-package.Rd
 a9f9a5f24d76a22010503e5069b8e5bf *man/gjam.Rd
 8c3261323a79c3867c64612ac1ef9e95 *man/gjamCensorY.Rd
 b01be95ac7f8c16ae59537cbfb77d89a *man/gjamDeZero.Rd
@@ -42,4 +42,4 @@ c766b2cf3b2abd570953cbead9ee6d11 *man/gjamTrimY.Rd
 61059660eb073d93e00e8ee054237071 *src/Makevars.win
 c1d69c2d7fb02392365c115fb91f1b37 *src/RcppExports.cpp
 adf47c79512d308bb00878f74ca4936f *src/cppFns.cpp
-26ba9376723f0525eae010417cb39621 *vignettes/gjamVignette.Rmd
+d9e975817a5f2520a6e210d0854c0c27 *vignettes/gjamVignette.Rmd

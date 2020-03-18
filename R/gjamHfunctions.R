@@ -2603,7 +2603,7 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
        inSamples = inSamples, nIn = nIn)
 }
 
-.gjamMissingValues <- function(x, y, factorList, typeNames, verbose){
+.gjamMissingValues <- function(x, y, factorList, typeNames, verbose = FALSE){
   
   n <- nrow(x)
   xnames <- colnames(x)

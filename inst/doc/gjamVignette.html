@@ -12,7 +12,7 @@
 
 <meta name="author" content="James S. Clark" />
 
-<meta name="date" content="2020-03-02" />
+<meta name="date" content="2020-03-18" />
 
 <title>Generalized joint attribute modeling - gjam</title>
 
@@ -301,11 +301,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Generalized joint attribute modeling - gjam</h1>
 <h4 class="author"><a href="http://sites.nicholas.duke.edu/clarklab/">James S. Clark</a></h4>
-<h4 class="date">2020-03-02</h4>
+<h4 class="date">2020-03-18</h4>
 
 
 
-<p>##version 2.3</p>
+<p>##version 2.3.1</p>
 <p>####citation:<br />
 <em>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, 87, 34–56.</em></p>
 <p><a href="http://sites.nicholas.duke.edu/clarklab/code/">website</a></p>
@@ -1012,22 +1012,22 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>##<span style="color:teal">categorical data</span></p>
 <p>Categorical data have levels within groups. The levels are unordered. The columns in <code>ydata</code> that hold categorical responses are declared as <code>typeNames = &quot;CAT&quot;</code>. In observation vector <span class="math inline">\(\mathbf{y}_{i}\)</span> there are elements for one less than the number of factor levels. Suppose that observations are obtained on attributes of individual plants, each plant being an observation. The group <code>leaf</code> type might have four levels broadleaf decidious <code>bd</code>, needleleaf decidious <code>nd</code>, broadleaf evergreen <code>be</code>, and needleaf evergreen <code>ne</code>. A second group <code>xylem</code> anatomy might have three levels diffuse porous <code>dp</code>, ring porous <code>rp</code>, and tracheid <code>tr</code>. In both cases I assign the last class to be a reference class, <code>other</code>. Ten rows of the response matrix data might look like this:</p>
 <pre><code>##    leaf xylem
-## 1    bd other
-## 2    be    rp
-## 3 other    rp
-## 4    nd    dp
-## 5    bd    dp
-## 6 other    dp
-## 7    bd other</code></pre>
+## 1 other    rp
+## 2 other    rp
+## 3    nd    rp
+## 4    bd    dp
+## 5 other other
+## 6    be    rp
+## 7    be    dp</code></pre>
 <p>This <code>data.frame ydata</code> becomes this response matrix <code>y</code>:</p>
 <pre><code>##      leaf_bd leaf_nd leaf_be leaf_other xylem_dp xylem_rp xylem_other
-## [1,]       1       0       0          0        0        0           1
-## [2,]       0       0       1          0        0        1           0
-## [3,]       0       0       0          1        0        1           0
-## [4,]       0       1       0          0        1        0           0
-## [5,]       1       0       0          0        1        0           0
-## [6,]       0       0       0          1        1        0           0
-## [7,]       1       0       0          0        0        0           1</code></pre>
+## [1,]       0       0       0          1        0        1           0
+## [2,]       0       0       0          1        0        1           0
+## [3,]       0       1       0          0        0        1           0
+## [4,]       1       0       0          0        1        0           0
+## [5,]       0       0       0          1        0        0           1
+## [6,]       0       0       1          0        0        1           0
+## [7,]       0       0       1          0        1        0           0</code></pre>
 <p><code>gjam</code> expands the two groups into four and three columns in <code>y</code>, respectively. As for composition data there is one redundant column for each group. Here is an example with simulated data, having two categorical groups:</p>
 <div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1">types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'CAT'</span>,<span class="st">'CAT'</span>)</a>
 <a class="sourceLine" id="cb42-2" data-line-number="2">f     &lt;-<span class="st"> </span><span class="kw">gjamSimData</span>(<span class="dt">n=</span><span class="dv">2000</span>, <span class="dt">S =</span> <span class="kw">length</span>(types), <span class="dt">typeNames =</span> types)</a>

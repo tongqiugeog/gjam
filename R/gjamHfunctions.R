@@ -75,7 +75,7 @@
   bb   <- specColor[ match(tnam, snames) ]
   ry   <- quantile(mat, c(.01, .99))
   ymin <- quantile(mat, .01) - diff(ry)*.15
-  ymax <- quantile(mat, .99) + diff(ry)*.15
+  ymax <- quantile(mat, .99) + diff(ry)*.7
   bx   <- .getColor(bb,.4)
   
   tmp <- .boxplotQuant( mat, xaxt='n',outline=F,ylim=c(ymin,ymax),
@@ -276,7 +276,7 @@
   hiRho <- lprior$hi
   rho   <- (loRho + hiRho)/2
   
-  loRho[,other] <- hiRho[,other] <- NA
+  if(length(other) > 0)loRho[,other] <- hiRho[,other] <- NA
   
   lkeep    <- which(!is.na(loRho))
   
@@ -1619,7 +1619,7 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
   nr   <- nrow(dmat)
   nn   <- nrow(dmat)
   
-  if(min(c(nr,nn)) < 3)return()
+  if( min(c(nr,nn) ) < 3)return()
   
   if(DIST){
     if(!isSymmetric(dmat))dmat <- dist(dmat)
@@ -3565,9 +3565,12 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
 }
 
 .getUnstandX <- function(xx, standRows, xmu, xsd, intMat){
-  # design to unstandard scale
   
-  if(length(standRows) != ncol(xx))standRows <- match(names(standRows),colnames(xx))
+  # design to unstandard scale
+  if(!is.character(standRows))standRows <- names(standRows)
+  
+  if( length(standRows) != ncol(xx) )standRows <- match(standRows,colnames(xx))
+  
   if(length(xmu) != ncol(xx)){
     xtmp <- xx[1,]*0
     xtmp[ names(xmu) ] <- xmu
@@ -3595,11 +3598,26 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
 
 .getStandX <- function(xx, standRows, xmu=NULL, xsd=NULL, intMat=NULL){
   
-  xstand <- xx
-  if(is.null(xmu))xmu <- colMeans(xx[,standRows,drop=F],na.rm=T)
-  if(is.null(xsd))xsd <- apply(xx[,standRows,drop=F],2,sd,na.rm=T)
+  if(length(standRows) == 0){
+    return( list(xstand = xx, xmu = xmu, xsd = xsd)
+    )
+  }
   
-  xstand[,standRows] <- t( (t(xx[,standRows]) - xmu)/xsd )
+  if(is.character(standRows)){
+    scols <- standRows
+  }else{
+    scols <- names(standRows)
+  }
+  
+  xstand <- xx
+  if(is.null(xmu))xmu <- colMeans(xx[,scols,drop=F],na.rm=T)
+  if(is.null(xsd))xsd <- apply(xx[,scols,drop=F],2,sd,na.rm=T)
+  
+  if(is.vector(xmu))
+    if(is.null(names(xmu)))stop('vector xmu must have variable names')
+    
+  
+  xstand[,scols] <- t( (t(xx[,scols]) - xmu)/xsd )
                        
   if(length(intMat) > 0){
     for(j in 1:nrow(intMat)){
@@ -4121,6 +4139,11 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   rownames(plo) <- xn
   colnames(plo) <- colnames(prior$lo)
   phi <- -plo
+  
+  prior$lo <- prior$lo[ drop=F, rownames(prior$lo) %in% rownames(plo),]
+  prior$hi <- prior$hi[ drop=F, rownames(prior$hi) %in% rownames(phi),]
+  
+  
   plo[rownames(prior$lo),] <- prior$lo
   phi[rownames(prior$hi),] <- prior$hi
   
@@ -5824,10 +5847,10 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       loESS[ ess < 0 ] <- loESS[ ess < 0 ] + 1
       hiESS[ ess > 0 ] <- hiESS[ ess > 0 ] + 1
       
-      ess[notOther,notOther] <- ginv(ess[notOther,notOther])
+      eii <- ginv(ess[notOther,notOther])
       
-      lmESS[ ess < 0 ] <- lmESS[ ess < 0 ] + 1  # neg values
-      hmESS[ ess > 0 ] <- hmESS[ ess > 0 ] + 1  # pos values
+      lmESS[notOther,notOther][ eii < 0 ] <- lmESS[notOther,notOther][ eii < 0 ] + 1  # neg values
+      hmESS[notOther,notOther][ eii > 0 ] <- hmESS[notOther,notOther][ eii > 0 ] + 1  # pos values
       ######################
       
       if(REDUCT)rndTot <- rndTot + rndEff
@@ -5921,6 +5944,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     betaStandXWse <- tmp$se
     betaStandXWTable <- tmp$tab
     
+    
     if(!is.null(loB)){
       blo <- as.vector( t(loB) )
       bhi <- as.vector( t(hiB) )
@@ -5936,6 +5960,10 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       betaMu    <- tmp$mu
       betaSe    <- tmp$se
       betaTable <- tmp$tab
+      
+      unstandBetaX <- betaStandXmu%*%t(betaMu)%*%solve(tcrossprod(betaMu))
+        
+        
     }else{
       betaMu    <- betaStandXWmu
       betaSe    <- betaStandXWse
@@ -5997,6 +6025,10 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         colnames(rhoTable)[1] <- ss
         rownames(rhoTable) <- NULL
         rhoTable <- rhoTable[!rhoMu == 0 & !rhoSe == 0, ]
+        
+        
+        unstandRhoX <- rhoStandXmu%*%t(rhoMu)%*%solve(tcrossprod(rhoMu))
+        
 
       }else{
         lgibbsUn <- lgibbs
@@ -6127,6 +6159,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     }
     
     if(ncol(x) > 1){
+      
       xpredMu <- .getUnstandX(xpredMu, xrow, xmu, xsd, intMat)$xu
       xpredSd[,xrow] <- xpredSd[,xrow]*matrix( xsd[xrow], n, length(xrow), byrow=T ) 
     }
@@ -6790,39 +6823,19 @@ sqrtSeq <- function( xx, nbin = 15){ #labels for sqrt scale
     }
   }
   
-  if(is.null(atx))atx <- breaks
+  if( is.null(atx) )atx <- breaks
   
   bins <- atx
   bin1 <- 1
-  sbin <- length(bins)
-  
-  xb <- findInterval(xx, bins, all.inside = TRUE)
-  tt <- table(xb)
-  
-  bins <- bins[ as.numeric(names(tt)) ]
-  xb <- findInterval(xx, bins, all.inside = TRUE)
-  tt <- table(xb)
-  
-  tt <- cumsum( tt/sum(tt) )
   nbin <- length(bins)
+ # sbin <- length(bins)
   
-  if(tt[1] > .5){
-    mb   <- quantile(xx, seq(0, 1, length = sbin+10 ))
-    bins <- mb[ !duplicated(mb) ]
- 
-  }else{
-    bins <- bins[ tt < .999 | tt == 1]
-    ww   <- which(tt < .001)
-    if(length(ww) > 0){
-      bin1 <- length(ww) + 1
-      xb[xb <= length(ww) ] <- bin1
-    }
-  }
   xb <- findInterval(xx, bins, all.inside = TRUE)
   tt <- table(xb)
-  bins <- bins[ as.numeric(names(tt)) ]
-  xb <- findInterval(xx, bins, all.inside = TRUE)
-  nbin <- length(bins)
+  kbin <- as.numeric(names(tt))
+ # bins <- bins[ as.numeric(names(tt)) ]
+ # xb <- findInterval(xx, bins, all.inside = TRUE)
+ # nbin <- length(bins)
   xf   <- (tt/sum(tt))^.5
   xf[ xf < .002 ] <- .002
   xs   <- xf^.2
@@ -6832,7 +6845,7 @@ sqrtSeq <- function( xx, nbin = 15){ #labels for sqrt scale
   wide <- c( wide, wide[ length(wide) ] )
   db   <- 1
   
-  for(k in bin1:nbin){
+  for(k in kbin){
     
     qk <- which(xb == k)
     q  <- quantile(yy[qk],c(.5,.025,.158,.841,.975),na.rm=T)
@@ -6853,14 +6866,17 @@ sqrtSeq <- function( xx, nbin = 15){ #labels for sqrt scale
     }
     rwide <- wide[k]
     
+    xtrans <- xs[ as.character(k) ]
+    ftrans <- xf[ as.character(k) ]
+    
     suppressWarnings(
-      arrows(xp, q[2], xp, q[5], lwd=2, angle=90, code=3, col=.getColor(col,xs[k]),
+      arrows(xp, q[2], xp, q[5], lwd=2, angle=90, code=3, col=.getColor(col,xtrans),
              length=.02)
     )
     lines(c(xp-.5*rwide,xp+.5*rwide),q[c(1,1)],lwd=2, 
-          col=.getColor(col,sqrt(xf[k])))
-    rect(xp-.4*rwide,q[3],xp+.4*rwide,q[4], border = .getColor(col,xs[k]), 
-                                                               col=.getColor(col,xf[k]))
+          col=.getColor(col,sqrt(ftrans)))
+    rect(xp-.4*rwide,q[3],xp+.4*rwide,q[4], border = .getColor(col,xtrans), 
+                                                               col=.getColor(col,ftrans))
   }
 }
 
@@ -6872,7 +6888,7 @@ sqrtSeq <- function(maxval, nbin = 10){ #labels for sqrt scale
   labs <- seq(0, maxval^2, by = by)
   
   while(length(labs) < nbin){
-    by <- .8*by
+    by <- .5*by
     labs <- seq(0, maxval^2, by = by)
   }
     
@@ -6889,11 +6905,46 @@ sqrtSeq <- function(maxval, nbin = 10){ #labels for sqrt scale
   
   yy[ yy < 0 ] <- 0
   
-  tx <- sqrtSeq( maxval = max(sqrt(xx), na.rm=T), nbin )
+  sxx <- sqrt(xx)
+  
+  # equal intervals on sqrt scale
+  tx <- sqrtSeq( maxval = max(sxx, na.rm=T), nbin )
   ty <- sqrtSeq( maxval = max(sqrt(yy), na.rm=T), nbin )
   
+  atx <- tx$at
+  lax <- tx$labs
+  
+  xtick <- atx
+  xlab  <- lax
+  
+  ix  <- findInterval(sxx, atx, all.inside = T)
+  ix  <- table(ix)
+  px  <- ix/sum(ix)
+  
+  # unbalanced
+  if( max(px) > .3 ){  
+    qx <- quantile(sxx[sxx != 0], seq(0, 1, length.out = nbin), na.rm=T )
+    ux <- unique(qx)
+    rx <- length(ux)/length(qx)
+    nb <- ceiling( nbin/rx )
+    qx <- quantile(sxx[sxx != 0], seq(0, 1, length.out = nb), na.rm=T )
+    atx <- unique(qx)
+    lax <- round( atx^2 )
+    atx <- c(0, atx)
+    lax <- c(0, lax)
+    wx  <- which( !duplicated(lax) )
+    atx <- atx[wx]
+    lax <- lax[wx]
+    
+  #  xtick <- seq(0, max(atx), length=nbin)
+  #  xlab  <- round( xtick^2 )
+    
+  }
+  
+  # bins vs labels
+  
   list(xlim = range(tx$at, na.rm=T), ylim = range(ty$at, na.rm=T), 
-       atx = tx$at, labx = tx$labs, 
+       atx = atx, labx = lax, xtick = xtick, xlab = xlab,
        aty = ty$at, laby = ty$labs)
 }
 
@@ -7262,7 +7313,7 @@ smooth.na <- function(x,y){
   if(termR){
     rhoLab   <- expression( paste('Growth matrix ',hat(bold(Rho))  ))
   }
-  if(termR){
+  if(termA){
     alphaLab   <- expression( paste('interaction matrix ',hat(bold(Alpha))  ))
   }
   
@@ -7278,7 +7329,7 @@ smooth.na <- function(x,y){
   
   ################if true parameter values
   
-  if(TV){
+  if( TV ){
     
     if(SAVEPLOTS)pdf( file=.outFile(outFolder,'trueVsPars.pdf') )
     
@@ -7689,7 +7740,7 @@ smooth.na <- function(x,y){
                ylim = opt$ylim, xlab='', ylab='', xaxt='n', yaxt='n')
           polygon(xy[1,],xy[2,],border='tan',col='wheat')
           
-          axis(1, at = opt$atx, labels = opt$labx)
+          axis(1, at = opt$xtick, labels = opt$xlab)
           axis(2, at = opt$aty, labels = opt$laby, las=2)
           
           opt <- append(opt, list( xlabel='Observed', ylabel='Predicted', col='darkgreen') )
@@ -7785,7 +7836,7 @@ smooth.na <- function(x,y){
     iy <- c(1:n)
     if(!is.null(timeZero))iy <- iy[-timeZero]
     
-    if(nfact > 0){
+    if( nfact > 0 ){
       
       nn <- length(unlist(factorList)) # + nfact
       mmat <- matrix(0,nn,nn)
@@ -7885,7 +7936,7 @@ smooth.na <- function(x,y){
     vnames <- xnames[-noplot]
     vnames <- vnames[!vnames %in% noX]
     
-    if(length(vnames) > 0){
+    if( length(vnames) > 0 ){
       
       if(SAVEPLOTS)pdf( file=.outFile(outFolder,'xPred.pdf') )
       
@@ -7987,7 +8038,7 @@ smooth.na <- function(x,y){
   }   
   ######################
   
-  if(PLOTALLY){
+  if( PLOTALLY ){
     
     yy <- y[,notOther]
     np <- ncol(yy)
@@ -8464,6 +8515,7 @@ smooth.na <- function(x,y){
     }
     
     if(termA){
+      
       if(SAVEPLOTS)pdf( file=.outFile(outFolder,'alphaChains.pdf') ) 
       
       cseq <- 1:nrow(alphaGibbs)
@@ -8638,7 +8690,6 @@ smooth.na <- function(x,y){
       
       .myBoxPlot( mat = lgibbs[,wc], tnam = vnam[ wc ], snames = snames,
                   specColor, label=glab)
-      if(j == 1)abline(h=1, col=.getColor('black',.3), lwd=2, lty=2)
       if(!SAVEPLOTS){
         readline('95% posterior -- return to continue ')
       } else {
@@ -8668,7 +8719,6 @@ smooth.na <- function(x,y){
         }
         .myBoxPlot( mat = lgibbs[,wc], tnam = vnam[ wc ], snames = snames,
                     specColor, label=glab)
-        if(j == 1)abline(h=1, col=.getColor('black',.3), lwd=2, lty=2)
       }
       
       if(!SAVEPLOTS){
@@ -8755,15 +8805,14 @@ smooth.na <- function(x,y){
   if(TIME){  ################ variance components
     
     sensMu <- sensSe <- numeric(0)
+    acol   <- colF(3)
+    names(acol) <- c('movement','DI growth','DD growth')
+    scol   <- character(0)
     
-    
-    acol <- colF(3)
-    scol <- character(0)
-    
-    if('sensAlpha' %in% names(parameters)){
-      sensMu <- cbind(sensMu, sensAlpha[,1])
-      sensSe <- cbind(sensSe, sensAlpha[,1])
-      colnames(sensMu)[ncol(sensMu)] <- colnames(sensSe)[ncol(sensMu)] <- 'alpha'
+    if('sensBeta' %in% names(parameters)){
+      sensMu <- cbind(sensMu, sensBeta[,1])
+      sensSe <- cbind(sensSe, sensBeta[,1])
+      colnames(sensMu)[ncol(sensMu)] <- colnames(sensSe)[ncol(sensMu)] <- 'beta'
       scol <- c(scol, acol[1])
     }
     if('sensRho' %in% names(parameters)){
@@ -8772,14 +8821,20 @@ smooth.na <- function(x,y){
       colnames(sensMu)[ncol(sensMu)] <- colnames(sensSe)[ncol(sensMu)] <- 'rho'
       scol <- c(scol, acol[2])
     }
-    if('sensBeta' %in% names(parameters)){
-      sensMu <- cbind(sensMu, sensBeta[,1])
-      sensSe <- cbind(sensSe, sensBeta[,1])
-      colnames(sensMu)[ncol(sensMu)] <- colnames(sensSe)[ncol(sensMu)] <- 'beta'
+    if('sensAlpha' %in% names(parameters)){
+      sensMu <- cbind(sensMu, sensAlpha[,1])
+      sensSe <- cbind(sensSe, sensAlpha[,1])
+      colnames(sensMu)[ncol(sensMu)] <- colnames(sensSe)[ncol(sensMu)] <- 'alpha'
       scol <- c(scol, acol[3])
     }
     
     if(length(sensMu) > 0){
+      
+      osens <- order( colMeans(sensMu), decreasing=T )
+      
+      sensMu <- sensMu[,osens]
+      sensSe <- sensSe[,osens]
+      scol   <- scol[ osens ]
       
       nc <- ncol(sensMu)
       sensMu <- sensMu[drop = FALSE, notOther,]
@@ -8824,15 +8879,11 @@ smooth.na <- function(x,y){
           arrows( tmp[j,], smu[j,], tmp[j,], smu[j,] + sse[j,], 
                   col = scol[j], lwd=2, angle=90, code=3, length=.04)
         )
+        
       }
       if(nc == 1)text( tmp[1,], 1.05*apply(smu + sse, 2, max), colnames(smu), srt = 75, pos = 4,
                        cex = .9)
-      mtext( 'Immigration/emigration', side = 1, outer = T, line = -2, adj = .9,
-             col = scol[3])
-      mtext( 'Density dependence', side = 1, outer = T, line = -2, adj = .1,
-             col = scol[1])
-      mtext( 'DI growth', side = 1, outer = T, line = -2, adj = .5,
-             col = scol[2])
+      legend('topright', names(scol), text.col = scol, bty='n')
       
       if(!SAVEPLOTS){
         readline('contributions to dynamics -- return to continue ')
@@ -8915,13 +8966,16 @@ smooth.na <- function(x,y){
   .plotLabel('a) Data correlation',above=T, cex=1.7)
   
   if( !is.null(ematrix) ){
-    tmp   <- .clustMat(ematrix[notOther,notOther], SYM = T)
+    emm   <- ematrix[notOther,notOther]
+    emm   <- .cov2Cor(emm)
+  
+    tmp   <- .clustMat(emm, SYM = T)#########
     ecor <- tmp$cmat
     
     opt <- list( main='',cex=.2, ncluster=ncluster, 
                  colCode=specColor[notOmit], textSize=.5, 
                  LABELS = LABELS, DIST=F)
-    tmp <- .clusterPlot( ecor , opt )
+    tmp <- .clusterPlot( ecor , opt ) #######################
     .plotLabel('b) E correlation',above=T, cex=1.7)
     
     clusterIndex <- cbind( clusterIndex, tmp$clusterIndex )
@@ -9199,7 +9253,7 @@ smooth.na <- function(x,y){
   graphics.off()
   if(SAVEPLOTS)pdf( file=.outFile(outFolder,'clusterGridE.pdf') ) # start plot
   
-  mat1 <-  ematrix[notOther,notOther] 
+  mat1 <- .cov2Cor( ematrix[notOther,notOther] )
   main1 <- expression(paste('Species ',hat(E)))
   opt <- list(mainLeft=main1, leftClus=T, leftLab=T, 
               colCode1 = specColor[notOther], rowCode = specColor[notOther],
@@ -9223,7 +9277,7 @@ smooth.na <- function(x,y){
   dcor[is.na(dcor)] <- 0
   
   mat1 <- dcor     
-  mat2 <- ematrix[notOther,notOther]
+  mat2 <- .cov2Cor( ematrix[notOther,notOther] )
 
   main1 <- expression(paste('Ordered by error ',hat(R)))
   main2 <- expression(paste('Response ',hat(E)))
@@ -9268,13 +9322,13 @@ smooth.na <- function(x,y){
   }
   
   #################### beta grid
-  if(BETAGRID & nrow(output$parameters$betaStandXWmu) > 2){
+  if( BETAGRID & nrow(output$parameters$betaStandXWmu) > 2 ){
     
     graphics.off()
     
     if(SAVEPLOTS)pdf( file=.outFile(outFolder,'clusterGridB.pdf') ) # start plot
     
-    mat1 <- output$parameters$ematrix[notOther,notOther]
+    mat1 <- .cov2Cor( output$parameters$ematrix[notOther,notOther] )
     mat2 <- t(output$parameters$betaStandXWmu)
     
     main1 <- expression(paste('Species ',hat(E)))
@@ -9447,7 +9501,8 @@ smooth.na <- function(x,y){
   invisible(all)
 }
     
-.gjamPrediction <- function(output, newdata, y2plot, PLOT, ylim, FULL, verbose = FALSE){
+.gjamPrediction <- function(output, newdata, y2plot, PLOT, ylim, FULL, 
+                            verbose = FALSE){
   
   xnew <- ydataCond <- interBeta <- groupRandEff <- NULL
   tiny  <- 1e-10
@@ -9607,15 +9662,29 @@ smooth.na <- function(x,y){
     colnames(y) <- ynames
     yp <- y
     
-    tmp <- .getStandX(xnew, standRows, xmu=NULL, xsd=NULL, intMat=NULL)
+    standRows <- output$inputs$standRows
+    standMatSd <- output$inputs$standX[,'xsd']
+    standMatMu <- output$inputs$standX[,'xmean']
+    intMat     <- output$inputs$intMat
+    
+    ig <- grep(':', names(standRows))
+    if(length(ig) > 0){
+      standRows <- standRows[-ig]
+      standMatMu <- standMatMu[ names(standRows) ]
+      standMatSd <- standMatSd[ names(standRows) ]
+    }
+    
+    tmp <- .getStandX(xnew, standRows, xmu = standMatMu, 
+                      xsd = standMatSd, intMat = intMat)
     xnew <- tmp$xstand
     
     tmp <- .gjamXY(formula, xnew, yp, typeNames, 
-                   notStandard=names(xnew), checkX = F, xscale = xscale,
+                   notStandard = names(xnew), checkX = F, xscale = xscale,
                    verbose)
-    x  <- tmp$x     
+    x  <- tmp$x             # not standardized
     
-    beta <- output$parameters$betaMu
+  #  beta <- output$parameters$betaMu
+    beta <- output$parameters$betaStandXmu
     
     w  <- x%*%beta
     yp <- w*effMat
@@ -9729,8 +9798,8 @@ smooth.na <- function(x,y){
     sampleW[,-condCols] <- 1
     
     standRows <- output$inputs$standRows
-    standMatSd <- output$inputs$standMatSd
-    standMatMu <- output$inputs$standMatMu
+    standMatSd <- output$inputs$standX[,'xsd']
+    standMatMu <- output$inputs$standX[,'xmean']
     
     byCol <- byRow <- F
     if(attr(sampleW,'type') == 'cols')byCol <- T
@@ -9851,7 +9920,7 @@ smooth.na <- function(x,y){
   for(g in gvals){ #########################
     
     bg  <- matrix( output$chains$bgibbs[g,], Q, S)
-    muw <- x%*%bg
+    muw <- x%*%bg                                 
 
     if(REDUCT){
       Z  <- matrix(output$chains$sgibbs[g,],N,r)
@@ -10687,6 +10756,8 @@ smooth.na <- function(x,y){
     facNames <- names(standX)[!standX]
     standX   <- names(standX)[standX]
     standX   <- standX[!standX %in% notStandard]
+    
+  #  print(standX)
     
     tmp <- .getStandX(xdata0,standX)
     xdata0 <- tmp$xstand
@@ -13575,14 +13646,16 @@ columnSplit <- function(vec, sep='_', ASFACTOR = F, ASNUMERIC=F,
   mat
 }
 
-columnPaste <- function(c1, c2, sep='-'){
+
+columnPaste <- function(c1, c2, sep='-', NOSPACE = FALSE){
   
-  FACT <- T
-  if(!is.factor(c1))FACT <- F
   c1    <- as.character(c1)
   c2    <- as.character(c2)
+  if(NOSPACE){
+    c1   <- .replaceString(c1, ' ', '')
+    c2   <- .replaceString(c2, ' ', '')
+  }
   c12   <- apply( cbind(c1, c2) , 1, paste0, collapse=sep)
-  c12   <- .replaceString(c12, ' ', '')
-  if(FACT) c12 <- as.factor(c12)
+  
   c12
 }

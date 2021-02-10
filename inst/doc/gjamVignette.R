@@ -352,6 +352,32 @@ x[1:5,]
 #  pl  <- list(specColor=sc)
 #  gjamPlot(output = out, plotPars = pl)
 
+## ---- eval=F------------------------------------------------------------------
+#  formula <- as.formula(~ temp + soil)
+#  
+#  # find species-soil type combinations that occur less than 5 times
+#  y0 <- treeYdata
+#  y0[ y0 > 0 ] <- 1
+#  soil <- rep( as.character(xdata$soil), ncol(y0) )
+#  soil <- paste('soil', soil, sep='') # soil is a factor, so full name begins with variable name
+#  spec <- rep( colnames(y0), each = nrow(y0) )
+#  specBySoil <- tapply( as.vector(y0), list(spec, soil), sum )
+#  wna <- which( specBySoil < 5, arr.ind = T )                   # only if at least 5 observations
+#  
+#  # assign NA to excluded coefficients using species-variable names
+#  nh <- nrow(wna)
+#  lo  <- vector('list', nh)
+#  names(lo) <- paste( rownames(specBySoil)[wna[,1]], colnames(specBySoil)[wna[,2]], sep='_' )
+#  hi <- lo
+#  for(j in 1:nh)lo[[j]] <- NA
+#  hi <- lo
+#  
+#  # setup prior and fit model
+#  bp <- gjamPriorTemplate(formula, xdata, ydata = treeYdata, lo = lo, hi=hi)
+#  rl <- list(N = 10, r = 5)
+#  ml <- list(ng=1000, burnin=200, typeNames = 'CA', betaPrior = bp, reductList=rl)
+#  out <- gjam(formula, xdata, ydata = treeYdata, modelList = ml)
+
 ## ----compData, eval = FALSE---------------------------------------------------
 #  f   <- gjamSimData(S = 8, typeNames = 'CC')
 #  ml  <- list(ng = 2000, burnin = 500, typeNames = f$typeNames)
@@ -540,7 +566,7 @@ cbind(ml,mx)
 #  ml  <- list(ng = 2000, burnin = 500, typeNames = f$typeNames,
 #              reductList = rl, PREDICTX = F)
 #  out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
-#  pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F)
+#  pl  <- list(trueValues = f$trueValues)
 #  gjamPlot(output = out, plotPars = pl)
 
 ## ----fungal data summary, bty='n', fig.width=6.5, eval=F----------------------
@@ -598,7 +624,7 @@ cbind(ml,mx)
 #  beta[ws,]
 
 ## ----int, eval=F--------------------------------------------------------------
-#  x <- output$inputs$x
+#  x <- output$inputs$xUnstand
 #  xvector <- x[1,]*0
 #  names(xvector)  <- colnames(x)
 #  
@@ -609,15 +635,15 @@ cbind(ml,mx)
 #  par(mfrow=c(1,3), bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0),
 #      mar = c(3,2,2,1), tcl = -0.5, mgp = c(3,1,0))
 #  gjamIIEplot(fit1, response = 'status', effectMu = 'direct',
-#              effectSd = 'direct', legLoc = 'bottomright', ylim=c(-5,10))
+#              effectSd = 'direct', legLoc = 'bottomright', ylim=c(-10,10))
 #  title('Direct effect by host')
 #  
 #  gjamIIEplot(fit1, response = 'status', effectMu = 'int', effectSd = 'int',
-#              legLoc = 'topright', ylim=c(-5,10))
+#              legLoc = 'topright', ylim=c(-10,10))
 #  title('Interactions with polyculture')
 #  
 #  gjamIIEplot(fit1, response = 'status', effectMu = 'ind', effectSd = 'ind',
-#              legLoc = 'topright', ylim=c(-1,1))
+#              legLoc = 'topright', ylim=c(-5,5))
 #  title('Indirect effect of microbiome')
 
 ## ----predict, eval=F----------------------------------------------------------
@@ -765,7 +791,7 @@ for(j in 1:length(xbox)){
 #  out$parameters$sigSe         # M by M covariance std errors
 
 ## ----IIEx, eval = F-----------------------------------------------------------
-#  xdrydry <- xwetdry  <- out$inputs$x[1,]
+#  xdrydry <- xwetdry  <- out$inputs$xUnstand[1,]
 #  xdrydry['moisture'] <- xdrydry['deficit'] <- -1
 #  xwetdry['moisture'] <- 1
 #  xwetdry['deficit']  <- -1
@@ -794,7 +820,7 @@ for(j in 1:length(xbox)){
 #              legLoc = 'bottomleft', ylim=c(-.3,.3))
 
 ## ----IIE4, eval = F-----------------------------------------------------------
-#  xvector <- out$inputs$x[1,]
+#  xvector <- out$inputs$xUnstand[1,]
 #  par(mfrow=c(2,1), bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0),
 #      mar = c(3,2,2,1), tcl = -0.5, mgp = c(3,1,0), family='')
 #  

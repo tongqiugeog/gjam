@@ -32,6 +32,13 @@ gjamPriorTemplate <- function(formula, xdata, ydata, lo = NULL, hi = NULL){
     hiBeta <- .setLoHi(plist = hi, pmat = hiBeta, xnames, ynames)
   }
   
+  wna <- which( sapply(lo, is.na) | sapply(hi, is.na) )
+  if(length(wna) > 0){
+    rc <- columnSplit( names(wna), '_')
+    rc <- rc[ rc[,2] %in% rownames(loBeta), ]             # reference level for factors will be absent
+    loBeta[ rc[,2], rc[,1] ] <- hiBeta[ rc[,2], rc[,1] ] <- 0
+  }
+  
   attr(loBeta,'formula') <- attr(hiBeta,'formula') <- formula
   
   list(lo = loBeta, hi = hiBeta)

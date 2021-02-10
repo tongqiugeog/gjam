@@ -452,7 +452,7 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
   #               group-species mean, and
   #               missing edata filled with group-species mean times missingEffort
   # xdata, ydata, edata - x, y, effort
-  # groupCol  - column name for group variable, i.e., observations part of the same time series
+  # groupCol  - column name for group variable, i.e., constant within a group
   # timeCol   - column name for time index
   # groupVars - character vector of column names having values that are fixed for a 'group', 
   #              i.e., they do not not change with time, in 'timeCol'
@@ -473,6 +473,14 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
   }
   
   if(!is.null(groupVars))groupVars <- groupVars[ groupVars %in% colnames(xdata) ]
+  
+  wna <- which( is.na(edata) | edata == 0, arr.ind=T )
+  if(length(wna) > 0){
+    nna <- nrow(wna)
+    pna <- signif( nna/length(edata) )
+    edata[wna] <- missingEffort
+    print( paste( nna, ' missing values (', pna, '%) in edata', sep='') )
+  }
 
   ord <- order(xdata[,groupCol], xdata[,timeCol])
   
@@ -603,10 +611,13 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
     ynew[ ymiss ] <- ynew[ ymiss ]*missingEffort
     
     ynew[,typeNames %in% c('DA','PA','CC')] <- round( ynew[,typeNames %in% c('DA','PA','CC')] )
+    sl <- rep(colnames(ynew), each = nrow(ynew))
+    
+    enew <- enew[,colnames(ynew)]
     
     em <- enew
     em[ em == 0 ] <- NA
-    em <- tapply(em, list(group = rep(xnew[,'groups'], ncol(enew)),
+    em <- tapply(as.vector(em), list(group = rep(xnew[,'groups'], ncol(enew)),
                             species = sl),
                  mean, na.rm=T)
     if(!is.matrix(em)){
@@ -1634,7 +1645,7 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
   wclus <- ctmp[,ncluster]
   clusterCol <- NULL
   
-  clusterIndex <- ctmp[,ncluster]
+  clusterIndex <- ctmp[, ncluster, drop=F]
   clusterList <- character(0)
   
   notLab <- F
@@ -3610,14 +3621,14 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
   }
   
   xstand <- xx
-  if(is.null(xmu))xmu <- colMeans(xx[,scols,drop=F],na.rm=T)
-  if(is.null(xsd))xsd <- apply(xx[,scols,drop=F],2,sd,na.rm=T)
+  if( is.null(xmu) )xmu <- colMeans(xx[,scols,drop=F],na.rm=T)
+  if( is.null(xsd) )xsd <- apply(xx[,scols,drop=F],2,sd,na.rm=T)
   
   if(is.vector(xmu))
     if(is.null(names(xmu)))stop('vector xmu must have variable names')
     
   
-  xstand[,scols] <- t( (t(xx[,scols]) - xmu)/xsd )
+  xstand[,scols] <- t( (t(xx[,scols]) - xmu[scols])/xsd[scols] )
                        
   if(length(intMat) > 0){
     for(j in 1:nrow(intMat)){
@@ -3877,10 +3888,20 @@ gjamFillMissingTimes <- function(xdata, ydata, edata, groupCol, timeCol,
   
   wf <- which( sapply(ydata,is.factor) )
   
-  if(length(wf) > 0){
+  if( length(wf) > 0 ){
     if(!all(typeNames[wf] == 'CAT'))
       stop('factors in ydata must be CAT data')
   }
+  wc <- which( typeNames == 'CAT' )
+  wc <- which( !wc %in% wf )
+  if(length(wc) > 0){
+    ydata <- data.frame(ydata)
+    for(k in wc){
+      ydata[,k] <- as.factor(ydata[,k])
+    }
+  }
+    
+  
   list(ydata = ydata, yordNames = yordNames)
 }
 
@@ -4212,9 +4233,13 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   formTerms <- unlist( strsplit( as.character(formula), '+', fixed=T) )
   formTerms <- .replaceString( formTerms[ !formTerms == '~' ], ' ', '')
   
+  ft <- c( grep('_', formTerms), grep('-', formTerms) )
+  if(length(ft) > 0)stop( " reserved characters '_' or '-' in formula variables, rename" )
+  
   if( is.null(timeList) ){
     
     termB <- TRUE
+    if( !is.null(betaPrior) ) BPRIOR <- TRUE
     
     }else{
     
@@ -4381,10 +4406,18 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   factorBeta  <- tmp$factorAll
   designTable <- tmp$designTable;      xscale <- tmp$xscale
   predXcols   <- tmp$predXcols
-  standMatSd    <- tmp$standMatSd; standMatMu <- tmp$standMatMu  
+  standMatSd  <- tmp$standMatSd; standMatMu <- tmp$standMatMu  
   standRows   <- tmp$standRows
   xdataNames  <- tmp$xdataNames
   notStandard <- tmp$notStandard[tmp$notStandard %in% xnames]
+  
+  #######################
+  xa  <- x[,-1]        # no intercept
+  con <- solve(crossprod(xa))%*%crossprod(xa,x)
+  con[ con < 1e-12 ] <- 0
+  
+  #######################
+  
   
   factorRho <- interRho <- NULL
   xlnames <- character(0)
@@ -5008,7 +5041,6 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
     facNames <- names(factorBeta$factorList)
     fl <- character(0)
     for(k in 1:length(facNames)){
-      
       kk <- which( startsWith( rownames(factorBeta$lCont), facNames[k] ) )
       fc <- rownames( factorBeta$lCont )[kk]
       fl <- c(fl, fc)
@@ -5279,7 +5311,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
       
     } else {
         
-      if(!TIME){
+     if(!TIME){
         
         Y <- w[inSamp,notOther]
         if(RANDOM)Y <- Y - groupRandEff[inSamp,notOther]
@@ -6026,8 +6058,7 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
         rownames(rhoTable) <- NULL
         rhoTable <- rhoTable[!rhoMu == 0 & !rhoSe == 0, ]
         
-        
-        unstandRhoX <- rhoStandXmu%*%t(rhoMu)%*%solve(tcrossprod(rhoMu))
+    #    unstandRhoX <- rhoStandXmu%*%t(rhoMu)%*%solveRcpp( tcrossprod(rhoMu) )
         
 
       }else{
@@ -6475,13 +6506,64 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
   class(all) <- "gjam"
   
   all
-  }
+}
+
+designFull <- function( form, xdata ){
   
+  n   <- nrow(xdata)
+  tmp <- model.frame( form, xdata)
+  terms <- attributes( tmp )$terms
+  xnames <- attr( terms, 'term.labels' )
+  facts <- which( attr( terms,'dataClasses' ) == 'factor' )
+  ints  <- grep(':', xnames)
+  
+  xfull <- numeric(0)
+  # main effects
+  for(k in 1:ncol(tmp)){
+    if( !k %in% facts){
+      x <- matrix( tmp[,k], ncol = 1)
+      colnames(x) <- colnames(tmp)[k]
+      xfull <- cbind(xfull, x)
+      next
+    }
+    levs <- levels(tmp[,k])
+    xk <- matrix(0, n, length(levs))
+    colnames(xk) <- paste(names(facts)[k], levs, sep='')
+    mm <- match( as.character(tmp[,k]), levs )
+    xk[ cbind(1:n, mm) ] <- 1
+    xfull <- cbind(xfull, xk)
+  }
+  csum <- colSums(abs(xfull), na.rm=T)
+  xfull <- xfull[,csum > 0]
+  
+  if(length(ints) > 0){   # there are interactions 
+    interactions <- numeric(0)
+    for(k in ints){
+      xi <- columnSplit( xnames[k], ':' )
+      x1 <- which( startsWith(colnames(xfull), xi[1] ) )
+      x2 <- which( startsWith(colnames(xfull), xi[2] ) )
+      cnames <- outer( colnames(xfull)[x1], colnames(xfull)[x2], paste, sep=':'  )
+      xint <- matrix(0, n, length(cnames))
+      colnames(xint) <- cnames
+      for(i in x1){
+        for(j in x2){
+          ij <- paste( colnames(xfull)[i], colnames(xfull)[j], sep=':')
+          xint[,ij] <- xfull[,i] * xfull[,j]
+        }
+      }
+      interactions <- cbind(interactions, xint)
+    }
+    xfull <- cbind(xfull, interactions)
+  }
+  csum <- colSums(abs(xfull), na.rm=T)
+  xfull <- xfull[,csum > 0]
+
+  # cannot be transformed, not full rank
+}
+   
 .contrastCoeff <- function(beta, sigma, sinv, notStand, stand, factorObject,
                            conditional=NULL){ 
-   
   SO  <- ncol(beta)
-  
   agg <- .sqrtRootMatrix(beta,sigma,DIVIDE=T)  #cor/stand scale
   
   if(factorObject$nfact > 0){          # center factors
@@ -6825,6 +6907,11 @@ sqrtSeq <- function( xx, nbin = 15){ #labels for sqrt scale
   
   if( is.null(atx) )atx <- breaks
   
+  if( is.null(atx) ){
+    tmp <- .bins4data(xx )
+    atx <- breaks  <- tmp$bins
+  }
+  
   bins <- atx
   bin1 <- 1
   nbin <- length(bins)
@@ -7047,7 +7134,7 @@ smooth.na <- function(x,y){
   unstandardX  <- NULL 
   specColor    <- NULL
   ematAlpha     <- alphaEigen <- .5  
-  ematrix      <- ematrixL <- ematrixA <- NULL
+  ematrix      <- ematrixL <- ematrixA <- eComs <- NULL
   ymiss <- eCont <- modelList <- timeList <- timeZero <- NULL
   random <- NULL
   kgibbs <- NULL
@@ -7357,8 +7444,8 @@ smooth.na <- function(x,y){
       } else {
         opt <- list(xlabel='true',
                     ylabel='estimate', nPerBin=length(beta)/10,
-                    fill='lightblue',box.col=sc,POINTS=T,MEDIAN=F,add=F)
-        .plotObsPred(beta[,notOther],betaMu[,notOther],opt = opt)
+                    fill='lightblue', box.col=sc, POINTS=T, MEDIAN=F, add=F)
+        .plotObsPred(beta[,notOther],betaMu[,notOther], opt = opt)
         abline(0,1,lty=2)
       }
     }
@@ -8056,7 +8143,7 @@ smooth.na <- function(x,y){
     add <- F
     o   <- 1:np
     o   <- o[o <= 16]
-    if(length(other) > 0)o   <- o[o != other]
+    if(length(other) > 0)o   <- o[!o %in% other]
     
     for(p in 1:npage){
       
@@ -8592,15 +8679,13 @@ smooth.na <- function(x,y){
       vnam <- tmp$vnam
       xnam <- tmp$xnam
       
+      fnames  <- unique( xnam )
       xpNames <- .replaceString(fnames,':','X')
       xpNames <- .replaceString(xpNames,'I(','')
       xpNames <- .replaceString(xpNames,')','')
       xpNames <- .replaceString(xpNames,'^2','2')
       xpNames <- .replaceString(xpNames,'*','TIMES')
-      
-      fnames <- unique( xnam )
-      
-      brange <- apply(bfSig,2,range)
+      brange  <- apply(bfSig,2,range)
       
       for(j in 1:length(fnames)){
         
@@ -8832,13 +8917,14 @@ smooth.na <- function(x,y){
       
       osens <- order( colMeans(sensMu), decreasing=T )
       
-      sensMu <- sensMu[,osens]
-      sensSe <- sensSe[,osens]
+      sensMu <- sensMu[,osens,drop = FALSE]
+      sensSe <- sensSe[,osens,drop = FALSE]
       scol   <- scol[ osens ]
       
       nc <- ncol(sensMu)
       sensMu <- sensMu[drop = FALSE, notOther,]
       sensSe <- sensSe[drop = FALSE, notOther,]
+      
       
       # total variance
       ord <- order(sensMu[,1], decreasing = T)
@@ -8862,15 +8948,15 @@ smooth.na <- function(x,y){
         ord <- order(sprop[,1], decreasing = T)
         
         smu <- t(sprop[ord,])
-        smu <- smu[1:(nrow(smu)-1),]
+        smu <- smu[drop=F, 1:(nrow(smu)-1),]
         smax <- max( colSums(smu) )
         tmp <- barplot( smu, beside = F, col = .getColor(scol, .4), border = scol, xaxt = 'n',
                         ylim = c(0, smax), ylab = 'Proportion of total SD' )
         text( tmp - .2*diff(tmp)[1], .04, colnames(smu), srt = 90, pos = 4, cex=.9)
       }
       
-      smu <- t(sensMu[ord,])
-      sse <- t(sensSe[ord,])
+      smu <- t(sensMu[drop=F, ord,])
+      sse <- t(sensSe[drop=F, ord,])
       
       tmp <- barplot( smu, beside = T, col = .getColor(scol, .4), border = scol, xaxt = 'n',
                       ylim = 1*c(0, max(smu + sse)), ylab = 'Std deviation scale' )
@@ -8921,12 +9007,12 @@ smooth.na <- function(x,y){
     }
   }
   
-  if(!GRIDPLOTS){
+  if( !GRIDPLOTS ){
     
     clusterIndex <- NULL
     clusterOrder <- NULL
     
-    if(S >= 8){
+    if( S >= 8 & !is.null(ematrix) ){
       opt <- list( ncluster=ncluster, PLOT=F, DIST=F )
       clusterDat <- .clusterPlot( ematrix , opt)
       colCode    <- clusterDat$colCode
@@ -8993,80 +9079,83 @@ smooth.na <- function(x,y){
   
   ########### E communities
   
-  imat <- output$inputs$y
-  imat[imat > 0] <- 1
-  iord <- colSums(imat)
-  etab  <- table(clusterIndex[,'E'])
-  eComs <- matrix(NA,ncluster, max(etab))
-  ename <- rep( character(0), max(etab) )
-  
-  egroup <- clusterIndex[,'E']
-  
-  for(j in 1:ncluster){
+  if(!is.null(ematrix)){
     
-    wj <- which(clusterIndex[,'E'] == j)
-    jname <- rownames(clusterIndex)[wj]
-    jname <- jname[order(iord[jname],decreasing=T)]
-    eComs[j,1:length(jname)] <- jname
-    mm    <- min( c(3,length(jname)) )
-    jj    <- substr(jname[1:mm],1,6)
-    ename[j] <- paste0(jj,collapse='_')
-  } 
-  rownames(eComs) <- ename
-  eComs <- t(eComs)
-  
-  ########### ordination
-  
-  if(SAVEPLOTS)pdf( file=.outFile(outFolder,'ordination.pdf') ) # start plot
-  
-  clusNames <- eComs[1,]
-  
-  lambda <- eValues/sum(eValues)
-  cl     <- cumsum(lambda)
-  
-  cbord <- .getColor(specColor[notOther],.4)
-  cfill <- .getColor(specColor[notOther],.4)
-  
-  par(mfcol=c(2,2), bty='n', cex = cex, mar=c(4,4,1,1))
-  
-  p1 <- paste('Axis I (',round(100*lambda[1],0),'%)',sep='')
-  p2 <- paste('Axis II (',round(100*lambda[2],0),'%)',sep='')
-  p3 <- paste('Axis III (',round(100*lambda[3],0),'%)',sep='')
-  
-  xlim <- range(eVecs[,1])
-  
-  plot(eVecs[,1],eVecs[,2],cex=1,col=cbord, bg = cfill, pch=16,
-       xlab=p1, ylab = p2) 
-  abline(h=0,col=.getColor('black',.1),lwd=2,lty=2)
-  abline(v=0,col=.getColor('black',.1),lwd=2,lty=2)
-  
-  text(eVecs[clusNames,1],eVecs[clusNames,2],substr(clusNames,1,7))
-  
-  plot(eVecs[,1],eVecs[,3],cex=1,col=cbord, bg = cfill, pch=16,
-       xlab=p1, ylab = p3) 
-  abline(h=0,col=.getColor('black',.1),lwd=2,lty=2)
-  abline(v=0,col=.getColor('black',.1),lwd=2,lty=2)
-  
-  text(eVecs[clusNames,1],eVecs[clusNames,3],substr(clusNames,1,7))
-  
-  plot(eVecs[,2],eVecs[,3],cex=1,col=cbord, bg = cfill, pch=16,
-       xlab=p2, ylab = p3)
-  abline(h=0,col=.getColor('black',.1),lwd=2,lty=2)
-  abline(v=0,col=.getColor('black',.1),lwd=2,lty=2)
-  
-  text(eVecs[clusNames,2],eVecs[clusNames,3],substr(clusNames,1,7))
-  
-  plot(cl,type='s',xlab='Rank',ylab='Proportion of variance',xlim=c(.9,S),
-       ylim=c(0,1),log='x')
-  lines(c(.9,1),c(0,cl[1]),lwd=2,type='s')
-  for(j in 1:length(lambda))lines(c(j,j),c(0,cl[j]),col='grey')
-  lines(cl,lwd=2,type='s')
-  abline(h=1,lwd=2,col=.getColor('grey',.5),lty=2)
-  
-  if(!SAVEPLOTS){
-    readline('ordination of E matrix -- return to continue ')
-  } else {
-    dev.off()
+    imat <- output$inputs$y
+    imat[imat > 0] <- 1
+    iord <- colSums(imat)
+    etab  <- table(clusterIndex[,'E'])
+    eComs <- matrix(NA,ncluster, max(etab))
+    ename <- rep( character(0), max(etab) )
+    
+    egroup <- clusterIndex[,'E']
+    
+    for(j in 1:ncluster){
+      
+      wj <- which(clusterIndex[,'E'] == j)
+      jname <- rownames(clusterIndex)[wj]
+      jname <- jname[order(iord[jname],decreasing=T)]
+      eComs[j,1:length(jname)] <- jname
+      mm    <- min( c(3,length(jname)) )
+      jj    <- substr(jname[1:mm],1,6)
+      ename[j] <- paste0(jj,collapse='_')
+    } 
+    rownames(eComs) <- ename
+    eComs <- t(eComs)
+    
+    ########### ordination
+    
+    if(SAVEPLOTS)pdf( file=.outFile(outFolder,'ordination.pdf') ) # start plot
+    
+    clusNames <- eComs[1,]
+    
+    lambda <- eValues/sum(eValues)
+    cl     <- cumsum(lambda)
+    
+    cbord <- .getColor(specColor[notOther],.4)
+    cfill <- .getColor(specColor[notOther],.4)
+    
+    par(mfcol=c(2,2), bty='n', cex = cex, mar=c(4,4,1,1))
+    
+    p1 <- paste('Axis I (',round(100*lambda[1],0),'%)',sep='')
+    p2 <- paste('Axis II (',round(100*lambda[2],0),'%)',sep='')
+    p3 <- paste('Axis III (',round(100*lambda[3],0),'%)',sep='')
+    
+    xlim <- range(eVecs[,1])
+    
+    plot(eVecs[,1],eVecs[,2],cex=1,col=cbord, bg = cfill, pch=16,
+         xlab=p1, ylab = p2) 
+    abline(h=0,col=.getColor('black',.1),lwd=2,lty=2)
+    abline(v=0,col=.getColor('black',.1),lwd=2,lty=2)
+    
+    text(eVecs[clusNames,1],eVecs[clusNames,2],substr(clusNames,1,7))
+    
+    plot(eVecs[,1],eVecs[,3],cex=1,col=cbord, bg = cfill, pch=16,
+         xlab=p1, ylab = p3) 
+    abline(h=0,col=.getColor('black',.1),lwd=2,lty=2)
+    abline(v=0,col=.getColor('black',.1),lwd=2,lty=2)
+    
+    text(eVecs[clusNames,1],eVecs[clusNames,3],substr(clusNames,1,7))
+    
+    plot(eVecs[,2],eVecs[,3],cex=1,col=cbord, bg = cfill, pch=16,
+         xlab=p2, ylab = p3)
+    abline(h=0,col=.getColor('black',.1),lwd=2,lty=2)
+    abline(v=0,col=.getColor('black',.1),lwd=2,lty=2)
+    
+    text(eVecs[clusNames,2],eVecs[clusNames,3],substr(clusNames,1,7))
+    
+    plot(cl,type='s',xlab='Rank',ylab='Proportion of variance',xlim=c(.9,S),
+         ylim=c(0,1),log='x')
+    lines(c(.9,1),c(0,cl[1]),lwd=2,type='s')
+    for(j in 1:length(lambda))lines(c(j,j),c(0,cl[j]),col='grey')
+    lines(cl,lwd=2,type='s')
+    abline(h=1,lwd=2,col=.getColor('grey',.5),lty=2)
+    
+    if(!SAVEPLOTS){
+      readline('ordination of E matrix -- return to continue ')
+    } else {
+      dev.off()
+    }
   }
   
   ########### dimension reduction ############
@@ -9210,7 +9299,7 @@ smooth.na <- function(x,y){
   
   fBetaMu <- output$parameters$betaStandXWmu
   
-  if(Q > 4){
+  if(Q > 4 & !is.null(fMat)){
     
     main1 <- expression( paste('Sensitivity ',hat(F)))
     main2 <- expression( paste('Responses ',hat(B)))
@@ -9251,78 +9340,88 @@ smooth.na <- function(x,y){
   #################################### cluster Emat
   
   graphics.off()
-  if(SAVEPLOTS)pdf( file=.outFile(outFolder,'clusterGridE.pdf') ) # start plot
   
-  mat1 <- .cov2Cor( ematrix[notOther,notOther] )
-  main1 <- expression(paste('Species ',hat(E)))
-  opt <- list(mainLeft=main1, leftClus=T, leftLab=T, 
-              colCode1 = specColor[notOther], rowCode = specColor[notOther],
-              topLab1=T,ncluster = ncluster,
-              lower1 = T, diag1 = F,horiz1=clusterIndex[,'E'])
-  
-  .clusterWithGrid(mat1, mat2=NULL, expand=1, opt)
-  
-  if(!SAVEPLOTS){
-    readline('E: model-based response to X -- return to continue ')
-  } else {
-    dev.off()
-  }
-  
-  ################# resid and Egrid
-  
-  graphics.off()
-  if(SAVEPLOTS)pdf( file=.outFile(outFolder,'gridR_E.pdf') ) # start plot
-  
-  dcor <- .cov2Cor(covy)
-  dcor[is.na(dcor)] <- 0
-  
-  mat1 <- dcor     
-  mat2 <- .cov2Cor( ematrix[notOther,notOther] )
-
-  main1 <- expression(paste('Ordered by error ',hat(R)))
-  main2 <- expression(paste('Response ',hat(E)))
-  opt <- list(mainLeft='Species', main1=main1, main2 = main2,
-              leftClus=T, leftLab=T, rowCode = specColor[notOther],
-              topLab1 = T, topLab2 = T,rightLab=F,ncluster = ncluster,
-              lower1 = T, diag1 = F,lower2 = T, diag2 = T)
-  .clusterWithGrid(mat1, mat2, expand=1, opt)
- 
-  if(!SAVEPLOTS){
-    readline('comparison R vs E -- return to continue ')
-  } else {
-    dev.off()
-  }
-  
-  ################# data vs E grid
-  
-  graphics.off()
-  if(SAVEPLOTS)pdf( file=.outFile(outFolder,'gridY_E.pdf') ) # start plot
-  
-  ytmp <- jitter(y[,mor],1e-10)
-  cory <- cor(ytmp)
-  
-  mat1 <- cory
-  mat2 <- ematrix[notOther,notOther]
-  main1 <- 'Ordered by data, cor(Y)'
-  main2 <- expression(paste('Response ',hat(E)))
-  topLab1 <- topLab2 <- F
-  if(S < 30)topLab1 <- topLab2 <- T
-  
-  
-  opt <- list(mainLeft='Species', main1=main1, main2 = main2,
-              leftClus=T, leftLab=T, lower1 = T, diag1 = F, rowCode = specColor[notOther],
-              topLab1 = topLab1, topLab2 = topLab2,ncluster = ncluster,
-              lower2 = T, diag2 = T, sameOrder = T)
-  .clusterWithGrid(mat1, mat2=mat2, expand=1, opt )
-  
-  if(!SAVEPLOTS){
-    readline('raw data vs E -- return to continue ')
-  } else {
-    dev.off()
+  if(!is.null(ematrix)){
+    if(SAVEPLOTS)pdf( file=.outFile(outFolder,'clusterGridE.pdf') ) # start plot
+    
+    mat1 <- .cov2Cor( ematrix[notOther,notOther] )
+    main1 <- expression(paste('Species ',hat(E)))
+    opt <- list(mainLeft=main1, leftClus=T, leftLab=T, 
+                colCode1 = specColor[notOther], rowCode = specColor[notOther],
+                topLab1=T,ncluster = ncluster,
+                lower1 = T, diag1 = F,horiz1=clusterIndex[,'E'])
+    
+    .clusterWithGrid(mat1, mat2=NULL, expand=1, opt)
+    
+    if(!SAVEPLOTS){
+      readline('E: model-based response to X -- return to continue ')
+    } else {
+      dev.off()
+    }
+    
+    ################# resid and Egrid
+    
+    graphics.off()
+    if(SAVEPLOTS)pdf( file=.outFile(outFolder,'gridR_E.pdf') ) # start plot
+    
+    dcor <- .cov2Cor(covy)
+    dcor[is.na(dcor)] <- 0
+    
+    mat1 <- dcor     
+    mat2 <- .cov2Cor( ematrix[notOther,notOther] )
+    
+    main1 <- expression(paste('Ordered by error ',hat(R)))
+    main2 <- expression(paste('Response ',hat(E)))
+    opt <- list(mainLeft='Species', main1=main1, main2 = main2,
+                leftClus=T, leftLab=T, rowCode = specColor[notOther],
+                topLab1 = T, topLab2 = T,rightLab=F,ncluster = ncluster,
+                lower1 = T, diag1 = F,lower2 = T, diag2 = T)
+    .clusterWithGrid(mat1, mat2, expand=1, opt)
+    
+    if(!SAVEPLOTS){
+      readline('comparison R vs E -- return to continue ')
+    } else {
+      dev.off()
+    }
+    
+    ################# data vs E grid
+    
+    graphics.off()
+    if(SAVEPLOTS)pdf( file=.outFile(outFolder,'gridY_E.pdf') ) # start plot
+    
+    ytmp <- jitter(y[,mor],1e-10)
+    cory <- cor(ytmp)
+    
+    mat1 <- cory
+    mat2 <- ematrix[notOther,notOther]
+    main1 <- 'Ordered by data, cor(Y)'
+    main2 <- expression(paste('Response ',hat(E)))
+    topLab1 <- topLab2 <- F
+    if(S < 30)topLab1 <- topLab2 <- T
+    
+    
+    opt <- list(mainLeft='Species', main1=main1, main2 = main2,
+                leftClus=T, leftLab=T, lower1 = T, diag1 = F, rowCode = specColor[notOther],
+                topLab1 = topLab1, topLab2 = topLab2,ncluster = ncluster,
+                lower2 = T, diag2 = T, sameOrder = T)
+    .clusterWithGrid(mat1, mat2=mat2, expand=1, opt )
+    
+    if(!SAVEPLOTS){
+      readline('raw data vs E -- return to continue ')
+    } else {
+      dev.off()
+    }
   }
   
   #################### beta grid
-  if( BETAGRID & nrow(output$parameters$betaStandXWmu) > 2 ){
+  
+  if(is.null(output$parameters$betaStandXWmu)){
+    BETAGRID <- F
+  }else{
+    if( nrow(output$parameters$betaStandXWmu) > 2 )BETAGRID <- F
+  }
+  
+  if( BETAGRID ){
     
     graphics.off()
     
@@ -9598,6 +9697,8 @@ smooth.na <- function(x,y){
   if(is.matrix(xscale))  xscale <- t(xscale)
   facNames   <- names(factorList)
   
+  facLevels <- unlist( factorList )   # needed to remove from standardized vars
+  
   typeNames <- output$modelList$typeNames
   tmp       <- .gjamGetTypes(typeNames)
   typeFull  <- tmp$typeFull
@@ -9613,6 +9714,12 @@ smooth.na <- function(x,y){
   standRows <- output$inputs$standRows
   standMatSd  <- output$inputs$standMatSd
   standX    <- output$inputs$standX
+  
+  #factors are not standardized
+  standRows  <- standRows[ !names(standRows) %in% facLevels ]
+  standMatSd <- standMatSd[ !names(standMatSd) %in% facLevels ]
+  standX <- standX[ drop=F, !rownames(standX) %in% facLevels, ]
+  
   xmu       <- standX[,1]
   xsd       <- standX[,2]
   intMat    <- interBeta$intMat
@@ -9629,7 +9736,6 @@ smooth.na <- function(x,y){
     if(length(wna) > 0)
       stop('cannot have NA in prediction grid newdata$xdata')
     
-    
     effMat <- matrix(1, nx, S)
     holdoutN <- nx
     holdoutIndex <- 1:nx
@@ -9644,6 +9750,7 @@ smooth.na <- function(x,y){
     ydataCond <- NULL
     
     if(nfact > 0){
+      
       for(j in 1:nfact){
         
         nf <- names(factorList)[j]
@@ -9662,10 +9769,13 @@ smooth.na <- function(x,y){
     colnames(y) <- ynames
     yp <- y
     
-    standRows <- output$inputs$standRows
     standMatSd <- output$inputs$standX[,'xsd']
     standMatMu <- output$inputs$standX[,'xmean']
     intMat     <- output$inputs$intMat
+    
+    #factors are not standardized
+    standMatSd <- standMatSd[ !names(standMatSd) %in% facLevels ]
+    standMatMu <- standMatMu[ !names(standMatMu) %in% facLevels ]
     
     ig <- grep(':', names(standRows))
     if(length(ig) > 0){
@@ -9674,7 +9784,7 @@ smooth.na <- function(x,y){
       standMatSd <- standMatSd[ names(standRows) ]
     }
     
-    tmp <- .getStandX(xnew, standRows, xmu = standMatMu, 
+    tmp <- .getStandX(xx = xnew, standRows, xmu = standMatMu, 
                       xsd = standMatSd, intMat = intMat)
     xnew <- tmp$xstand
     
@@ -9842,7 +9952,7 @@ smooth.na <- function(x,y){
   ptmp[,catCols]  <- 10
   
   # note: all are holdouts for newdata, no holdouts for COND
-  if(COND | XCOND ){
+  if( COND | XCOND ){
     holdoutN <- 0
     holdoutIndex <- NULL
     ploHold <- phiHold <- NULL
@@ -9851,10 +9961,10 @@ smooth.na <- function(x,y){
   }else{
     holdoutN <- n
     holdoutIndex <- c(1:n)
-    ploHold <- plo
-    phiHold <- phi
     plo <- -ptmp
     phi <- ptmp
+    ploHold <- plo
+    phiHold <- phi
   }
     
   .updateW <- .wWrapper(REDUCT, RANDOM, S, effMat, corCols, notCorCols, typeNames, 
@@ -12643,7 +12753,7 @@ smooth.na <- function(x,y){
       yPredict  <-  w*0
       SN <- length(notCorCols)
       
-      if(length(notCorCols) > 0){ ###### covariance scale
+      if( length(notCorCols) > 0 ){ ###### covariance scale
         mue    <- x%*%bg
         if(RANDOM)mue <- mue + groupRandEff
         muf    <- mue + rndEff
@@ -12707,6 +12817,7 @@ smooth.na <- function(x,y){
     }
       
       if(!is.null(sampleW))w[sampleW == 0] <- y[sampleW == 0]
+      
       if(holdoutN > 0){   # in-sample to sample X out-out-sample
         wHold[sampleWhold == 0] <- y[holdoutIndex,][sampleWhold == 0]  
       }

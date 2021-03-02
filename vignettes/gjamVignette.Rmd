@@ -12,7 +12,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-##version 2.3.1
+## version 2.3.4
 
 
 ```{r outform, echo=F}
@@ -30,7 +30,7 @@ bigskip <- function(){
 }
 ```
 
-####citation:  
+#### citation:  
 *Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017. Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data, Ecological Monographs, 87, 34–56.*
 
 [website](http://sites.nicholas.duke.edu/clarklab/code/)
@@ -38,7 +38,7 @@ bigskip <- function(){
 `r bigskip()`
 
 
-#<span style="color:darkgreen">overview</span>
+# <span style="color:darkgreen">overview</span>
 
 `gjam` models multivariate responses that can be combinations of discrete and continuous variables, where interpretation is needed on the observation scale. It was motivated by the challenges of modeling distribution and abundance of multiple species, so-called joint species distribution models (JSDMs).  Because species and other attributes are often recorded on many different scales and with different levels of sampling effort, many analyses are limited to presence-absence, the lowest common denominator.  Combining species and other attributes is challenging because some species groups are counted.  Some may be continuous cover values or basal area.  Some may be recorded in ordinal bins, such as 'rare', 'moderate', and 'abundant'.  Others may be presence-absence.  Some are composition data, either fractional (continuous on (0, 1)) or counts (e.g., molecular and fossil pollen data).  Attributes such as body condition, infection status, and herbivore damage are often included in field data.  `gjam` accommodate multifarious observations.
 
@@ -50,7 +50,7 @@ Censoring is used with the *effort* for an observation to combine continuous and
 
 `gjam` generates an object of `class` `"gjam"`, allowing it to appropriate the `summary` and `print` functions in R.  To avoid conflicts with other packages, `gjam function` names begin with `"gjam"`.  `gjam` uses the `RcppArmadillo` linear algebra library with the `Rcpp` interface library for R/C++.  
 
-##<span style="color:teal">model summary</span>
+## <span style="color:teal">model summary</span>
 
 
 The basic model is detailed in Clark et al. (2017) and summarized at the end of this vignette (see **reference notes**).  An observation consists of two vectors $(\mathbf{x}_i, \mathbf{y}_i)^n_{i = 1}$, where $\mathbf{x}_i$ is a length-$Q$ design vector (intercept and predictors) and $\mathbf{y}_i$ is a length-$S$ vector of response variables, each potentially measured in different ways.  $\mathbf{y}_i$ may include both continuous and discrete variables.  There is a latent vector $\mathbf{w}_i$ that represents response variables all on a continuous scale.  The vector $\mathbf{w}_i$ has the joint distribution $\mathbf{w}_i \sim MVN(\boldsymbol{\mu}_i, \boldsymbol{\Sigma})$, where $\boldsymbol{\mu}_i$ is the length-$S$ mean vector, and $\boldsymbol{\Sigma}$, is an $S \times S$ covariance matrix.
@@ -157,7 +157,7 @@ Of course, data present us with the inverse problem: the observed $y_{is}$ are c
 **Censoring in gjam.**  As a data-generating model (a), a realization $w_{is}$ that lies within a censored interval is translated by the partition $\mathbf{p}_{is}$ to discrete $y_{is}$.  The distribution of data (bars at left) is induced by the latent scale and the partition.  For inference (b), observed discrete $y_{is}$ takes values on the latent scale from a truncated distribution.
 
 
-##<span style="color:teal">data types</span>
+## <span style="color:teal">data types</span>
 
 The different types of data that can be included in the model are summarized in Table 1, assigned to the `character` variable `typeNames` that is included in the `modelList` passed to `gjam`:
 
@@ -181,7 +181,7 @@ $^2$ For `'CAT'` data species $s$ has $K_s - 1$ non-reference categories.  The c
 <br>
 
 
-##<span style="color:teal">effort and weight of discrete data</span>
+## <span style="color:teal">effort and weight of discrete data</span>
 
 The partition for a discrete interval $k$ depends on effort for sample $i$
 
@@ -207,11 +207,11 @@ Again, on the composition scale $[0, 1]$, weight of the observation is determine
 
 `r bigskip()`
 
-#<span style="color:darkgreen">using gjam</span> 
+# <span style="color:darkgreen">using gjam</span> 
 
 It's easiest to start with the examples from `gjam` help pages.  This section provides additional examples and explanation.  
 
-##<span style="color:teal">simulated data</span>
+## <span style="color:teal">simulated data</span>
 
 Simulated data are used to check that the algorithm can recover true parameter values and predict data, including underlying latent variables.  To illustrate I simulate a sample of size $n = 500$ for $S = 10$ species and $Q = 4$ predictors.  To indicate that all species are *continuous abundance* data I specify `typeNames` as `'CA'`.  `CA` data are continuous above zero, with point mass at zero. 
 
@@ -347,7 +347,6 @@ out$parameters$sigMu         # S by S covariance matrix omega
 out$parameters$sigSe         # S by S covariance std errors
 ```
 
-```
 
 Again, check Table 2 for names of all fitted coefficients.
 
@@ -384,7 +383,7 @@ plot(f$y,out$prediction$ypredMu, cex = .2)
 
 To process the output beyond what is provided in `gjamPlot` I can work directly with the `chains`.  
 
-##<span style="color:teal">my data</span>
+## <span style="color:teal">my data</span>
 
 `gjam` uses the standard `R` syntax in the `formula` that I would use with functions like `lm` and `glm`.  Because `gjam` uses inverse prediction to summarize large multivariate output, it is important to abide by this syntax.  For example, to analyze a model with quadratic and interaction terms, I might simply construct my own design matrix with these columns included, i.e., side-stepping the standard syntax for these effects that can be specified in `formula`.  This would be fine for model fitting.  However, without specifying this in the `formula` there is no way for `gjam` to know that these columns are in fact non-linear transformations of other columns.  Without this knowledge there is no way to properly predict them.  The prediction that `gjam` would return would include silly variable combinations.  
 
@@ -504,7 +503,7 @@ Additional information on variable types and their treatment in `gjam` is includ
 
 `r bigskip()`
 
-#<span style="color:darkgreen">sensitivity to predictors</span>
+# <span style="color:darkgreen">sensitivity to predictors</span>
 
 The sensitivity of an individual response variable $s$ to an individual predictor $q$ is given by the coefficient $\beta_{qs}$.  This granularity is useful, but it is often desirable to have a sensitivity that applies to the full response matrix.  That sensitivity is given by 
 
@@ -567,7 +566,7 @@ legend('bottomright',c('CA data','CC data'),
 
 `r bigskip()`
 
-#<span style="color:darkgreen">plotting output</span>
+# <span style="color:darkgreen">plotting output</span>
 
 
 In the foregoing example arguments passed to `gjamPlot` in the `list plotPars` included `SMALLPLOTS = F` (do not compress margins and axes), `GRIDPLOTS = T` (draw grid diagrams as heat maps for parameter values and predictions).  In this section I summarize plots generated by `gjamPlot`.
@@ -619,10 +618,10 @@ For large $S$ the labels are not shown on the graphs, they would be too small.  
 
 `r bigskip()`
 
-#<span style="color:darkgreen">flexibility in gjam</span>
+# <span style="color:darkgreen">flexibility in gjam</span>
 
 
-##<span style="color:teal">heterogeneous effort</span>
+## <span style="color:teal">heterogeneous effort</span>
 
 Here is an example with discrete abundance data, now with heterogeneous sample effort.  Heterogeneous effort applies where vegetation plots have different areas, animal survey data have variable search times, or catch returns from fishing vessels have different gear and/or trawling times.  Here I simulate a list containing the columns and the effort that applies to those columns, shown for 50 observations:
 
@@ -663,7 +662,7 @@ gjamPlot(output = out, plotPars = pl)
 
 Use `summary(out)` to see a summary of effort.
 
-##<span style="color:teal">specifying censored intervals</span>
+## <span style="color:teal">specifying censored intervals</span>
 
 To analyze data that are censored at specific intervals, I specify the censored values and the intervals to which those values apply. In the help page for `gjamCensorY` I discuss a `vector` of `values` and a corresponding `matrix` of upper and lower bounds in two rows and one column for each element in `values`.  For example, if an observer stops counting wildebeest or sea lions at, say, 100 animals, I can set this as a censored interval:
 
@@ -694,7 +693,7 @@ for(j in 1:ncol(f$ydata)){
 
 This `list censor` can be passed directly to `gjam` in the `list modelList`.
 
-##<span style="color:teal">prior distribution on coefficients</span>
+## <span style="color:teal">prior distribution on coefficients</span>
 
 Informative prior distributions in regression models are rare, perhaps partly because it is hard to assign both magnitude (e.g., large or small prior mean value) and weight (large or small prior variance) without obscuring the relative contributions of prior and data.  Prior distributions for regression coefficients are typically Gaussian, having support on $(-\infty, \infty)$.  In many cases, the sign of the effect is known, but the magnitude is not.  Ad hoc experimentation with prior mean and variance can, at best, only insure that 'most' of the posterior distribution is positive or negative.  Yet, it can be important to use prior information, especially in the multivariate setting, where covariances between responses can result in estimates where the sign of a coefficient effect makes no sense. 
 
@@ -739,7 +738,40 @@ gjamPlot(output = out, plotPars = pl)
 
 The combination of `lo` and `hi` set the limits for posterior draws from the truncated multivariate normal distribution.  The `help` page for `gjamPriorTemplate` provides an example with informative priors specified for individual predictor-response combinations.
 
-##<span style="color:teal">sample effort in count data</span>
+## <span style="color:teal">species-factor levels that do not occur</span>
+
+There can be times when specific species-predictor combinations could be omitted. For example, some species may never occur on some soil types. If I want to estimate $\beta$ conditioned on some elements being zero, I could do the following:
+
+```{r, eval=F}
+formula <- as.formula(~ temp + soil)
+
+# find species-soil type combinations that occur less than 5 times
+y0 <- treeYdata
+y0[ y0 > 0 ] <- 1
+soil <- rep( as.character(xdata$soil), ncol(y0) )
+soil <- paste('soil', soil, sep='') # soil is a factor, so full name begins with variable name
+spec <- rep( colnames(y0), each = nrow(y0) )
+specBySoil <- tapply( as.vector(y0), list(spec, soil), sum )
+wna <- which( specBySoil < 5, arr.ind = T )                   # only if at least 5 observations
+
+# assign NA to excluded coefficients using species-variable names
+nh <- nrow(wna)
+lo  <- vector('list', nh)
+names(lo) <- paste( rownames(specBySoil)[wna[,1]], colnames(specBySoil)[wna[,2]], sep='_' )
+hi <- lo
+for(j in 1:nh)lo[[j]] <- NA
+hi <- lo
+
+# setup prior and fit model
+bp <- gjamPriorTemplate(formula, xdata, ydata = treeYdata, lo = lo, hi=hi)
+rl <- list(N = 10, r = 5) 
+ml <- list(ng=1000, burnin=200, typeNames = 'CA', betaPrior = bp, reductList=rl)
+out <- gjam(formula, xdata, ydata = treeYdata, modelList = ml)
+```
+
+The values in `out$parameters$betaMu` will show these omitted values as NA. The sampling for $\beta$ that conditions on zeros is described in the Supplement to Clark et al., PNAS (2020, [202003852](https://www.pnas.org/content/117/29/17074)). 
+
+## <span style="color:teal">sample effort in count data</span>
 
 Discrete count (`'DA'`) data have effort associated with search time, plot area, and so forth.  When the effort values are measured in units that result in large differences between data types sampled with different efforts, model fitting deteriorates.  The modeling scale is $W = Y/E$, where $Y$ are counts, and $E$ is effort.  Units that make $E$ large, can make $W$ vanishingly small.   When counts per unit effort span different orders of magnitude for different data types, consider changing the units on effort to bring them more in alignment with one another. Model predictions for ground beetles (pitfall traps) and small mammals (live traps) in our NEON analysis improved by shifting from trap-days to trap-months.
 
@@ -748,7 +780,7 @@ Discrete count (`'DA'`) data have effort associated with search time, plot area,
 
 
 
-##<span style="color:teal">sample effort in composition data</span>
+## <span style="color:teal">sample effort in composition data</span>
 
 Composition count (`'CC'`) data have heterogenous effort due to different numbers of counts for each sample.  For example, in microbiome data, the number of reads per sample can range from $10^{2}$ to $10^{6}$.  Typically, the number of reads does not depend on total abundance.  It is generally agreed that only relative differences are important. gjam knows that the effort in `CC` data is the total count for the sample, so `effort` does not need to be specified.  Here is an example with simulated data:
 
@@ -772,7 +804,7 @@ gjamPlot(output = out, plotPars = pl)
 
 
 
-##<span style="color:teal">the partition in ordinal data</span>
+## <span style="color:teal">the partition in ordinal data</span>
 
 Ordinal count (`'OC'`) data are collected where abundance must be evaluated rapidly or  precise measurements are difficult.  Because there is no absolute scale the partition must be inferred. Here is an example with 10 species:
 
@@ -798,7 +830,7 @@ pl  <- list(trueValues = f$trueValues)
 gjamPlot(output = out, plotPars = pl)
 ```
 
-##<span style="color:teal">categorical data</span>
+## <span style="color:teal">categorical data</span>
 
 Categorical data have levels within groups.  The levels are unordered.  The columns in `ydata` that hold categorical responses are declared as `typeNames = "CAT"`.  In observation vector $\mathbf{y}_{i}$ there are elements for one less than the number of factor levels. Suppose that observations are obtained on attributes of individual plants, each plant being an observation.  The group `leaf` type might have four levels broadleaf decidious `bd`, needleleaf decidious `nd`, broadleaf evergreen `be`, and needleaf evergreen `ne`.  A second group `xylem` anatomy might have three levels diffuse porous `dp`, ring porous `rp`, and tracheid `tr`.  In both cases I assign the last class to be a reference class, `other`. Ten rows of the response matrix data might look like this:
 
@@ -837,7 +869,7 @@ gjamPlot(out, plotPars = pl)
 ```
 
 
-##<span style="color:teal">combinations of data types</span>
+## <span style="color:teal">combinations of data types</span>
 
 One of the advantages of gjam is that it combines data of many types.  Here is an example showing joint analysis of 12 species represented by five data types, specified by column:
 
@@ -864,7 +896,7 @@ gjamPlot(output = out, plotPars = pl)
 ```
 
 
-##<span style="color:teal">random effects</span>
+## <span style="color:teal">random effects</span>
 
 In addition to random effects on species used in dimension reduction, `gjam` allows for random groups.  Examples could be observer effects for bird point counts or plot effects, where there are multiple observations per plot.  Just like fixed effects, random effects should have replication.  In other words, if I want to estimate an observer effect, I should have multiple observations for each observer.  For plot effects, I want replication within plots.
 
@@ -877,7 +909,7 @@ modelList$random <- 'columnNameInXdata'
 This column will be the basis for the random groups.  Any rare groups (less than a few observations) will be aggregated into a single `rareGroups` category, again, to insure replication.
 
 
-##<span style="color:teal">missing data, out-of-sample prediction</span>
+## <span style="color:teal">missing data, out-of-sample prediction</span>
 
 gjam identifies missing values in `xdata` and `ydata` and models them as part of the posterior distribution.  These are located at `$missing$xmiss` and `$missing$ymiss`.  The estimates for missing $\mathbf{X}$ are `$missing$xmissMu` and `$missing$xmissSe`.  The estimates for missing $\mathbf{Y}$ are `$missing$ymissMu` and `$missing$ymissSe`.  
 
@@ -933,7 +965,7 @@ Note that there are no 'true' values in the simulation for missing x--the last g
 
 
 
-##<span style="color:teal">prediction with heterogenous effort</span>
+## <span style="color:teal">prediction with heterogenous effort</span>
 
 Out-of-sample prediction can not only be done by holding out samples in `gjam`.  It can also be done post-fitting, with the function `gjamPredict`.  In this second case, a prediction grid is passed together with the fitted object generated by `gjam`.  Here is an example with counts (`DA`) and continuous data (`CA`). I simulate, fit, and predict these data with heterogeneous sample effort: 
 
@@ -971,7 +1003,7 @@ abline(0,1)
 
 The orange dots show what the model would predict had effort on all observations been equal to 1. 
 
-##<span style="color:teal">conditional prediction</span>
+## <span style="color:teal">conditional prediction</span>
 
 `gjam` can predict a subset of columns in `y` conditional on other columns using the function `gjamPredict`.  Here is an example using the model fitted in the previous section.  Consider model prediction in the case where the second plant species is absent, and the first species is at its mean value.  In other words, for these plant species abundances, what is the effect of model predictors?  I compare it to predictions where I first condition on the observed values for the first two plant species.  I do not specify a new version of `xdata`, but rather include the columns of `y` to condition on:
 
@@ -1047,7 +1079,7 @@ rmspe
 The rmspe for the unconditional prediction is lower, because there are residual relationships between species.
 
 
-##<span style="color:teal">presence-only data with effort</span>
+## <span style="color:teal">presence-only data with effort</span>
 
 If I have a model for effort, then incidence data can have a likelihood, i.e., a probability assigned to observations that are aggregated into groups of known effort. I cannot model absence for the aggregate data unless I know how much effort was devoted to searching for it.  Effort is widely known to have large spatio-temporal and taxonomic bias.  
 
@@ -1059,7 +1091,7 @@ If effort is unknown, I can model the data as composition data, `'CC'`.  Again, 
 
 `r bigskip()`
 
-#<span style="color:darkgreen">dimension reduction</span>
+# <span style="color:darkgreen">dimension reduction</span>
 
 
 
@@ -1088,7 +1120,7 @@ rl  <- list(r = 5, N = 20)
 ml  <- list(ng = 2000, burnin = 500, typeNames = f$typeNames, 
             reductList = rl, PREDICTX = F)  
 out <- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
-pl  <- list(trueValues = f$trueValues, SMALLPLOTS = F)
+pl  <- list(trueValues = f$trueValues)
 gjamPlot(output = out, plotPars = pl)
 ```  
 
@@ -1105,7 +1137,7 @@ $$
 \mathbf{W}
 $$
 
-##<span style="color:teal">*big-S* composition data: fungal endophytes</span>
+## <span style="color:teal">*big-S* composition data: fungal endophytes</span>
 
 Microbiome data are often *big-S, small-n*; with thousands of response variables, columns in $\mathbf{Y}$ (e.g., OTUs).  They are also composition count (`'CC'`) data, discrete counts, but not related to absolute abundance; they are meaningful in a relative sense.  Because data only inform about relative abundance, there is information for only $S - 1$ species.  If there are thousands of OTUs, most of which are rare and thus not explained by the model, consider aggregating the many rare types into a single `other` class.  
 
@@ -1179,7 +1211,7 @@ Check the chains for convergence.  Those coefficients that do not converge are p
 
 Again, the low dimensional version of covariance $\boldsymbol{\Sigma}$ is expected to perform best when there is structure in the data.  The responses in matrix $\mathbf{E}$, returned in `fit$ematrix`, classify OTUs in three main groups, contained in `fit$eComs`.
 
-##<span style="color:teal">interactions and indirect effects</span>
+## <span style="color:teal">interactions and indirect effects</span>
 
 A plot of main effects, interactions, and indirect effects is used in this example to show contributions to host status, the response variable `status`.  The effects on host status of on responses is available as a table with standard errors and credible intervals:
 
@@ -1206,7 +1238,7 @@ The vector of predictor values `xvector` passed to `gjamIIE` has the same elemen
 For the following plots I copy the first row of `x`.  In the first are main effects of all predictors on `status`.  In the second plot is interactions with `poly` set to 1.  In the third plot are indirect effects of the microbes:
 
 ```{r int, eval=F}
-x <- output$inputs$x
+x <- output$inputs$xUnstand
 xvector <- x[1,]*0
 names(xvector)  <- colnames(x)
 
@@ -1217,15 +1249,15 @@ fit1 <- gjamIIE(output, xvector, omitY = 'other')
 par(mfrow=c(1,3), bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0), 
     mar = c(3,2,2,1), tcl = -0.5, mgp = c(3,1,0))
 gjamIIEplot(fit1, response = 'status', effectMu = 'direct', 
-            effectSd = 'direct', legLoc = 'bottomright', ylim=c(-5,10))
+            effectSd = 'direct', legLoc = 'bottomright', ylim=c(-10,10))
 title('Direct effect by host')
 
 gjamIIEplot(fit1, response = 'status', effectMu = 'int', effectSd = 'int',
-            legLoc = 'topright', ylim=c(-5,10))
+            legLoc = 'topright', ylim=c(-10,10))
 title('Interactions with polyculture')
 
 gjamIIEplot(fit1, response = 'status', effectMu = 'ind', effectSd = 'ind',
-            legLoc = 'topright', ylim=c(-1,1))
+            legLoc = 'topright', ylim=c(-5,5))
 title('Indirect effect of microbiome')
 ```
 
@@ -1260,12 +1292,12 @@ In the first plot dots above the the 1:1 line are microbial taxa predicted to be
 
 `r bigskip()`
 
-#<span style="color:darkgreen">joint trait modeling</span>
+# <span style="color:darkgreen">joint trait modeling</span>
 
 
 Because it accommodates different data types gjam can be used to model ecological traits by either of two approaches (Clark 2016). One approach uses community weighted mean/mode (CWMM) trait values for a plot $i$ as a response vector $\mathbf{u}_{i}$, where each trait has a corresponding data type designation in `typeNames`.  I discuss this approach first.  I then summarize the second approach, predictive trait modeling.
 
-##<span style="color:teal">trait response model (TRM)</span>
+## <span style="color:teal">trait response model (TRM)</span>
 
 There are $n$ observations of $M$ traits to be explained by $Q - 1$ predictors in design matrix $\mathbf{X}$.  The Trait Response Model (TRM) in Clark (2016) is
 
@@ -1330,7 +1362,7 @@ for(j in 1:length(xbox)){
 
 `r bigskip()`
 
-###<span style="color:brown">input data</span>
+### <span style="color:brown">input data</span>
 
 
 
@@ -1374,7 +1406,7 @@ types                                          # 12 individual trait types
 cbind(colnames(u),tTypes)                      # M trait names and types
 ```
 
-###<span style="color:brown">traits by species</span>
+### <span style="color:brown">traits by species</span>
 
 
 Note the change in data types by comparing `types` for individuals of a species with `tTypes` for CWMM values at the plot scale.  At the plot scale `tTypes` has $M = 15$ values, because the leaf `'CAT'` group in `types` includes four levels, which are expanded to four `'FC'` columns in `u`.  The two-level groups `'xylem'` and `'repro'` are transformed to censored continuous values on (0, 1) and thus each occupy a single column in `u`.  
@@ -1417,7 +1449,7 @@ censorList    <- gjamCensorY(values = c(0,1), intervals = cbind( c(-Inf,0),c(1,I
 This censoring was already done with `gjamSpec2Trait`, which knows to treat `'CAT'` data with only two levels as censored `'CA'` data.  In this case the `values = c(0,1)` indicates that zeros and ones in the data indicate censoring.  The `intervals` matrix gives their ranges.
 
 
-###<span style="color:brown">factors in this example</span>
+### <span style="color:brown">factors in this example</span>
 
 
 
@@ -1441,7 +1473,7 @@ xdata$soil <- relevel(xdata$soil,'reference')
 To avoid confusion, contrasts can be inspected as `output$modelSummary$contrasts`.  If the reference class is all zeros and other classes are zeros and ones, then the intercept is the reference class. 
 
 
-###<span style="color:brown">TRM analysis</span>
+### <span style="color:brown">TRM analysis</span>
 
 
 Here is an analysis of the data, with 20 holdout plots.  Predictors in `xdata` are winter temperature (`temp`), slope (`f1`), aspect (`f2`, `f3`), 
@@ -1492,7 +1524,7 @@ The matrices `out$parameters$cutMu` and `out$parameters$cutSe` hold the estimate
 `r insertPlot("trmPartition.JPEG", "The partition is estimated for ordinal variables, showing that not all classes are identified by the data. Each variable has three cutpoints for five classes.")`
 
 
-###<span style="color:brown">interactions and indirect effects</span>
+### <span style="color:brown">interactions and indirect effects</span>
 
 
 Consider the interactions and indirect effects for this model.  If there are no interactions in the `formula` passed to `gjam`, then there will be no interactions to estimate with the function `gjamIIE` (there will still be indirect effects, discussed below).  If there are interactions in the `formula`, I must specify the values for main effects that are involved in these interactions to be used for estimating their effects on predictions.  For example, consider a model containing the interaction between predictors $q$ and $q'$,
@@ -1508,7 +1540,7 @@ which depends not on $x_{q}$, but rather on $x_{q'}$.  So if I want to know how 
 In this example interactions involve `moisture`, `deficit`, and the multi-level factor `soil`, as specified in the `formula` passed to `gjam`.  The first row of the design matrix is used with `moisture` and `deficit` set to -1 or +1 standard deviation to compare dry and wet sites in a dry climate:
 
 ```{r IIEx, eval = F}
-xdrydry <- xwetdry  <- out$inputs$x[1,]
+xdrydry <- xwetdry  <- out$inputs$xUnstand[1,]
 xdrydry['moisture'] <- xdrydry['deficit'] <- -1
 xwetdry['moisture'] <- 1
 xwetdry['deficit']  <- -1
@@ -1545,7 +1577,7 @@ The main effects plotted in the graphs do not depend on the values in `xvector`.
 The indirect effects come from the effects of responses.  This example shows indirect effects for foliar N and P that come through `broaddeciduous` leaf habit:
 
 ```{r IIE4, eval = F}
-xvector <- out$inputs$x[1,]
+xvector <- out$inputs$xUnstand[1,]
 par(mfrow=c(2,1), bty='n', mar=c(1,1,1,1), oma = c(0,0,0,0), 
     mar = c(3,2,2,1), tcl = -0.5, mgp = c(3,1,0), family='')
 
@@ -1563,11 +1595,11 @@ title('foliar N')
 There will always be indirect effects, because they come through the covariance matrix.
 
 
-##<span style="color:teal">predictive trait model (PTM)</span>
+## <span style="color:teal">predictive trait model (PTM)</span>
 
 The PTM models species abundance data, then predicts traits.  This approach has a number of advantages over TRM discussed in Clark (2016).  The response is the $n \times S$ matrix $\mathbf{Y}$, which could be counts, biomass, and so forth. 
 
-###<span style="color:brown">start with species abundance</span>
+### <span style="color:brown">start with species abundance</span>
 
 PTM is based on species abundance, but includes trait data for CWMM prediction.  On the latent scale the observation is represented by a  composition (`'FC'` or `'CC'`) vector,
 
@@ -1686,7 +1718,7 @@ Additional quantities can be predicted from the output using the MCMC output in 
 
 It is worth checking for combinations of responses and factor levels that might be missing from the data.  That is an issue here, because each species has a limited geographic distribution, as do the soil types.  The object `output$inputs$factorBeta$missFacSpec` lists the missing predictor-response combinations.  This list could be the basis for consolidating factor levels.
 
-###<span style="color:brown">trouble shooting in PTM</span>
+### <span style="color:brown">trouble shooting in PTM</span>
 
 
 When using `gjam` in predictive trait mode remember the following:
@@ -1706,7 +1738,7 @@ When using `gjam` in predictive trait mode remember the following:
     
 `r bigskip()`
 
-#<span style="color:darkgreen">selecting variables</span>
+# <span style="color:darkgreen">selecting variables</span>
 
 In a univariate model, there is one response and perhaps a number of potential predictor variables from which to choose.  Variable selection focuses on $\mathbf{X}$.  In a multivariate model, the overall fit and predictive capacity depends not only on what's in $\mathbf{X}$, but also on what's in $\mathbf{Y}$.  A different combination of variables in $\mathbf{X}$ will provide the best "fit" for each combination of variables in $\mathbf{Y}$.  Given that many species may be rare, and rare types will not be explained by the model, there will be decisions about what variables to include on both sides of the likelihood.  
 
@@ -1728,7 +1760,7 @@ To cull rare types in $\mathbf{Y}$ see the help page for `gjamTrimY`.  To evalua
 
 `r bigskip()`
 
-#<span style="color:darkgreen">trouble shooting</span>
+# <span style="color:darkgreen">trouble shooting</span>
 
 
 A joint model for data sets with many response variables can be unstable for several reasons.  Because the model can accommodate large, multivariate data sets, there is temptation to throw everything in and see what happens.  gjam is vulnerable due to the fact that columns in `ydata` have different scales and, thus, can range over orders of magnitude.  It's best to start small, gain a feel for the data and how it translates to estimates of many coefficients and covariances.  More species and predictors can be added without changing the model.  The opposite approach of throwing in everything is asking for trouble and is unlikely to generate insight.
@@ -1769,10 +1801,10 @@ If execution is stopped with the message `overfitted covariance`, then try reduc
 
 `r bigskip()`
 
-#<span style="color:darkgreen">reference notes</span>
+# <span style="color:darkgreen">reference notes</span>
 
 
-##<span style="color:teal">model summary</span>
+## <span style="color:teal">model summary</span>
 
 An observation consists of environmental variables and species attributes, $\lbrace \mathbf{x}_{i}, \mathbf{y}_{i}\rbrace$, $i = 1,..., n$.  The vector $\mathbf{x}_{i}$ contains predictors $x_{iq}: q = 1,..., Q$. The vector $\mathbf{y}_{i}$ contains attributes (responses), such as species abundance, presence-absence, and so forth, $y_{is}: s = 1,..., S$.  The effort $E_{is}$ invested to obtain the observation of response $s$ at location $i$ can affect the observation. The combinations of continuous and discrete measurements in observed $\mathbf{y}_{i}$ motivate the three elements of `gjam`. 
 
@@ -1813,7 +1845,7 @@ For **ordinal counts** gjam is Lawrence et al.'s (2008) model having the partiti
 Like categorical data, **composition** data have one reference class.  For this and other **discrete count** data, the partition for observation $i$ can be defined to account for sample effort (next section).  
 
 
-##<span style="color:teal">more on parameter dimensions</span>
+## <span style="color:teal">more on parameter dimensions</span>
 
 Unlike a univariate model that has one $Y$ per observation or multivariate models where all $Y$'s have the same dimension, gjam has $Y$'s on multiple dimensions.  So there are two sets of dimensions to consider, the dimensions for the $X$'s and those for the $Y$'s. To avoid more notation I just refer to the dimension of a coefficient in the unstandardized coefficient matrix $\mathbf{B}_u$ as $W/X$ (Table 2).  Except for responses that have no dimension (presence-absence, ordinal, categorical) $W$ has the same dimension as $Y$ (or $Y/E$, if effort is specified).  `gjam` returns unstandardized coefficients in tables `parameters$betaMuUn, parameters$betaSeUn`, and in MCMC `chains$bgibbsUn`, because they are not prone to be misinterpreted by a user who has supplied unstandardized predictors in `xdata`. I refer to the coefficient matrix as $\mathbf{B}_u$ and corresponding unstandardized design matrix as $\mathbf{X}_u$. Each row of `$chains$bgibbsUn` is one draw from the $Q \times S$ matrix $\mathbf{B}_u$.
 
@@ -1829,7 +1861,7 @@ $$\mathbf{F} = \mathbf{B}\boldsymbol{\Sigma}^{-1} \mathbf{B}'$$
 Note that $\mathbf{F}$ takes $\mathbf{B}_r$, not $\mathbf{B}$, and not $\mathbf{B}_u$.  The sensitivity matrix $\mathbf{F}$ is `$parameters$fmatrix`.  The sensitivity vector  $\mathbf{f} = diag( \mathbf{F} )$ is `vector $parameters$fMu`.  Details are given in Clark et al. (2017).
 
 
-##<span style="color:teal">more on factors in $\mathbf{X}$</span>
+## <span style="color:teal">more on factors in $\mathbf{X}$</span>
 
 The coefficient matrix $\boldsymbol{\tilde{\mathbf{B}}}$ is useful when there are **factors** in the model.  Factor treatment in `gjam` follows the convention where a reference level is taken as the overall intercept, and remaining coefficients are added to the intercept.  The reference level can be controlled with the R function `relevel`.  This approach makes sense in the ANOVA context, where an experiment has a control level to which other treatment levels are to be compared.  A 'significant' level is different from the reference (e.g., control), but we are not told about its relationship to other levels.  The coefficients in `$parameters$betaMu` and `$parameters$betaSd` are reported this way.  Should it be needed, the contrasts matrix for this design is returned as a list for all factors in the model as `$inputs$factorBeta$contrast` and as a single contrasts matrix for the entire model as `$inputs$factorBeta$eCont`.
 
@@ -1873,7 +1905,7 @@ where $\mathbf{\tilde{V}} = cov \left(\mathbf{X} \mathbf{H} \right)$.
 
 `r bigskip()`
 
-#<span style="color:darkgreen">algorithm summary</span>
+# <span style="color:darkgreen">algorithm summary</span>
 
 
 Model fitting is done by Gibbs sampling.  The design matrix $\mathbf{X}$ is centered and standardized.  Parameters $\mathbf{B}$ and $\boldsymbol{\Sigma}$ are sampled directly,
@@ -1914,14 +1946,14 @@ Inverse prediction of input variables provides sensitivity analysis (Clark et al
 
 `r bigskip()`
 
-#<span style="color:darkgreen">acknowledgements</span>
+# <span style="color:darkgreen">acknowledgements</span>
 
 
 For valuable feedback on the model and computation I thank Bene Bachelot, Alan Gelfand, Diana Nemergut, Erin Schliep, Bijan Seyednasrollah, Daniel Taylor-Rodriquez, Brad Tomasek, Phillip Turner, and Stacy Zhang.  Daniel Taylor-Rodriguez implemented the dimension reduction.  I thank the members of NSF's *SAMSI* program on *Ecological Statistics* and my class *Bayesian Analysis of Environmental Data* at Duke University.  Funding came from NSF's Macrosystems Biology and EAGER programs.
 
 `r bigskip()`
 
-#<span style="color:darkgreen">references</span>
+# <span style="color:darkgreen">references</span>
 
 Brynjarsdottir, J. and A.E. Gelfand. 2014. Collective sensitivity analysis for ecological regression models with multivariate response. *Journal of Biological, Environmental, and Agricultural Statistics* 19, 481-502.
 

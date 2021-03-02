@@ -4157,7 +4157,6 @@ gjamSensitivity <- function(output, group=NULL, nsim=100){
 }
 
 .gjam <- function(formula, xdata, ydata, modelList, verbose = FALSE){
-  
   holdoutN      <-  0
   holdoutIndex  <- numeric(0)
   breakList <- modelSummary  <- reductList <- traitList <- NULL
@@ -7628,7 +7627,6 @@ smooth.na <- function(x,y){
   }  
   
   ############################
-  
   rmspeAll <- sqrt( mean( (y[,notOther] - ypredMu[,notOther])^2,na.rm=T ) )
   
   eBySpec <- sqrt( colMeans( (y[,notOther]/rowSums(y[,notOther]) - 
@@ -8686,6 +8684,10 @@ smooth.na <- function(x,y){
       }
       
       if(SAVEPLOTS)pdf( file=.outFile(outFolder,plab) ) # start plot
+      qt_save_list <- list(mat = lgibbs[,wc], tnam = vnam[ wc ], snames = snames,
+                           specColor = specColor, label=glab)
+      saveRDS(qt_save_list, sprintf('agu_%s', gnames[j]))
+      
       par(mfrow=c(1,1),bty='n', oma=oma, mar=mar, tcl= tcl, mgp=mgp)
       
       .myBoxPlot( mat = lgibbs[,wc], tnam = vnam[ wc ], snames = snames,
@@ -9325,6 +9327,8 @@ smooth.na <- function(x,y){
   if( BETAGRID & nrow(output$parameters$betaStandXWmu) > 2 ){
     
     graphics.off()
+    
+    browser()
     
     if(SAVEPLOTS)pdf( file=.outFile(outFolder,'clusterGridB.pdf') ) # start plot
     
